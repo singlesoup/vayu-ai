@@ -5,6 +5,7 @@ import { TokenPage } from "./components/TokenPage";
 import { FirstRunScreen } from "./components/FirstRunScreen";
 import { DailyNote } from "./components/DailyNote";
 import { Calendar } from "./components/Calendar";
+import { Settings } from "./components/Settings";
 import { now } from "./lib/appClock";
 import { titleForDate } from "./lib/dateFormat";
 import { localDateKey, isNoteDate, type NoteDate } from "./lib/noteFile";
@@ -45,6 +46,8 @@ function AppBody() {
   const [days, setDays] = useState<DayState | null>(initialDays);
   // Notes that already exist on disk (from list_notes), for the calendar marks.
   const [noteDates, setNoteDates] = useState<NoteDate[]>([]);
+  // Settings panel (task 1.9.2): Phase 1 holds the Model (Ollama) section.
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   function loadConfig() {
     void getConfig()
@@ -112,6 +115,15 @@ function AppBody() {
   const isToday = days.current === days.today;
   return (
     <main className="app workspace">
+      <button
+        type="button"
+        className="settings-open"
+        aria-label="Settings"
+        onClick={() => setSettingsOpen(true)}
+      >
+        ⚙
+      </button>
+      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <aside className="calendar-rail">
         <Calendar
           today={days.today}

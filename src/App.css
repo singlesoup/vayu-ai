@@ -86,6 +86,48 @@
   font-weight: bold;
 }
 
+/* Settings (task 1.9.2): a top-right gear and a simple dialog panel. */
+.settings-open {
+  position: absolute;
+  right: var(--space-2);
+  top: var(--space-2);
+  border: 1px solid var(--color-border-card);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius);
+  padding: var(--space-half) var(--space-1);
+  cursor: pointer;
+}
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-ink); /* dims the note behind the panel */
+  display: grid;
+  place-items: center;
+}
+
+.settings {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  min-width: var(--space-6);
+}
+
+.settings header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.settings-reason {
+  color: var(--color-muted);
+  font-size: var(--text-small);
+}
+
 /* Task panel (task 1.8.3): checkbox, editable text, delete, add input. */
 .task-list {
   margin-top: var(--space-3);
