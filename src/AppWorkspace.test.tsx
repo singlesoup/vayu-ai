@@ -81,4 +81,20 @@ describe("Workspace launch (task 1.5.4)", () => {
     render(<App />);
     await screen.findByDisplayValue("started at 9");
   });
+
+  it("clicking a calendar day opens that day's note (task 1.7.2)", async () => {
+    const { fireEvent } = await import("@testing-library/react");
+    const tauri = armConfig();
+    tauri.on("list_notes", () => ["2026-10-05"]);
+    tauri.on("read_note", (args) =>
+      args["date"] === "2026-10-05"
+        ? { exists: true, content: "pruned the apple tree" }
+        : { exists: true, content: "started at 9" },
+    );
+    render(<App />);
+    await screen.findByDisplayValue("started at 9");
+
+    fireEvent.click(await screen.findByRole("button", { name: "5" }));
+    expect(await screen.findByDisplayValue("pruned the apple tree")).toBeInTheDocument();
+  });
 });
