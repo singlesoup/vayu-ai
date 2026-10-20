@@ -7,9 +7,14 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
   it("ensures then reads the day's note, in that order, and shows the content", async () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
-    tauri.given("read_note", { exists: true, content: "Watered the tomato plant.\n- [x] repot it" });
+    tauri.given("read_note", {
+      exists: true,
+      content: "Watered the tomato plant.\n- [x] repot it",
+    });
     render(<DailyNote date="2026-10-21" isToday create />);
-    expect(await screen.findByDisplayValue("Watered the tomato plant.\n- [x] repot it")).toBeInTheDocument();
+    const editor = (await screen.findByLabelText("Note")) as HTMLTextAreaElement;
+    // exact value comparison (findByDisplayValue collapses newlines in RTL)
+    expect(editor.value).toBe("Watered the tomato plant.\n- [x] repot it");
     expect(tauri.ran("ensure_note")).toBe(true);
     expect(tauri.ran("read_note")).toBe(true);
   });
@@ -28,7 +33,7 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "hi" });
     render(<DailyNote date="2026-10-20" isToday={false} create={false} />);
-    expect(await screen.findByDisplayValue("hi")).toBeInTheDocument();
+    expect(((await screen.findByLabelText("Note")) as HTMLTextAreaElement).value).toBe("hi");
     expect(screen.getByText("TUE 20 OCT 2026")).toBeInTheDocument();
     expect(screen.queryByText("Today")).not.toBeInTheDocument();
   });
