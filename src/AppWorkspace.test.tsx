@@ -64,11 +64,11 @@ describe("Workspace launch (task 1.5.4)", () => {
 
     expect(await screen.findByText("THU 22 OCT 2026")).toBeInTheDocument();
     expect(document.title).toBe("Vayu — Today");
-    const iEnsure = callIndex("ensure_note");
-    const iRead = callIndex("read_note");
-    // the second ensure/read pair targets the new day
-    expect(getInvokeMock().mock.calls[iEnsure]?.[1]).toEqual({ date: "2026-10-22" });
-    expect(getInvokeMock().mock.calls[iRead]?.[1]).toEqual({ date: "2026-10-22" });
+    // the last ensure/read pair targets the new day
+    const lastEnsure = [...getInvokeMock().mock.calls].reverse().findIndex(([c]) => c === "ensure_note");
+    const lastRead = [...getInvokeMock().mock.calls].reverse().findIndex(([c]) => c === "read_note");
+    expect(getInvokeMock().mock.calls.at(-1 - lastEnsure)?.[1]).toEqual({ date: "2026-10-22" });
+    expect(getInvokeMock().mock.calls.at(-1 - lastRead)?.[1]).toEqual({ date: "2026-10-22" });
   });
 
   it("startup does not wait for Ollama: the note renders even when ollama_status never resolves", async () => {
