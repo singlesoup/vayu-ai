@@ -35,5 +35,7 @@ export default defineConfig(() => ({
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
     include: ["src/**/*.test.{ts,tsx}"],
+    // Needed so `?raw` CSS imports (1.3.4 TokenPage) return real content.
+    css: true,
   },
 }));

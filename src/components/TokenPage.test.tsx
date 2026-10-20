@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { TokenPage, tokenSwatches } from "./TokenPage";
+import { TokenPage } from "./TokenPage";
+import { tokenSwatches } from "./tokenData";
 
 describe("TokenPage (task 1.3.4 — dev-only token test page)", () => {
   it("shows one swatch per colour token with name and value", () => {

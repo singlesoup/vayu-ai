@@ -20,7 +20,7 @@ describe("token page gate (task 1.3.4 AC3)", () => {
   it("the app shell renders the token page under ?dev=tokens in dev builds", () => {
     window.history.replaceState(null, "", "/?dev=tokens");
     render(<App />);
-    expect(screen.getByTestId("token-swatch")).toBeInTheDocument();
+    expect(screen.getAllByTestId("token-swatch").length).toBeGreaterThan(0);
   });
 
   it("the app shell does not show token cards without the param", () => {

@@ -455,8 +455,8 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.2.4 | CSP / network lockdown | 1.2.2 | review | strict `csp` + `devCsp` in `src/tauri.conf.json` (`devCsp` only adds `'unsafe-inline'` scripts + `ws:` for the Vite/React-refresh preamble). App-loads-in-dev/release is (manual) pending Rust |
 | 1.3.1 | Design token file | 1.2.2 | review | all tokens asserted in `src/styles/tokens.test.ts`; only colour definitions in `src/styles/tokens.css` (`--color-warm` defined but its use anywhere outside tokens.css is banned and guarded in 1.3.3) |
 | 1.3.2 | Bundle fonts locally | 1.3.1 | review | 11 woff2 (latin subset) + 3 OFL licences in `src/assets/fonts/`, wired via @font-face in `tokens.css`; "correct fonts with Wi-Fi off" is (manual) pending Rust |
-| 1.3.3 | Hard-coded colour guard | 1.3.1 | doing | |
-| 1.3.4 | Dev token page | 1.3.1 | todo | |
+| 1.3.3 | Hard-coded colour guard | 1.3.1 | review | guard test `src/styles/colours.test.ts` (+ keyword list file); a temp `#fff` + named colour in a component previously made it fail with file+line; AC2 (verifier) can re-add `color: #fff` anywhere to see `check` go red |
+| 1.3.4 | Dev token page | 1.3.1 | doing | |
 | 1.4.1 | Config storage | 1.2.2 | todo | |
 | 1.4.2 | Default notes folder | 1.4.1 | todo | |
 | 1.4.3 | Validate folder | 1.4.1 | todo | |
