@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockInvoke } from "../test/mocks";
 import { DailyNote } from "./DailyNote";
 
@@ -50,3 +51,72 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     expect(tauri.ran("write_note")).toBe(false);
   });
 });
+
+describe("DailyNote autosave (task 1.6.2)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Arms mocks and renders with a loaded empty note (flushes load promises). */
+  async function renderLoaded() {
+    const tauri = mockInvoke();
+    tauri.given("ensure_note", null);
+    tauri.given("read_note", { exists: true, content: "" });
+    render(<DailyNote date="2026-10-21" isToday create />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    return { tauri, editor: screen.getByLabelText("Note") as HTMLTextAreaElement };
+  }
+
+  it("typing does not write immediately; ONE write arrives after the quiet window", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { tauri, editor } = await renderLoaded();
+
+    await user.type(editor, "hello");
+    expect(tauri.ran("write_note")).toBe(false);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(tauri.callCount("write_note")).toBe(1);
+    expect(tauri.args("write_note")).toEqual({ date: "2026-10-21", content: "hello" });
+  });
+
+  it("10 rapid keystrokes collapse into one write of the final text", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { tauri, editor } = await renderLoaded();
+
+    await user.type(editor, "abcdefghij");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(tauri.callCount("write_note")).toBe(1);
+    expect(tauri.args("write_note")?.["content"]).toBe("abcdefghij");
+  });
+
+  it("a save error shows a calm retrying note and never loses the text; success clears it", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const { tauri, editor } = await renderLoaded();
+    tauri.givenError("write_note", { kind: "Io", message: "disk hiccup" });
+
+    await user.type(editor, "keep me");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(screen.getByText("Couldn't save — retrying")).toBeInTheDocument();
+    expect(editor.value).toBe("keep me");
+
+    // the write starts succeeding again; the retry clears the note
+    tauri.on("write_note", () => null);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(screen.queryByText(/Couldn't save/)).not.toBeInTheDocument();
+    expect(editor.value).toBe("keep me");
+  });
+});
+
