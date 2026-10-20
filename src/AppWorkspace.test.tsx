@@ -97,4 +97,17 @@ describe("Workspace launch (task 1.5.4)", () => {
     fireEvent.click(await screen.findByRole("button", { name: "5" }));
     expect(await screen.findByDisplayValue("pruned the apple tree")).toBeInTheDocument();
   });
+
+  // Task 1.8.4: guard — the app is for notes, not for stopwatching. Render the
+  // whole shell and make sure nothing suggests timers/Pomodoro/countdowns.
+  it("no timer UI anywhere in the shell (task 1.8.4)", async () => {
+    armConfig();
+    const { container } = render(<App />);
+    await screen.findByDisplayValue("started at 9");
+
+    const prohibit = /pomodoro|timer|countdown|start focus/i;
+    expect(screen.queryByLabelText(/pomodoro|timer|countdown|start focus/i)).toBeNull();
+    expect(screen.queryByPlaceholderText(prohibit)).toBeNull();
+    expect(container.textContent).not.toMatch(prohibit);
+  });
 });
