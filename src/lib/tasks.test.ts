@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { addTask, deleteTask, editTask, parseTasks, toggleTask } from "./tasks";
+
+// `line` is the 0-based index into md.split(/\r?\n/), same side as the edits.
+const SAMPLE = [
+  "# Journal",
+  "- [ ] first task",
+  "nothing here",
+  "```md",
+  "- [x] inside a fence",
+  "```",
+  "* [ ] starred task",
+  "  - [X] indented task",
+  "- a normal bullet",
+  "- [x] done task",
+].join("\n");
+
+describe("parseTasks (task 1.8.1 — pure Markdown task parsing)", () => {
+  it("finds tasks with their line, text and done state", () => {
+    expect(parseTasks(SAMPLE)).toEqual([
+      { line: 1, text: "first task", done: false },
+      { line: 6, text: "starred task", done: false },
+      { line: 7, text: "indented task", done: true },
+      { line: 9, text: "done task", done: true },
+    ]);
+  });
+
+  it("does not count lines inside fenced code blocks", () => {
+    expect(parseTasks("- [x] inside a fence").length).toBe(0);
+  });
+
+  it("ignores normal bullets and text", () => {
+    expect(parseTasks("plain text\n- plain bullet\n- [ ] real task")).toHaveLength(1);
+  });
+
+  it("handles both CRLF and LF line endings", () => {
+    expect(parseTasks("- [ ] a\r\n- [x] b")).toEqual([
+      { line: 0, text: "a", done: false },
+      { line: 1, text: "b", done: true },
+    ]);
+  });
+
+  it("returns [] for empty content", () => {
+    expect(parseTasks("")).toEqual([]);
+  });
+});
+
+describe("toggleTask (task 1.8.2 — pure edits)", () => {
+  it("flips [ ] to [x] on one line, byte-identical elsewhere", () => {
+    expect(toggleTask("- [ ] a\n- [ ] b", 1)).toBe("- [ ] a\n- [x] b");
+  });
+
+  it("flips [X] back to [ ]", () => {
+    expect(toggleTask("- [X] b", 0)).toBe("- [ ] b");
+  });
+
+  it("leaves the note unchanged for out-of-range or non-task lines", () => {
+    expect(toggleTask("- [ ] a\nnot a task", 5)).toBe("- [ ] a\nnot a task");
+    expect(toggleTask("- [ ] a\nnot a task", 1)).toBe("- [ ] a\nnot a task");
+  });
+});
+
+describe("addTask (task 1.8.2 — pure edits)", () => {
+  it("appends after the last existing task line", () => {
+    expect(addTask("- [ ] a\ntext\n- [x] b", "new task")).toBe(
+      "- [ ] a\ntext\n- [x] b\n- [ ] new task",
+    );
+  });
+
+  it("appends at the end of the note when there are no tasks", () => {
+    expect(addTask("just text\n", "new task")).toBe("just text\n- [ ] new task");
+    expect(addTask("", "new task")).toBe("- [ ] new task");
+  });
+});
+
+describe("editTask (task 1.8.2 — pure edits)", () => {
+  it("changes only the task text on that line", () => {
+    expect(editTask("- [ ] a\n- [x] b", 1, "renamed")).toBe("- [ ] a\n- [x] renamed");
+  });
+
+  it("leaves the note unchanged for a non-task line", () => {
+    expect(editTask("text\nmore", 0, "renamed")).toBe("text\nmore");
+  });
+});
+
+describe("deleteTask (task 1.8.2 — pure edits)", () => {
+  it("removes only that line", () => {
+    expect(deleteTask("- [ ] a\n- [x] b\n- [ ] c", 1)).toBe("- [ ] a\n- [ ] c");
+  });
+
+  it("leaves the note unchanged for out-of-range or non-task lines", () => {
+    expect(deleteTask("text\nmore", 5)).toBe("text\nmore");
+    expect(deleteTask("text\nmore", 1)).toBe("text\nmore");
+  });
+});
