@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNoteDate, noteFileName } from "./noteFile";
+import { isNoteDate, localDateKey, noteFileName } from "./noteFile";
 
 describe("noteFileName (task 1.5.1 — date to file name, pure)", () => {
   it("formats a date as a zero-padded YYYY-MM-DD.md local file name", () => {
@@ -17,6 +17,15 @@ describe("noteFileName (task 1.5.1 — date to file name, pure)", () => {
   it("handles the year boundary", () => {
     expect(noteFileName(new Date(2025, 11, 31, 23, 59))).toBe("2025-12-31.md");
     expect(noteFileName(new Date(2026, 0, 1, 0, 0))).toBe("2026-01-01.md");
+  });
+});
+
+describe("localDateKey (used by 1.5.4 — inverse of noteDateToDate)", () => {
+  it("returns the validated date string for a local Date", () => {
+    expect(localDateKey(new Date(2026, 9, 21))).toBe("2026-10-21");
+    expect(localDateKey(new Date(2026, 9, 21, 0, 30))).toBe("2026-10-21");
+    expect(localDateKey(new Date(2026, 0, 1))).toBe("2026-01-01");
+    expect(isNoteDate(localDateKey(new Date(2026, 9, 21)))).toBe(true);
   });
 });
 
