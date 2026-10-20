@@ -73,20 +73,23 @@ describe("createAutosaver (task 1.6.2 — debounced autosave, pure)", () => {
     await vi.advanceTimersByTimeAsync(DELAY);
     expect(save).toHaveBeenCalledTimes(2);
     expect(save).toHaveBeenLastCalledWith("precious text");
-    expect(onSaved).toHaveBeenCalled();
+    await vi.waitFor(() => expect(onSaved).toHaveBeenCalled());
   });
 
-  it("a NEW schedule replaces a scheduled retry and saves the newest content once", async () => {
+  it("a NEW schedule replaces a scheduled retry: the retry saves the newest content", async () => {
     const onError = vi.fn();
     save.mockRejectedValueOnce({ kind: "Io", message: "still failing" });
     const saver = createAutosaver({ delayMs: DELAY, save, onError });
     saver.schedule("old");
-    await vi.advanceTimersByTimeAsync(DELAY);
-    saver.schedule("new");
-    await vi.advanceTimersByTimeAsync(DELAY);
-    await vi.advanceTimersByTimeAsync(DELAY);
+    await vi.advanceTimersByTimeAsync(DELAY); // first save of "old" FAILS
+    saver.schedule("new"); // replaces the pending "old" retry
+    await vi.runAllTimersAsync();
     const contents = save.mock.calls.map(([c]) => c);
+    // two attempts only: the failed "old" attempt, then ONE save of "new".
+    // The failed "old" is never re-tried once a newer schedule replaced it.
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(contents[0]).toBe("old");
     expect(contents[contents.length - 1]).toBe("new");
-    expect(contents).not.toContain("old");
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
 });
