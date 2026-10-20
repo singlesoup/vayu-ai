@@ -478,7 +478,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.9.1 | Ollama status | 1.2.2 | todo | |
 | 1.9.2 | Settings: status | 1.9.1 | review | UI only — Rust side pending. `src/components/Settings.tsx`: Running/Not found labels, Refresh, 5s poll while open (poll stops on close). AC2 is (manual) |
 | 1.10.1 | Detect models | 1.9.1 | todo | |
-| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | todo | |
+| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | UI only — Rust side pending. Three rows Present/Missing + "Dev model: …" line; NO download UI. AC2 is (manual, dev PC) |
 | 1.11.1 | Stream parser | 1.2.2 | todo | |
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | |
 | 1.11.3 | Test AI UI | 1.11.2 | todo | |
