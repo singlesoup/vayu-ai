@@ -465,7 +465,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
 | 1.5.3 | Safe note writes | 1.5.2 | todo | |
 | 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | review | UI only — Rust side pending. Launch/ensure/read/title/midnight-refocus/non-blocking tests in `src/AppWorkspace.test.tsx` + `src/components/DailyNote.test.tsx`; AC2 timing is (manual) |
-| 1.6.1 | Editor component | 1.5.4 | todo | |
+| 1.6.1 | Editor component | 1.5.4 | doing | UI only — Rust side pending |
 | 1.6.2 | Debounced autosave | 1.6.1 | todo | |
 | 1.6.3 | Save on close / day switch | 1.6.2 | todo | |
 | 1.7.1 | List notes | 1.5.2 | todo | |
