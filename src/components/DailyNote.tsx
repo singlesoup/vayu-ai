@@ -9,6 +9,8 @@ import { useEffect, useMemo, useState } from "react";
 // component via `key={date}` in App (no setState-in-effect reset here).
 import { ensureNote, readNote, writeNote } from "../lib/api";
 import { createAutosaver } from "../lib/autosave";
+import type { UnlistenFn } from "../lib/windowClose";
+import { onWindowClose } from "../lib/windowClose";
 import type { NoteDate } from "../lib/noteFile";
 import { noteDateToDate } from "../lib/noteFile";
 import { formatNoteHeader, titleForDate } from "../lib/dateFormat";
@@ -56,6 +58,22 @@ export function DailyNote({ date, isToday, create }: Props) {
       cancelled = true;
     };
   }, [date, create]);
+
+  // Task 1.6.3: a pending edit is never lost — it is flushed when the window
+  // gets a close request, and again on unmount (day switch remounts this view).
+  useEffect(() => {
+    let disposed = false;
+    let unlisten: UnlistenFn | undefined;
+    void onWindowClose(() => saver.flush()).then((fn) => {
+      if (disposed) fn();
+      else unlisten = fn;
+    });
+    return () => {
+      disposed = true;
+      if (unlisten) unlisten();
+      saver.flush();
+    };
+  }, [saver]);
 
   const title = isToday ? "Today" : titleForDate(noteDateToDate(date));
 

@@ -4,6 +4,23 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getInvokeMock, mockInvoke } from "../test/mocks";
 import { DailyNote } from "./DailyNote";
 
+// Task 1.6.3: fake window-close wiring (vi.mock must live at module top level).
+const closeState = vi.hoisted(() => ({
+  handlers: [] as Array<(e: { isPreventDefault: () => boolean }) => Promise<void> | void>,
+}));
+
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: () => ({
+    onCloseRequested: async (handler: (e: { isPreventDefault: () => boolean }) => Promise<void> | void) => {
+      closeState.handlers.push(handler);
+      return () => {
+        const i = closeState.handlers.indexOf(handler);
+        if (i >= 0) closeState.handlers.splice(i, 1);
+      };
+    },
+  }),
+}));
+
 describe("DailyNote (task 1.5.4 — open to today)", () => {
   it("ensures then reads the day's note, in that order, and shows the content", async () => {
     const tauri = mockInvoke();
@@ -124,22 +141,6 @@ describe("DailyNote autosave (task 1.6.2)", () => {
 
 describe("DailyNote save on close / day switch (task 1.6.3)", () => {
   // Fake timers + fireEvent (see the 1.6.2 describe note above).
-  const closeState = vi.hoisted(() => ({
-    handlers: [] as Array<(e: { isPreventDefault: () => boolean }) => Promise<void> | void>,
-  }));
-
-  vi.mock("@tauri-apps/api/window", () => ({
-    getCurrentWindow: () => ({
-      onCloseRequested: async (handler: (e: { isPreventDefault: () => boolean }) => Promise<void> | void) => {
-        closeState.handlers.push(handler);
-        return () => {
-          const i = closeState.handlers.indexOf(handler);
-          if (i >= 0) closeState.handlers.splice(i, 1);
-        };
-      },
-    }),
-  }));
-
   beforeEach(() => {
     vi.useFakeTimers();
     closeState.handlers.length = 0;
@@ -147,6 +148,18 @@ describe("DailyNote save on close / day switch (task 1.6.3)", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
+
+  /** Arms mocks and renders with a loaded empty note (flushes load promises). */
+  async function renderLoaded() {
+    const tauri = mockInvoke();
+    tauri.given("ensure_note", null);
+    tauri.given("read_note", { exists: true, content: "" });
+    render(<DailyNote date="2026-10-21" isToday create />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    return { tauri, editor: screen.getByLabelText("Note") as HTMLTextAreaElement };
+  }
 
   /** Fires the window close request handlers (as the OS would). */
   async function fireWindowClose() {

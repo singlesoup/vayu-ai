@@ -36,4 +36,32 @@ describe("onWindowClose (task 1.6.3)", () => {
     unlisten();
     expect(mockWin.handlers.length).toBe(0);
   });
+
+  it("degrades to a no-op when no Tauri window runtime exists", async () => {
+    vi.resetModules();
+    vi.doMock("@tauri-apps/api/window", () => ({
+      getCurrentWindow: () => {
+        throw new Error("No Tauri runtime");
+      },
+    }));
+    const { onWindowClose: freshOnWindowClose } = await import("./windowClose");
+
+    const runs = vi.fn();
+    const unlisten = await freshOnWindowClose(runs);
+    expect(runs).not.toHaveBeenCalled();
+    expect(() => unlisten()).not.toThrow(); // a valid, safe no-op
+
+    // the runtime can also come up AFTER registration (async failure path)
+    vi.doMock("@tauri-apps/api/window", () => ({
+      getCurrentWindow: () => ({
+        onCloseRequested: async () => {
+          throw new Error("runtime died");
+        },
+      }),
+    }));
+    const { onWindowClose: lateOnWindowClose } = await import("./windowClose");
+    const unlisten2 = await lateOnWindowClose(runs);
+    expect(runs).not.toHaveBeenCalled();
+    expect(() => unlisten2()).not.toThrow();
+  });
 });

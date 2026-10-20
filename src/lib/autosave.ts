@@ -35,7 +35,7 @@ export function createAutosaver(options: AutosaverOptions): Autosaver {
     const content = latestContent;
     try {
       await options.save(content);
-      options.onSaved?.();;
+      options.onSaved?.();
     } catch (e) {
       dirty = true; // the text is never lost
       options.onError?.(e);
