@@ -94,3 +94,64 @@ describe("Settings → Model status (task 1.9.2)", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 });
+
+describe("Settings → Model list (task 1.10.2)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function openWithModels(models: unknown) {
+    const tauri = mockInvoke();
+    tauri.on("ollama_status", () => RUNNING);
+    tauri.on("list_models", () => models);
+    const view = render(<Settings open onClose={() => {}} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    return view;
+  }
+
+  it("shows the 3 PRD models with Present/Missing, and NO download button", async () => {
+    const { container } = await openWithModels({
+      present: ["gemma3n:e4b"],
+      missing: ["gemma3n:e2b", "embeddinggemma"],
+      status: RUNNING,
+      devChatModel: null,
+    });
+
+    expect(screen.getByText("gemma3n:e4b")).toBeInTheDocument();
+    expect(screen.getByText("gemma3n:e2b")).toBeInTheDocument();
+    expect(screen.getByText("embeddinggemma")).toBeInTheDocument();
+    // one Present, two Missing
+    expect(screen.getByText("Present")).toBeInTheDocument();
+    expect(screen.getAllByText("Missing").length).toBe(2);
+    // downloads are Phase 2 — no affordance may exist
+    expect(screen.queryByRole("button", { name: /download/i })).toBeNull();
+    expect(container.textContent).not.toMatch(/download|install|pull/i);
+  });
+
+  it("the dev override model shows separately as 'Dev model: …'", async () => {
+    await openWithModels({
+      present: [],
+      missing: ["gemma3n:e4b", "gemma3n:e2b", "embeddinggemma"],
+      status: RUNNING,
+      devChatModel: "gemma4-e4b-fast:latest",
+    });
+    expect(screen.getByText("Dev model: gemma4-e4b-fast:latest")).toBeInTheDocument();
+  });
+
+  it("Ollama down → all three Missing with a calm Not found, no crash", async () => {
+    await openWithModels({
+      present: [],
+      missing: ["gemma3n:e4b", "gemma3n:e2b", "embeddinggemma"],
+      status: NOT_FOUND,
+      devChatModel: null,
+    });
+    expect(screen.getByText("Not found")).toBeInTheDocument();
+    expect(screen.getAllByText("Missing").length).toBe(3);
+    expect(screen.queryByText("Present")).toBeNull();
+  });
+});
