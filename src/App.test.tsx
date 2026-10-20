@@ -5,8 +5,6 @@ import { mockInvoke } from "./test/mocks";
 const { dialogOpenMock } = vi.hoisted(() => ({ dialogOpenMock: vi.fn() }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: dialogOpenMock }));
 
-// (needed for the JSX below and any future hook usage)
-import React from "react";
 import App from "./App";
 
 describe("First-run flow (task 1.4.4)", () => {

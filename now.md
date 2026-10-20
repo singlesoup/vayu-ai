@@ -460,7 +460,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.4.1 | Config storage | 1.2.2 | todo | |
 | 1.4.2 | Default notes folder | 1.4.1 | todo | |
 | 1.4.3 | Validate folder | 1.4.1 | todo | |
-| 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | todo | |
+| 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | doing | UI built against the mocked contract; AC2/AC3 (manual) pending Rust |
 | 1.5.1 | Date → file name | 1.2.2 | review | `src/lib/noteFile.ts` (`noteFileName`, `isNoteDate`, plus `noteDateToDate` for parsing validated dates — local-time based) |
 | 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
 | 1.5.3 | Safe note writes | 1.5.2 | todo | |
@@ -483,7 +483,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | |
 | 1.11.3 | Test AI UI | 1.11.2 | todo | |
 | CI-1 | Check-in 1 | all above | todo | |
-| api | Typed command contract (`src/lib/api.ts`) | — | doing | Doc comments describe expected Rust behaviour for the morning work |
+| api | Typed command contract (`src/lib/api.ts`) | — | review | All invoke shapes tested in `src/lib/api.test.ts`; mocks.ts also fakes `Channel` for tests |
 
 ---
 

@@ -38,12 +38,18 @@ export const COMMANDS = {
 } as const;
 
 /**
- * `{ notesDir, version }` when a valid config exists, `null` when there is no
- * config file or its JSON is corrupt (Rust renames a corrupt file to
- * `config.bad.json` — see 1.4.1). The config lives in the Tauri app config
- * dir, NEVER inside the notes folder.
+ * Result of `get_config`. `notesDir` is `null` when no valid config exists
+ * (no file, or corrupt JSON — Rust renames a corrupt file to `config.bad.json`,
+ * see 1.4.1). `defaultNotesDir` is ALWAYS supplied as
+ * `<documents dir>\Vayu` (1.4.2 `default_notes_dir`) and is pre-filled on the
+ * first-run screen. The config lives in the Tauri app config dir, NEVER inside
+ * the notes folder.
  */
-export type ConfigResult = { notesDir: string; version: number } | null;
+export type ConfigResult = {
+  notesDir: string | null;
+  version: number;
+  defaultNotesDir: string;
+};
 
 /**
  * Result of reading one note: `{ exists: false, content: "" }` when no file
