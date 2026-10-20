@@ -465,7 +465,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
 | 1.5.3 | Safe note writes | 1.5.2 | todo | |
 | 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | review | UI only — Rust side pending. Launch/ensure/read/title/midnight-refocus/non-blocking tests in `src/AppWorkspace.test.tsx` + `src/components/DailyNote.test.tsx`; AC2 timing is (manual) |
-| 1.6.1 | Editor component | 1.5.4 | doing | UI only — Rust side pending |
+| 1.6.1 | Editor component | 1.5.4 | review | UI only — Rust side pending. Plain textarea (Decisions log); content typed = bytes written (AC2 manual until Rust) |
 | 1.6.2 | Debounced autosave | 1.6.1 | todo | |
 | 1.6.3 | Save on close / day switch | 1.6.2 | todo | |
 | 1.7.1 | List notes | 1.5.2 | todo | |
@@ -495,5 +495,6 @@ _Newest first: what got done, what's blocked, manual steps waiting for the verif
 
 ## Blockers / questions
 
+- **Note column width (1.6.1):** the design board doesn't give a single-column note width. Took `--width-note-column: 680px` in tokens.css (Reflect-like proportions); change it there in one place if the owner disagrees.
 - **Model tag matching (1.10.1):** confirm whether quantised variants like `gemma3n:e4b-it-q4_K_M` should count as E4B. Default: exact tag match, plus `:latest` for `embeddinggemma`.
 - **App name:** PRD §13 says the name may change (the vayu.ai domain isn't owned). Keep the product name in one place (Tauri config + one UI constant) so a rename is a one-line change.
