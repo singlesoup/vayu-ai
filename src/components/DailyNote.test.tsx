@@ -1,5 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockInvoke } from "../test/mocks";
 import { DailyNote } from "./DailyNote";
@@ -53,6 +52,9 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
 });
 
 describe("DailyNote autosave (task 1.6.2)", () => {
+  // Fake timers + fireEvent (not userEvent): userEvent's event delays deadlock
+  // under fake timers in this setup. fireEvent.change is synchronous and the
+  // debounce timers/quiet-window are exactly what we want to control here.
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -67,16 +69,15 @@ describe("DailyNote autosave (task 1.6.2)", () => {
     tauri.given("read_note", { exists: true, content: "" });
     render(<DailyNote date="2026-10-21" isToday create />);
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(1);
     });
     return { tauri, editor: screen.getByLabelText("Note") as HTMLTextAreaElement };
   }
 
   it("typing does not write immediately; ONE write arrives after the quiet window", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { tauri, editor } = await renderLoaded();
 
-    await user.type(editor, "hello");
+    fireEvent.change(editor, { target: { value: "hello" } });
     expect(tauri.ran("write_note")).toBe(false);
 
     await act(async () => {
@@ -87,10 +88,11 @@ describe("DailyNote autosave (task 1.6.2)", () => {
   });
 
   it("10 rapid keystrokes collapse into one write of the final text", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { tauri, editor } = await renderLoaded();
 
-    await user.type(editor, "abcdefghij");
+    for (const word of ["a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh", "abcdefghi", "abcdefghij"]) {
+      fireEvent.change(editor, { target: { value: word } });
+    }
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800);
     });
@@ -99,11 +101,10 @@ describe("DailyNote autosave (task 1.6.2)", () => {
   });
 
   it("a save error shows a calm retrying note and never loses the text; success clears it", async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const { tauri, editor } = await renderLoaded();
     tauri.givenError("write_note", { kind: "Io", message: "disk hiccup" });
 
-    await user.type(editor, "keep me");
+    fireEvent.change(editor, { target: { value: "keep me" } });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800);
     });
@@ -119,4 +120,5 @@ describe("DailyNote autosave (task 1.6.2)", () => {
     expect(editor.value).toBe("keep me");
   });
 });
+
 
