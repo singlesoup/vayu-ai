@@ -1,13 +1,52 @@
-/* Design tokens (task 1.3.1 fills in the full set).
-   The 1.2.3 task only needs the Ink background, added here first so `body`
-   can reference the token instead of a literal colour. Colours must not be
-   defined anywhere else in the app (guard: src/styles/tokens.test.ts, 1.3.3). */
+/* Vayu design tokens — PRD §8 (adopted 21 Oct, see plan.md Decisions log).
+   This file is the ONLY place colours are defined (guard: src/styles/colours.test.ts).
+   Any design change is made here plus a Decisions log row in plan.md;
+   no component ever needs editing for a token change. */
 
 :root {
-  --color-ink: #0e1116;
+  /* ---- Core colours (the 8 PRD §8 tokens) ---- */
+  --color-ink: #0E1116; /* app background (dark, default) */
+  --color-surface: #171B22; /* cards, sidebar */
+  --color-text: #EDEFF3; /* primary text */
+  --color-muted: #9BA3AF; /* secondary text, metadata */
+  --color-breeze: #5EEAD4; /* primary accent, links, everything AI */
+  --color-deep-teal: #14B8A6; /* pressed / active states, checked checkbox, today */
+  --color-paper: #FAF9F6; /* light-mode background (light mode is P1, Friday) */
+  --color-warm: #F5C97A; /* Evening Reflection ONLY (Phase 3). The colour guard
+     test fails `npm run check` if any file outside tokens.css uses this token. */
+
+  /* ---- Supporting shades from the design board ---- */
+  --color-border: #262C36; /* dividers */
+  --color-border-card: #2B323E; /* card and window borders */
+  --color-checkbox-border: #4A5261; /* unchecked checkbox border */
+  --color-on-accent: #06231F; /* text on Deep Teal / Breeze */
+
+  /* ---- Fonts (files bundled locally, task 1.3.2) ---- */
+  --font-ui: Inter;
+  --font-body: Newsreader;
+  --font-mono: JetBrains Mono;
+
+  /* ---- Type sizes (PRD §8 type scale) ---- */
+  --text-display: 34px;
+  --text-heading: 22px;
+  --text-body: 15px;
+  --text-small: 13px;
+  --text-mono: 12px;
+
+  /* ---- Shape and motion ---- */
+  --radius: 12px; /* cards and windows; no hard square corners */
+  --space-1: 8px; /* 8pt spacing grid */
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --motion-fade: 200ms; /* 200ms fade only; nothing slides, bounces, or spins */
 }
 
+/* Global surface: the app window must never flash white (task 1.2.3). */
 body {
   margin: 0;
   background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-ui), system-ui, sans-serif;
 }
