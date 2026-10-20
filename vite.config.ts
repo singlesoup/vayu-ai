@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 // @ts-expect-error type error without @types/node package
 import process from "node:process";
@@ -28,5 +28,12 @@ export default defineConfig(() => ({
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
+  },
+
+  // Vitest frontend test harness (task 1.2.2)
+  test: {
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 }));
