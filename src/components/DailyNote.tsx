@@ -1,8 +1,9 @@
 // Daily note view for ONE date (tasks 1.5.4, 1.7.3).
 // When `create` is true (today on launch / a new day), Rust's ensure_note
-// creates the file; otherwise the day is only read — an empty result shows the
-// empty state and never creates a file. Saves are handled by the editor's
-// autosave (1.6.2); here the content starts from what Rust reports.
+// creates the file; otherwise the day is only read. An empty day shows the
+// placeholder and STAYS editable (1.7.3): its first save (write_note) creates
+// the file. Saves are debounced by the autosaver (1.6.2), flushed on close or
+// day switch (1.6.3).
 
 import { useEffect, useMemo, useState } from "react";
 // NOTE on initial state: `null` = "loading"; switching days remounts this
@@ -95,10 +96,13 @@ export function DailyNote({ date, isToday, create }: Props) {
       )}
       {note === null ? (
         <p>Loading…</p>
-      ) : !note.exists ? (
-        <p className="empty-note">Nothing written on this day yet</p>
       ) : (
-        <Editor value={note.content} onChange={onEditorChange} />
+        <>
+          {/* Task 1.7.3: empty days stay editable — the placeholder shows
+              until first typing; the day's FIRST SAVE creates the file. */}
+          {!note.exists && <p className="empty-note">Nothing written on this day yet</p>}
+          <Editor value={note.content} onChange={onEditorChange} />
+        </>
       )}
     </section>
   );
