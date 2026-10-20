@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockInvoke } from "../test/mocks";
+import { getInvokeMock, mockInvoke } from "../test/mocks";
 import { DailyNote } from "./DailyNote";
 
 describe("DailyNote (task 1.5.4 — open to today)", () => {
@@ -120,5 +121,77 @@ describe("DailyNote autosave (task 1.6.2)", () => {
     expect(editor.value).toBe("keep me");
   });
 });
+
+describe("DailyNote save on close / day switch (task 1.6.3)", () => {
+  // Fake timers + fireEvent (see the 1.6.2 describe note above).
+  const closeState = vi.hoisted(() => ({
+    handlers: [] as Array<(e: { isPreventDefault: () => boolean }) => Promise<void> | void>,
+  }));
+
+  vi.mock("@tauri-apps/api/window", () => ({
+    getCurrentWindow: () => ({
+      onCloseRequested: async (handler: (e: { isPreventDefault: () => boolean }) => Promise<void> | void) => {
+        closeState.handlers.push(handler);
+        return () => {
+          const i = closeState.handlers.indexOf(handler);
+          if (i >= 0) closeState.handlers.splice(i, 1);
+        };
+      },
+    }),
+  }));
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    closeState.handlers.length = 0;
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Fires the window close request handlers (as the OS would). */
+  async function fireWindowClose() {
+    const event = { isPreventDefault: () => false };
+    for (const handler of [...closeState.handlers]) await handler(event);
+  }
+
+  it("a pending edit is written when the window closes", async () => {
+    const { tauri, editor } = await renderLoaded();
+
+    fireEvent.change(editor, { target: { value: "written at the last second" } });
+    await act(async () => {
+      await fireWindowClose();
+    });
+    expect(tauri.args("write_note")).toEqual({
+      date: "2026-10-21",
+      content: "written at the last second",
+    });
+  });
+
+  it("switching days flushes the edit into the OLD day's file, never the new one", async () => {
+    const tauri = mockInvoke();
+    tauri.given("ensure_note", null);
+    tauri.given("read_note", { exists: true, content: "" });
+    let switchTo: (date: string) => void = () => {};
+    function Harness() {
+      const [date, setDate] = useState("2026-10-21");
+      switchTo = setDate;
+      return <DailyNote key={date} date={date} isToday create />;
+    }
+    render(<Harness />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+
+    fireEvent.change(screen.getByLabelText("Note"), { target: { value: "old day text" } });
+    await act(async () => {
+      switchTo("2026-10-10");
+    });
+
+    const writes = getInvokeMock().mock.calls.filter(([cmd]) => cmd === "write_note");
+    expect(writes.length).toBe(1);
+    expect(writes[0]?.[1]).toEqual({ date: "2026-10-21", content: "old day text" });
+  });
+});
+
 
 
