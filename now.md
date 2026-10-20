@@ -461,7 +461,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.4.2 | Default notes folder | 1.4.1 | todo | |
 | 1.4.3 | Validate folder | 1.4.1 | todo | |
 | 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | todo | |
-| 1.5.1 | Date → file name | 1.2.2 | doing | |
+| 1.5.1 | Date → file name | 1.2.2 | review | `src/lib/noteFile.ts` (`noteFileName`, `isNoteDate`, plus `noteDateToDate` for parsing validated dates — local-time based) |
 | 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
 | 1.5.3 | Safe note writes | 1.5.2 | todo | |
 | 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | todo | |
@@ -471,8 +471,8 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.7.1 | List notes | 1.5.2 | todo | |
 | 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | todo | |
 | 1.7.3 | Empty-day state | 1.7.2 | todo | |
-| 1.8.1 | Parse tasks | 1.2.2 | todo | |
-| 1.8.2 | Task edits | 1.8.1 | todo | |
+| 1.8.1 | Parse tasks | 1.2.2 | doing | |
+| 1.8.2 | Task edits | 1.8.1 | doing | |
 | 1.8.3 | Task UI | 1.8.2, 1.6.2 | todo | |
 | 1.8.4 | No-timer guard | 1.8.3 | todo | |
 | 1.9.1 | Ollama status | 1.2.2 | todo | |
