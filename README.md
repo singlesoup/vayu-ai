@@ -1,6 +1,8 @@
 # Vayu
 
-**A calm, private, local-AI journaling app for Windows.**
+**The thinking layer for Windows: a calm, private, local-AI daily notes app that helps you decide your day and reflect on it.**
+
+Vayu doesn't time your work. *Vayu thinks, TimeBlocks times.*
 
 Vayu opens straight to today's note. You write, plan your tasks, and reflect on your day with an AI that runs entirely on your own PC. There's no account, no API key, and no cloud. Your notes stay plain `.md` files in a folder you choose.
 
@@ -34,7 +36,9 @@ On first run, Vayu checks your hardware before downloading anything and picks th
 | Yellow | 8–15GB RAM and 8GB+ free disk | Lite model (`gemma3n:e2b`), a little slower, fully private |
 | Red | Below minimum | Notes, tasks, and search still work; AI chat is off |
 
-Search and Ask Your Notes use `embeddinggemma` for local embeddings.
+Vayu starts with the Lite model and moves up to the Full model only on 16GB+ machines. It never downloads both models by default. Search and Ask Your Notes use `embeddinggemma` for local embeddings.
+
+Project docs: [`plan.md`](plan.md) (full plan and progress) · [`now.md`](now.md) (current tasks for the coding agent).
 
 **Minimum:** Windows 10/11 64-bit, 8GB RAM, 8GB free SSD space, i3/Ryzen 3 (2019+).
 **Recommended:** 16GB RAM, 10GB free SSD space, i5/Ryzen 5 (2021+).
