@@ -132,6 +132,68 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
   });
 });
 
+describe("DailyNote task UI (task 1.8.3)", () => {
+  // Fake timers + fireEvent (see the 1.6.2 describe note above).
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Loads a note with one open and one done task. */
+  async function renderWithTasks() {
+    const tauri = mockInvoke();
+    tauri.given("ensure_note", null);
+    tauri.given("read_note", {
+      exists: true,
+      content: "## Chores\n- [ ] call plumber\n- [x] pay rent",
+    });
+    render(<DailyNote date="2026-10-21" isToday create />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    return { tauri, editor: screen.getByLabelText("Note") as HTMLTextAreaElement };
+  }
+
+  it("task lines render as checkboxes with their text", async () => {
+    await renderWithTasks();
+    expect(screen.getByRole("checkbox", { name: "Task: call plumber" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Task: pay rent" })).toBeChecked();
+  });
+
+  it("checking a box rewrites the editor markdown and SAVES it", async () => {
+    const { tauri, editor } = await renderWithTasks();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Task: call plumber" }));
+    expect(editor.value).toBe("## Chores\n- [x] call plumber\n- [x] pay rent");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(tauri.callCount("write_note")).toBe(1);
+    expect(tauri.args("write_note")).toEqual({
+      date: tauri.args("ensure_note")!["date"],
+      content: "## Chores\n- [x] call plumber\n- [x] pay rent",
+    });
+  });
+
+  it("adding a task with Enter rewrites the editor and SAVES the new markdown", async () => {
+    const { tauri } = await renderWithTasks();
+
+    const add = screen.getByLabelText("New task") as HTMLInputElement;
+    fireEvent.change(add, { target: { value: "buy milk" } });
+    fireEvent.keyDown(add, { key: "Enter" });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(tauri.callCount("write_note")).toBe(1);
+    expect(tauri.args("write_note")).toEqual({
+      date: tauri.args("ensure_note")!["date"],
+      content: "## Chores\n- [ ] call plumber\n- [x] pay rent\n- [ ] buy milk",
+    });
+  });
+});
+
 describe("DailyNote autosave (task 1.6.2)", () => {
   // Fake timers + fireEvent (not userEvent): userEvent's event delays deadlock
   // under fake timers in this setup. fireEvent.change is synchronous and the

@@ -473,7 +473,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.7.3 | Empty-day state | 1.7.2 | review | UI only — Rust side pending. Empty day = placeholder + editable textarea; first save (`write_note`) creates the file (Rust 1.5.3 side pending). AC1 covered; (manual) click-through AC with real files pending Rust |
 | 1.8.1 | Parse tasks | 1.2.2 | review | `src/lib/tasks.ts` `parseTasks`; fenced blocks skipped; `line` is 0-based |
 | 1.8.2 | Task edits | 1.8.1 | review | `toggleTask` / `addTask` / `editTask` / `deleteTask` pure, other lines byte-identical |
-| 1.8.3 | Task UI | 1.8.2, 1.6.2 | todo | |
+| 1.8.3 | Task UI | 1.8.2, 1.6.2 | doing | UI only — Rust side pending |
 | 1.8.4 | No-timer guard | 1.8.3 | todo | |
 | 1.9.1 | Ollama status | 1.2.2 | todo | |
 | 1.9.2 | Settings: status | 1.9.1 | todo | |
