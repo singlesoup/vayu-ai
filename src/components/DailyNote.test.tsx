@@ -34,7 +34,9 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     tauri.given("read_note", { exists: true, content: "hi" });
     render(<DailyNote date="2026-10-20" isToday={false} create={false} />);
     expect(((await screen.findByLabelText("Note")) as HTMLTextAreaElement).value).toBe("hi");
+    // header keeps the mono uppercase date; the title is the weekday + date
     expect(screen.getByText("TUE 20 OCT 2026")).toBeInTheDocument();
+    expect(screen.getByText("Tuesday, 20 October 2026")).toBeInTheDocument();
     expect(screen.queryByText("Today")).not.toBeInTheDocument();
   });
 
