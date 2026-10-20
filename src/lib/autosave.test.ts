@@ -70,10 +70,10 @@ describe("createAutosaver (task 1.6.2 — debounced autosave, pure)", () => {
     expect(onError).toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();
     // the retry carries the same, still-unsaved text
-    await vi.advanceTimersByTimeAsync(DELAY);
+    await vi.runAllTimersAsync();
     expect(save).toHaveBeenCalledTimes(2);
     expect(save).toHaveBeenLastCalledWith("precious text");
-    await vi.waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(onSaved).toHaveBeenCalled();
   });
 
   it("a NEW schedule replaces a scheduled retry: the retry saves the newest content", async () => {
