@@ -4,6 +4,15 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+#[cfg(test)]
+mod tests {
+    // Trivial harness test (task 1.2.2): proves `cargo test` is wired before any real Rust work.
+    #[test]
+    fn harness_works() {
+        assert_eq!(1 + 1, 2);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
