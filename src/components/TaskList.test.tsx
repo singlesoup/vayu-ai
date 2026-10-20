@@ -29,11 +29,13 @@ describe("TaskList (task 1.8.3)", () => {
   it("a checked task is checked and has the done style", () => {
     const { container } = render(<TaskList markdown={START} onChange={() => {}} />);
     expect(screen.getByRole("checkbox", { name: "Task: pay rent" })).toBeChecked();
-    const rows = container.querySelectorAll("li.task");
-    const doneRow = [...rows].find((r) => r.textContent?.includes("pay rent"));
-    expect(doneRow?.className).toContain("task-done");
-    const openRow = [...rows].find((r) => r.textContent?.includes("call plumber"));
-    expect(openRow?.className).not.toContain("task-done");
+    // (li.textContent does not include input values — match via the aria-label)
+    const rowByLabel = (label: string): string | undefined =>
+      [...container.querySelectorAll("li.task")]
+        .find((r) => r.querySelector(`input[aria-label="${label}"]`) !== null)
+        ?.className;
+    expect(rowByLabel("Task: pay rent")).toContain("task-done");
+    expect(rowByLabel("Task: call plumber")).not.toContain("task-done");
   });
 });
 
