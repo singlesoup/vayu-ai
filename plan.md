@@ -188,6 +188,8 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Test-driven development for every task; tests committed before code | Gives the verifier evidence and protects the core loop |
 | 2026-10-21 | Stack (owner confirmed): Tauri v2, React + TypeScript + Vite, Vitest + Testing Library, `cargo test`; all filesystem and Ollama HTTP calls in Rust | PRD only fixes "Tauri shell + web UI"; this stack is easy to test |
 | 2026-10-21 | Design system adopted from PRD §8 (owner: "open to these for now, may revisit later"): Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. Later changes go through `tokens.css` only, with a log row | Keeps a later revisit cheap without reopening components |
+| 2026-10-21 | Dev PC has only `gemma4-e4b-fast:latest` (no PRD models). Owner: use it for Test AI via a dev-only `VAYU_DEV_CHAT_MODEL` override; model detection still checks the PRD models | Unblocks Check-in 1 without a 7.5GB download |
+| 2026-10-21 | Dev PC is missing Rust and the MSVC C++ build tools. Owner: the overnight coding agent tries to install them; if blocked, it does frontend-only tasks against a typed API contract | Keep making progress overnight |
 | | _Editor approach (textarea vs. Markdown editor) — record when chosen in 1.6.1_ | |
 
 ---
@@ -201,6 +203,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | Q3 | 2.2 | The PRD's Red tier is "≤4GB RAM"; the checklist says "RAM <8GB" | Use the checklist's thresholds (they're marked "exact") | Thu |
 | Q4 | 2.10 | The design board's Brain Dump card shows a "Parking lot" line from the Extractor; the PRD only describes a Parking Lot for Laya (Red tier) | v1 Extractor outputs tasks only; non-task text stays in the note as journal | Thu |
 | Q5 | 2.4 | The PRD says Vayu bundles or installs Ollama when absent; the checklist's cut trigger allows "guided install link" instead | Try the in-app path first; fall back to the guided link if Check-in 2 fails twice | Thu |
+| Q7 | 2.6, CI-2 | The checklist assumes the dev PC already has `gemma3n:e4b` ("zero bytes downloaded" test), but it has only `gemma4-e4b-fast` | Either pull the PRD models before Thursday or rerun that test against the pulled model; or decide to move the product to Gemma 4 | Thu |
 | Q6 | 1.10.1 | Should quantised tags like `gemma3n:e4b-it-q4_K_M` count as E4B? | Exact match only, plus `:latest` for `embeddinggemma` | Wed |
 
 ---

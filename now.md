@@ -388,7 +388,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 - **Tests first:** component test: shows the 3 models with Present/Missing, and **no download button** (downloads are Phase 2).
 - **Acceptance criteria**
   - AC1: Tests pass.
-  - AC2: The list matches `ollama list` on the dev PC; E4B shows Present. **(manual)**
+  - AC2: The list matches `ollama list` on the dev PC. The dev PC currently has only `gemma4-e4b-fast:latest`, so all three PRD models should show **Missing**, and the dev chat model (see 1.11.2) shows separately as "Dev model: gemma4-e4b-fast:latest". **(manual)**
 
 ### 1.11.1 Streaming reply parser (Rust)
 - **Tests first:** pure tests for the NDJSON stream parser:
@@ -406,7 +406,8 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
   - a second `generate` while one is running → `Err(Busy)`
   - the server dropping the connection mid-stream → `Error("connection lost")`, no panic
   - no first token within the timeout (e.g. 60s, configurable for tests) → `Error("timed out")` (PRD §9: every call has a timeout and a visible Stop)
-- **Do:** Test AI uses the first installed model of `gemma3n:e4b`, then `gemma3n:e2b`. If neither is installed → a clear `NoModel` result.
+- **Do:** Test AI picks its chat model in this order: `gemma3n:e4b`, then `gemma3n:e2b`, then a **dev-only override** from the `VAYU_DEV_CHAT_MODEL` environment variable (on the owner's PC: `gemma4-e4b-fast:latest`). If none is available → a clear `NoModel` result. The override is ignored in release builds.
+- **Extra tests first:** model selection prefers E4B over E2B over the override; the override is used only when set and only in debug builds; nothing installed + no override → `NoModel`.
 - **Acceptance criteria**
   - AC1: Tests pass.
 
