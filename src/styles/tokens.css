@@ -21,7 +21,89 @@
   --color-checkbox-border: #4A5261; /* unchecked checkbox border */
   --color-on-accent: #06231F; /* text on Deep Teal / Breeze */
 
-  /* ---- Fonts (files bundled locally, task 1.3.2) ---- */
+  /* ---- Bundled fonts (task 1.3.2, SIL OFL licences in src/assets/fonts/) ----
+   Files are downloaded once by scripts/fetch-fonts.mjs during setup and
+   committed; the app never loads fonts from the network (see fonts.test.ts). */
+
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../assets/fonts/Inter-400.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 500;
+  src: url("../assets/fonts/Inter-500.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 600;
+  src: url("../assets/fonts/Inter-600.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 700;
+  src: url("../assets/fonts/Inter-700.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Inter;
+  font-style: normal;
+  font-weight: 800;
+  src: url("../assets/fonts/Inter-800.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../assets/fonts/Newsreader-400.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  font-style: normal;
+  font-weight: 500;
+  src: url("../assets/fonts/Newsreader-500.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  font-style: italic;
+  font-weight: 400;
+  src: url("../assets/fonts/Newsreader-400Italic.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: Newsreader;
+  font-style: italic;
+  font-weight: 500;
+  src: url("../assets/fonts/Newsreader-500Italic.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: JetBrains Mono;
+  font-style: normal;
+  font-weight: 400;
+  src: url("../assets/fonts/JetBrainsMono-400.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: JetBrains Mono;
+  font-style: normal;
+  font-weight: 500;
+  src: url("../assets/fonts/JetBrainsMono-500.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* ---- Fonts (files bundled locally, task 1.3.2) ---- */
   --font-ui: Inter;
   --font-body: Newsreader;
   --font-mono: JetBrains Mono;
