@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { getConfig } from "./lib/api";
+import { getConfig, listNotes } from "./lib/api";
 import { shouldShowTokenPage } from "./tokenPageGate";
 import { TokenPage } from "./components/TokenPage";
 import { FirstRunScreen } from "./components/FirstRunScreen";
 import { DailyNote } from "./components/DailyNote";
+import { Calendar } from "./components/Calendar";
 import { now } from "./lib/appClock";
 import { titleForDate } from "./lib/dateFormat";
 import { localDateKey, isNoteDate, type NoteDate } from "./lib/noteFile";
@@ -42,6 +43,8 @@ function initialDays(): DayState | null {
 function AppBody() {
   const [config, setConfig] = useState<ConfigState>({ state: "loading" });
   const [days, setDays] = useState<DayState | null>(initialDays);
+  // Notes that already exist on disk (from list_notes), for the calendar marks.
+  const [noteDates, setNoteDates] = useState<NoteDate[]>([]);
 
   function loadConfig() {
     void getConfig()
@@ -55,6 +58,16 @@ function AppBody() {
   }
 
   useEffect(loadConfig, []);
+
+  // Calendar marks (task 1.7.2): which days have notes. Refreshed whenever the
+  // viewed day changes (opening a future day for today's date adds a file).
+  const currentDay = days?.current ?? null;
+  useEffect(() => {
+    if (currentDay === null) return;
+    void listNotes()
+      .then((dates) => setNoteDates(dates.filter((d) => isNoteDate(d))))
+      .catch(() => setNoteDates([]));
+  }, [currentDay]);
 
   // Midnight handling: when the window regains focus (or becomes visible), move
   // the editor to the new day — which makes Rust create that day's file.
@@ -99,6 +112,13 @@ function AppBody() {
   const isToday = days.current === days.today;
   return (
     <main className="app workspace">
+      <aside className="calendar-rail">
+        <Calendar
+          today={days.today}
+          noteDates={noteDates}
+          onSelect={(date) => setDays((prev) => (prev ? { ...prev, current: date } : prev))}
+        />
+      </aside>
       <DailyNote key={days.current} date={days.current} isToday={isToday} create={isToday} />
     </main>
   );

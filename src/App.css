@@ -37,6 +37,55 @@
 }
 
 /* Daily note main column (task 1.6.1): single column, Newsreader body. */
+.workspace {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Calendar sidebar (task 1.7.2): narrow rail on the left. */
+.calendar-rail {
+  flex: none;
+  width: var(--width-calendar-rail);
+}
+
+.cal-grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--text-small);
+}
+
+.cal-grid th {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-weight: normal;
+  padding: var(--space-half) 0;
+}
+
+.cal-grid td {
+  text-align: center;
+  padding: 0;
+}
+
+.cal-grid td button {
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  padding: var(--space-half) var(--space-1);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+/* Days that have a note stand out (bold), per task 1.7.2. */
+.cal-grid td button[data-note="true"] {
+  font-weight: bold;
+}
+
 .note-column {
   max-width: var(--width-note-column);
   padding: 0 var(--space-3);
