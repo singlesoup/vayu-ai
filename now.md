@@ -456,12 +456,12 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.3.1 | Design token file | 1.2.2 | review | all tokens asserted in `src/styles/tokens.test.ts`; only colour definitions in `src/styles/tokens.css` (`--color-warm` defined but its use anywhere outside tokens.css is banned and guarded in 1.3.3) |
 | 1.3.2 | Bundle fonts locally | 1.3.1 | review | 11 woff2 (latin subset) + 3 OFL licences in `src/assets/fonts/`, wired via @font-face in `tokens.css`; "correct fonts with Wi-Fi off" is (manual) pending Rust |
 | 1.3.3 | Hard-coded colour guard | 1.3.1 | review | guard test `src/styles/colours.test.ts` (+ keyword list file); a temp `#fff` + named colour in a component previously made it fail with file+line; AC2 (verifier) can re-add `color: #fff` anywhere to see `check` go red |
-| 1.3.4 | Dev token page | 1.3.1 | doing | |
+| 1.3.4 | Dev token page | 1.3.1 | review | `src/components/TokenPage.tsx` + `tokenData.ts` + `src/tokenPageGate.ts` (AC3 gate helper tests); opens at `?dev=tokens` in dev — (manual) visual check pending Rust |
 | 1.4.1 | Config storage | 1.2.2 | todo | |
 | 1.4.2 | Default notes folder | 1.4.1 | todo | |
 | 1.4.3 | Validate folder | 1.4.1 | todo | |
 | 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | todo | |
-| 1.5.1 | Date → file name | 1.2.2 | todo | |
+| 1.5.1 | Date → file name | 1.2.2 | doing | |
 | 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
 | 1.5.3 | Safe note writes | 1.5.2 | todo | |
 | 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | todo | |
