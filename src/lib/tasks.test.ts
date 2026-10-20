@@ -26,7 +26,12 @@ describe("parseTasks (task 1.8.1 — pure Markdown task parsing)", () => {
   });
 
   it("does not count lines inside fenced code blocks", () => {
-    expect(parseTasks("- [x] inside a fence").length).toBe(0);
+    expect(parseTasks("```md\n- [x] inside a fence\n```").length).toBe(0);
+    // and only the fence contents are ignored:
+    expect(parseTasks("- [ ] before\n```md\n- [x] inside\n```\n- [ ] after")).toEqual([
+      { line: 0, text: "before", done: false },
+      { line: 4, text: "after", done: false },
+    ]);
   });
 
   it("ignores normal bullets and text", () => {
