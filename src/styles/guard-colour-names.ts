@@ -152,7 +152,4 @@ export const CSS_COLOUR_NAMES = [
   "whitesmoke",
   "yellow",
   "yellowgreen",
-  // CSS system / special keywords
-  "currentcolor",
-  "transparent",
 ] as const;
