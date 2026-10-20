@@ -189,7 +189,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Stack (owner confirmed): Tauri v2, React + TypeScript + Vite, Vitest + Testing Library, `cargo test`; all filesystem and Ollama HTTP calls in Rust | PRD only fixes "Tauri shell + web UI"; this stack is easy to test |
 | 2026-10-21 | Design system adopted from PRD §8 (owner: "open to these for now, may revisit later"): Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. Later changes go through `tokens.css` only, with a log row | Keeps a later revisit cheap without reopening components |
 | 2026-10-21 | Dev PC has only `gemma4-e4b-fast:latest` (no PRD models). Owner: use it for Test AI via a dev-only `VAYU_DEV_CHAT_MODEL` override; model detection still checks the PRD models | Unblocks Check-in 1 without a 7.5GB download |
-| 2026-10-21 | Dev PC is missing Rust and the MSVC C++ build tools. Owner: the overnight coding agent tries to install them; if blocked, it does frontend-only tasks against a typed API contract | Keep making progress overnight |
+| 2026-10-21 | Dev PC is missing Rust and the MSVC C++ build tools. Owner: overnight run is **frontend-only** (no installs, nobody to approve prompts). Frontend tasks are built against a typed API contract with mocked calls; Rust tasks wait for the owner to install Rust in the morning | Keep making progress overnight without hanging on permission prompts |
 | | _Editor approach (textarea vs. Markdown editor) — record when chosen in 1.6.1_ | |
 
 ---
