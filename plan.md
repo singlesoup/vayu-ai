@@ -82,7 +82,7 @@ Parent tasks are below. The small test-first tasks (1.2.1, 1.2.2, …) with acce
 
 | ID | Task | P | Status |
 |---|---|---|---|
-| 1.1 | Lock design system (PRD §8): record decision in Decisions log | P0 | todo |
+| 1.1 | Adopt design system (PRD §8): record decision in Decisions log | P0 | review |
 | 1.2 | Tauri skeleton; `dev` opens a window named Vayu with Ink BG `#0E1116` | P0 | todo |
 | 1.3 | Design tokens as CSS variables (8 colours, Inter / Newsreader / JetBrains Mono, 12px radius, 8pt spacing) + token test page | P0 | todo |
 | 1.4 | Notes folder: ask or default on first launch, store path in local config | P0 | todo |
@@ -180,8 +180,8 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | 4-day plan replaces PRD §12 7-day plan; Laya, BYOK, voice, compat checker moved to P2 | Fit the 24 Oct ship date |
 | 2026-10-21 | Repo on `main`, LF line endings | Consistent diffs across tools |
 | 2026-10-21 | Test-driven development for every task; tests committed before code | Gives the verifier evidence and protects the core loop |
-| 2026-10-21 | **Proposed** stack: Tauri v2, React + TypeScript + Vite, Vitest + Testing Library, `cargo test`; all filesystem and Ollama HTTP calls in Rust (pending owner confirmation) | PRD only fixes "Tauri shell + web UI"; this stack is easy to test |
-| 2026-10-21 | Design values from PRD §8: Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. **Lock pending owner confirmation** | PRD §13 lists the lock as an open decision |
+| 2026-10-21 | Stack (owner confirmed): Tauri v2, React + TypeScript + Vite, Vitest + Testing Library, `cargo test`; all filesystem and Ollama HTTP calls in Rust | PRD only fixes "Tauri shell + web UI"; this stack is easy to test |
+| 2026-10-21 | Design system adopted from PRD §8 (owner: "open to these for now, may revisit later"): Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. Later changes go through `tokens.css` only, with a log row | Keeps a later revisit cheap without reopening components |
 | | _Editor approach (textarea vs. Markdown editor) — record when chosen in 1.6.1_ | |
 
 ---
@@ -190,7 +190,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 
 | # | Where | Conflict | Proposed resolution | Needed by |
 |---|---|---|---|---|
-| Q1 | 1.1 | PRD §13 says the design lock is open; the design board says "locked" | Owner confirms "lock" today | Wed |
+| Q1 | 1.1 | PRD §13 says the design lock is open; the design board says "locked" | **Resolved 21 Oct:** adopted for now, revisit allowed through `tokens.css` only | — |
 | Q2 | 2.3 | The design board's Red tier card promises "Laya decisions" and "tiny built-in decisions", but Laya is cut to P2 | Red tier copy says only "Notes work, AI chat is off on this PC" (checklist wording); no Laya mention | Thu |
 | Q3 | 2.2 | The PRD's Red tier is "≤4GB RAM"; the checklist says "RAM <8GB" | Use the checklist's thresholds (they're marked "exact") | Thu |
 | Q4 | 2.10 | The design board's Brain Dump card shows a "Parking lot" line from the Extractor; the PRD only describes a Parking Lot for Laya (Red tier) | v1 Extractor outputs tasks only; non-task text stays in the note as journal | Thu |

@@ -47,7 +47,7 @@ For **every** task below:
 
 ---
 
-## Proposed stack (owner can override before 1.2.1 starts)
+## Stack (confirmed by owner, 21 Oct)
 
 | Area | Choice |
 |---|---|
@@ -58,7 +58,7 @@ For **every** task below:
 | HTTP to Ollama | Rust (`reqwest`, streaming), sent to the UI through a Tauri channel or events |
 | Lint / format | ESLint + Prettier, `cargo fmt` + `cargo clippy` |
 
-Record the final choice in the `plan.md` Decisions log.
+Recorded in the `plan.md` Decisions log.
 
 ---
 
@@ -109,11 +109,11 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 ## 1A — Setup and design system
 
-### 1.1 Lock the design system
-- **Depends on:** the owner confirming "lock" (PRD §13 lists this as an open decision; the design board already says "locked").
+### 1.1 Adopt the design system
+- **Owner decision (21 Oct):** use PRD §8 as-is for now; it may be revisited later.
 - **Acceptance criteria**
-  - AC1: The `plan.md` Decisions log has a row saying PRD §8 is locked, listing all 8 colours (name + hex), the 3 fonts, the 12px radius, 8pt spacing and 200ms fade.
-  - AC2: After today, no commit changes those values (verifier checks with `git log -p` on `tokens.css`).
+  - AC1: The `plan.md` Decisions log has a row recording PRD §8 as adopted, listing all 8 colours (name + hex), the 3 fonts, the 12px radius, 8pt spacing and 200ms fade. ✅ Done by verifier.
+  - AC2: Any later design change touches only `tokens.css` (plus font files) and adds a Decisions log row. No component needs editing to change a colour, font, radius, or spacing value (enforced by 1.3.3).
 
 ### 1.2.1 Scaffold the Tauri app
 - **Tests first:** none (scaffolding). The test harness comes next in 1.2.2.
@@ -445,7 +445,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 | ID | Task | Depends on | Status | Verifier notes |
 |---|---|---|---|---|
-| 1.1 | Lock design system | owner input | todo | |
+| 1.1 | Adopt design system | — | review | AC1 done 21 Oct; AC2 checked via 1.3.3 |
 | 1.2.1 | Scaffold Tauri app | — | todo | |
 | 1.2.2 | Test harness + `npm run check` | 1.2.1 | todo | |
 | 1.2.3 | Ink window background | 1.2.2 | todo | |
@@ -485,7 +485,5 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 ## Blockers / questions
 
-- **Design lock (1.1):** all values are now known from PRD §8. Only the owner's "lock" confirmation is needed.
-- **Stack:** the proposed stack above is the default unless the owner overrides it before 1.2.1.
 - **Model tag matching (1.10.1):** confirm whether quantised variants like `gemma3n:e4b-it-q4_K_M` should count as E4B. Default: exact tag match, plus `:latest` for `embeddinggemma`.
 - **App name:** PRD §13 says the name may change (the vayu.ai domain isn't owned). Keep the product name in one place (Tauri config + one UI constant) so a rename is a one-line change.
