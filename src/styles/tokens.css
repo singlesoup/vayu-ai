@@ -1,0 +1,13 @@
+/* Design tokens (task 1.3.1 fills in the full set).
+   The 1.2.3 task only needs the Ink background, added here first so `body`
+   can reference the token instead of a literal colour. Colours must not be
+   defined anywhere else in the app (guard: src/styles/tokens.test.ts, 1.3.3). */
+
+:root {
+  --color-ink: #0e1116;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+}
