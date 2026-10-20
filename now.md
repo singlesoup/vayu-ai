@@ -469,7 +469,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.6.2 | Debounced autosave | 1.6.1 | review | UI only — Rust side pending |
 | 1.6.3 | Save on close / day switch | 1.6.2 | review | UI only — Rust side pending. `onWindowClose` (`src/lib/windowClose.ts`) fires the flush on close request; unmount flush covers day switches. AC2/AC3 are (manual) — need the real runtime |
 | 1.7.1 | List notes | 1.5.2 | todo | |
-| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | doing | UI only — Rust side pending |
+| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | review | UI only — Rust side pending. `list_notes` data drives the note marks (mocked); AC2 is (manual) |
 | 1.7.3 | Empty-day state | 1.7.2 | todo | |
 | 1.8.1 | Parse tasks | 1.2.2 | review | `src/lib/tasks.ts` `parseTasks`; fenced blocks skipped; `line` is 0-based |
 | 1.8.2 | Task edits | 1.8.1 | review | `toggleTask` / `addTask` / `editTask` / `deleteTask` pure, other lines byte-identical |
