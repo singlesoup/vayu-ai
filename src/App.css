@@ -36,6 +36,26 @@
   color: var(--color-muted);
 }
 
+/* Daily note main column (task 1.6.1): single column, Newsreader body. */
+.note-column {
+  max-width: var(--width-note-column);
+  padding: 0 var(--space-3);
+  box-sizing: border-box;
+}
+
+.note-editor {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  width: 100%;
+  min-height: 12rem;
+}
+
 .first-run button,
 .app button {
   background: var(--color-surface);

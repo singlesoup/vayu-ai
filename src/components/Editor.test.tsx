@@ -3,28 +3,30 @@ import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { Editor } from "./Editor";
 
 describe("Editor (task 1.6.1)", () => {
   it("renders the given content exactly", () => {
-    render(<Editor value="line one\nline two" onChange={vi.fn()} />);
+    render(<Editor value={"line one\nline two"} onChange={vi.fn()} />);
     const editor = screen.getByLabelText("Note") as HTMLTextAreaElement;
     expect(editor.value).toBe("line one\nline two");
   });
 
   it("updates on typing, reporting the changed text", async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Editor value="start" onChange={onChange} />);
-    await user.type(screen.getByLabelText("Note"), "abc");
-    expect(onChange).toHaveBeenCalled();
-    // userEvent types per character; the reported value accumulates
-    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1];
-    expect(lastCall[0]).toBe("startabc");
+    function Wrapper() {
+      const [value, setValue] = useState("start");
+      return <Editor value={value} onChange={setValue} />;
+    }
+    render(<Wrapper />);
+    const editor = screen.getByLabelText("Note") as HTMLTextAreaElement;
+    await user.type(editor, "abc");
+    expect(editor.value).toBe("startabc");
   });
 
   it("the editor styles come from tokens (body font, single column max width)", () => {
-    const css = readFileSync(resolve(__dirname, "../../App.css"), "utf8");
+    const css = readFileSync(resolve(__dirname, "../App.css"), "utf8");
     const editorBlock = css.match(/\.note-editor\s*{[^}]*}/);
     expect(editorBlock).not.toBeNull();
     expect(editorBlock?.[0]).toMatch(/font-family:\s*var\(--font-body\)/);

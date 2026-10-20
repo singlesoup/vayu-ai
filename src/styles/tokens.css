@@ -123,6 +123,10 @@
   --space-4: 32px;
   --space-6: 48px;
   --motion-fade: 200ms; /* 200ms fade only; nothing slides, bounces, or spins */
+
+  /* ---- Layout ---- */
+  /* Single-column note width (added for 1.6.1; see plan.md Decisions log). */
+  --width-note-column: 680px;
 }
 
 /* Global surface: the app window must never flash white (task 1.2.3). */

@@ -11,6 +11,7 @@ import { ensureNote, readNote, writeNote } from "../lib/api";
 import type { NoteDate } from "../lib/noteFile";
 import { noteDateToDate } from "../lib/noteFile";
 import { formatNoteHeader, titleForDate } from "../lib/dateFormat";
+import { Editor } from "./Editor";
 
 type NoteState = { content: string; exists: boolean };
 
@@ -59,12 +60,7 @@ export function DailyNote({ date, isToday, create }: Props) {
       ) : !note.exists ? (
         <p className="empty-note">Nothing written on this day yet</p>
       ) : (
-        <textarea
-          aria-label="Note"
-          className="note-editor"
-          value={note.content}
-          onChange={(e) => onEditorChange(e.currentTarget.value)}
-        />
+        <Editor value={note.content} onChange={onEditorChange} />
       )}
     </section>
   );
