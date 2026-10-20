@@ -28,3 +28,8 @@ export function noteDateToDate(value: NoteDate): Date {
   const [y, m, d] = value.split("-").map(Number) as [number, number, number];
   return new Date(y, m - 1, d, 12, 0, 0);
 }
+
+/** Inverse of noteDateToDate: the validated YYYY-MM-DD key for a local Date. */
+export function localDateKey(date: Date): NoteDate {
+  return noteFileName(date).replace(/\.md$/, "");
+}
