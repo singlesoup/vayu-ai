@@ -451,8 +451,8 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.1 | Adopt design system | — | review | AC1 done 21 Oct; AC2 checked via 1.3.3 |
 | 1.2.1 | Scaffold Tauri app | — | review | UI scaffold done; `cargo check` + window launch pending Rust install |
 | 1.2.2 | Test harness + `npm run check` | 1.2.1 | review | `npm run check` green; Rust step prints `SKIPPED: cargo not installed` |
-| 1.2.3 | Ink window background | 1.2.2 | doing | |
-| 1.2.4 | CSP / network lockdown | 1.2.2 | todo | |
+| 1.2.3 | Ink window background | 1.2.2 | review | config test in `src/tauri-config.test.ts`; body bg = `var(--color-ink)` via new `src/styles/tokens.css`; no-white-flash launch is (manual) pending Rust |
+| 1.2.4 | CSP / network lockdown | 1.2.2 | review | strict `csp` + `devCsp` in `src/tauri.conf.json` (`devCsp` only adds `'unsafe-inline'` scripts + `ws:` for the Vite/React-refresh preamble). App-loads-in-dev/release is (manual) pending Rust |
 | 1.3.1 | Design token file | 1.2.2 | todo | |
 | 1.3.2 | Bundle fonts locally | 1.3.1 | todo | |
 | 1.3.3 | Hard-coded colour guard | 1.3.1 | todo | |
