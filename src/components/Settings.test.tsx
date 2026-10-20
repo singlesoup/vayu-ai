@@ -103,9 +103,9 @@ describe("Settings → Model list (task 1.10.2)", () => {
     vi.useRealTimers();
   });
 
-  async function openWithModels(models: unknown) {
+  async function openWithModels(models: unknown, status: unknown = RUNNING) {
     const tauri = mockInvoke();
-    tauri.on("ollama_status", () => RUNNING);
+    tauri.on("ollama_status", () => status);
     tauri.on("list_models", () => models);
     const view = render(<Settings open onClose={() => {}} />);
     await act(async () => {
@@ -144,12 +144,15 @@ describe("Settings → Model list (task 1.10.2)", () => {
   });
 
   it("Ollama down → all three Missing with a calm Not found, no crash", async () => {
-    await openWithModels({
-      present: [],
-      missing: ["gemma3n:e4b", "gemma3n:e2b", "embeddinggemma"],
-      status: NOT_FOUND,
-      devChatModel: null,
-    });
+    await openWithModels(
+      {
+        present: [],
+        missing: ["gemma3n:e4b", "gemma3n:e2b", "embeddinggemma"],
+        status: NOT_FOUND,
+        devChatModel: null,
+      },
+      NOT_FOUND,
+    );
     expect(screen.getByText("Not found")).toBeInTheDocument();
     expect(screen.getAllByText("Missing").length).toBe(3);
     expect(screen.queryByText("Present")).toBeNull();
