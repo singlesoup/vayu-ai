@@ -86,6 +86,34 @@
   font-weight: bold;
 }
 
+/* Task panel (task 1.8.3): checkbox, editable text, delete, add input. */
+.task-list {
+  margin-top: var(--space-3);
+}
+
+.task-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.task-list li.task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* checked tasks are struck through and quieter (task 1.8.3) */
+.task-list li.task-done input[type="text"] {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.task-add {
+  margin-top: var(--space-1);
+  width: 60%;
+}
+
 .note-column {
   max-width: var(--width-note-column);
   padding: 0 var(--space-3);

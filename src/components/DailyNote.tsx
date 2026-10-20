@@ -16,6 +16,7 @@ import type { NoteDate } from "../lib/noteFile";
 import { noteDateToDate } from "../lib/noteFile";
 import { formatNoteHeader, titleForDate } from "../lib/dateFormat";
 import { Editor } from "./Editor";
+import { TaskList } from "./TaskList";
 
 /** Quiet window before a save lands (task 1.6.2, PRD ~800ms). */
 export const AUTOSAVE_DELAY_MS = 800;
@@ -102,6 +103,9 @@ export function DailyNote({ date, isToday, create }: Props) {
               until first typing; the day's FIRST SAVE creates the file. */}
           {!note.exists && <p className="empty-note">Nothing written on this day yet</p>}
           <Editor value={note.content} onChange={onEditorChange} />
+          {/* Task panel (1.8.3): edits flow through the same change handler,
+              so they ride the same debounced save. */}
+          <TaskList markdown={note.content} onChange={onEditorChange} />
         </>
       )}
     </section>
