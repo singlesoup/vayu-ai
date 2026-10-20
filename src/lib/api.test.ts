@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+// IMPORTANT: mocks must be imported before ./api so the Tauri invoke mock is
+// registered before the real @tauri-apps/api/core module resolves.
+import { getInvokeMock, mockInvoke } from "../test/mocks";
 import {
   COMMANDS,
   ensureNote,
@@ -12,7 +15,6 @@ import {
   stopGeneration,
   writeNote,
 } from "./api";
-import { getInvokeMock, mockInvoke } from "../test/mocks";
 
 describe("api contract (src/lib/api.ts)", () => {
   it("names exactly the Rust commands now.md depends on", () => {
@@ -40,7 +42,8 @@ describe("api contract (src/lib/api.ts)", () => {
   });
 
   it("setNotesDir sends the path arg", async () => {
-    mockInvoke();
+    const tauri = mockInvoke();
+    tauri.given("set_notes_dir", null);
     await setNotesDir("C:/Users/samon/notes");
     expect(getInvokeMock().mock.calls[0]).toEqual([
       "set_notes_dir",
@@ -95,7 +98,10 @@ describe("api contract (src/lib/api.ts)", () => {
     expect(result).toEqual({ status: "Done" });
     const calls = getInvokeMock().mock.calls;
     expect(calls[0][0]).toBe("generate");
-    expect(calls[0][1]).toHaveProperty("prompt", "hello");
+    const args = calls[0][1] as { prompt: string; onEvent: { __mockChannel: boolean } };
+    expect(args).toHaveProperty("prompt", "hello");
+    // the streaming channel travels as the `onEvent` arg (Rust: snake_case `on_event`)
+    expect(args.onEvent.__mockChannel).toBe(true);
     expect(calls[1]).toEqual(["stop_generation"]);
     // no events were emitted by the mock (correct — they come from Rust)
     expect(events.length).toBe(0);

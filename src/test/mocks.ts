@@ -24,21 +24,23 @@ import { beforeEach, vi } from "vitest";
  */
 export type InvokeHandler = (args: Record<string, unknown>) => unknown;
 
-const { invokeMock } = vi.hoisted(
-  () =>
-    ({
-      invokeMock:
-        vi.fn<
-          (cmd: string, args?: Record<string, unknown>) => Promise<unknown>
-        >(),
-    }) as const,
-);
+const { invokeMock, FakeChannelImpl } = vi.hoisted(() => ({
+  invokeMock: vi.fn<(cmd: string, args?: Record<string, unknown>) => Promise<unknown>>(),
+  FakeChannelImpl: class FakeChannel<T> {
+    /** Same shape as Tauri's Channel: assign a callback here. */
+    onmessage: ((message: T) => void) | null = null;
+    /** Marker so tests/mocks can recognise the fake. */
+    readonly __mockChannel = true as const;
+  },
+}));
 
 vi.mock("@tauri-apps/api/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tauri-apps/api/core")>();
   return {
     ...actual,
     invoke: invokeMock,
+    // The real Channel needs window.__TAURI_INTERNALS__; tests get a stand-in.
+    Channel: FakeChannelImpl,
   };
 });
 
