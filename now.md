@@ -474,7 +474,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.8.1 | Parse tasks | 1.2.2 | review | `src/lib/tasks.ts` `parseTasks`; fenced blocks skipped; `line` is 0-based |
 | 1.8.2 | Task edits | 1.8.1 | review | `toggleTask` / `addTask` / `editTask` / `deleteTask` pure, other lines byte-identical |
 | 1.8.3 | Task UI | 1.8.2, 1.6.2 | review | UI only — Rust side pending. Task panel under the editor; every edit rewrites the note markdown and rides the same debounced save. AC2/AC3 are (manual) |
-| 1.8.4 | No-timer guard | 1.8.3 | todo | |
+| 1.8.4 | No-timer guard | 1.8.3 | review | Guard test in `src/AppWorkspace.test.tsx` (shell): no timer/Pomodoro/countdown text, label, or placeholder anywhere |
 | 1.9.1 | Ollama status | 1.2.2 | todo | |
 | 1.9.2 | Settings: status | 1.9.1 | todo | |
 | 1.10.1 | Detect models | 1.9.1 | todo | |
