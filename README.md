@@ -55,14 +55,25 @@ The model is downloaded once, for free, and works fully offline after that.
 
 ## Getting started (development)
 
-> The project skeleton is being set up. Commands will be added here once the Tauri app is scaffolded.
-
 Prerequisites:
 
 - Windows 10/11 64-bit
-- [Node.js](https://nodejs.org) (LTS)
-- [Rust](https://www.rust-lang.org/tools/install) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/)
+- [Node.js](https://nodejs.org) (LTS) — v18+ (v24 used on the dev PC)
+- [Rust](https://www.rust-lang.org/tools/install) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) (Windows: MSVC C++ build tools) — **not yet installed on the dev PC; `cargo check` and `npm run tauri dev` are pending that install**
 - [Ollama](https://ollama.com) with `gemma3n:e4b` (or `gemma3n:e2b`) and `embeddinggemma`
+
+Commands:
+
+```sh
+npm install          # install frontend dependencies
+npm run check        # lint + typecheck + tests (+ Rust step; skipped while cargo is missing)
+npm test             # frontend tests once (Vitest)
+npm run lint         # ESLint
+npm run typecheck    # TypeScript
+npm run tauri dev    # run the desktop app (needs Rust installed)
+```
+
+Tests use Vitest + React Testing Library with the Tauri `invoke` API mocked; see `src/test/mocks.ts` for the shared `mockInvoke` helper.
 
 ## Roadmap
 

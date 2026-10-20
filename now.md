@@ -449,7 +449,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | ID | Task | Depends on | Status | Verifier notes |
 |---|---|---|---|---|
 | 1.1 | Adopt design system | — | review | AC1 done 21 Oct; AC2 checked via 1.3.3 |
-| 1.2.1 | Scaffold Tauri app | — | todo | |
+| 1.2.1 | Scaffold Tauri app | — | review | UI scaffold done; `cargo check` + window launch pending Rust install |
 | 1.2.2 | Test harness + `npm run check` | 1.2.1 | todo | |
 | 1.2.3 | Ink window background | 1.2.2 | todo | |
 | 1.2.4 | CSP / network lockdown | 1.2.2 | todo | |
