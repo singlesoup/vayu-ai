@@ -17,6 +17,12 @@ This file is the single source of truth for scope, status, and decisions. The co
 
 Known conflicts between them are listed under **Open questions** at the end of this file.
 
+**When stuck on a UX or behaviour question** the documents don't answer, look at these, in order:
+1. [Focu](https://focu.app/): AI-guided journaling, check-ins, reflections, 100% local (the closest match for the AI flows)
+2. [Reflect](https://reflect.app/): daily notes, backlinks, minimal write-first design (the closest match for the notes UI)
+
+Borrow the feel, not features. Anything that adds scope goes in the change log as a question, not into code.
+
 ---
 
 ## How this works

@@ -11,6 +11,8 @@ Full plan and status: [`plan.md`](plan.md)
 - Vayu Build Checklist to Oct 24 (the Wed 21 Oct section is this phase)
 - Vayu — Design & Architecture Visuals (the design board)
 
+**When stuck** on a UX detail the documents don't cover: check [Focu](https://focu.app/) for AI flows, then [Reflect](https://reflect.app/) for the notes UI. Borrow the feel, never extra scope.
+
 ---
 
 ## Instructions for the coding agent
@@ -480,6 +482,12 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | |
 | 1.11.3 | Test AI UI | 1.11.2 | todo | |
 | CI-1 | Check-in 1 | all above | todo | |
+
+---
+
+## Session notes (coding agent writes here at the end of each session)
+
+_Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
 
 ---
 
