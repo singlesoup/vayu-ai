@@ -481,7 +481,7 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | UI only — Rust side pending. Three rows Present/Missing + "Dev model: …" line; NO download UI. AC2 is (manual, dev PC) |
 | 1.11.1 | Stream parser | 1.2.2 | todo | |
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | |
-| 1.11.3 | Test AI UI | 1.11.2 | todo | |
+| 1.11.3 | Test AI UI | 1.11.2 | doing | UI only — Rust side pending |
 | CI-1 | Check-in 1 | all above | todo | |
 | api | Typed command contract (`src/lib/api.ts`) | — | review | All invoke shapes tested in `src/lib/api.test.ts`; mocks.ts also fakes `Channel` for tests |
 
