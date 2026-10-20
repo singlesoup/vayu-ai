@@ -51,10 +51,11 @@ describe("Workspace launch (task 1.5.4)", () => {
 
   it("open over midnight: window refocus switches to the new day and creates that file", async () => {
     const tauri = armConfig();
-    tauri.on("read_note", (args) => ({
-      exists: false,
-      content: args["date"] === "2026-10-22" ? "" : "started at 9",
-    }));
+    tauri.on("read_note", (args) =>
+      args["date"] === "2026-10-22"
+        ? { exists: false, content: "" }
+        : { exists: true, content: "started at 9" },
+    );
     render(<App />);
     await screen.findByDisplayValue("started at 9");
 
