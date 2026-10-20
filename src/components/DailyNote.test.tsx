@@ -67,6 +67,69 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     expect(tauri.ran("ensure_note")).toBe(false);
     expect(tauri.ran("write_note")).toBe(false);
   });
+
+  it("without create, another empty (FUTURE) day behaves the same", async () => {
+    const tauri = mockInvoke();
+    tauri.given("read_note", { exists: false, content: "" });
+    render(<DailyNote date="2027-01-05" isToday={false} create={false} />);
+    expect(await screen.findByText("Nothing written on this day yet")).toBeInTheDocument();
+    expect(tauri.ran("ensure_note")).toBe(false);
+    expect(tauri.ran("write_note")).toBe(false);
+  });
+
+  it("typing on an empty past/future day saves THAT date on the first save (file created on save)", async () => {
+    vi.useFakeTimers();
+    try {
+      const tauri = mockInvoke();
+      tauri.given("read_note", { exists: false, content: "" });
+      render(<DailyNote date="2026-11-02" isToday={false} create={false} />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(screen.getByText("Nothing written on this day yet")).toBeInTheDocument();
+
+      // the editor is available without any file existing yet
+      const editor = screen.getByLabelText("Note") as HTMLTextAreaElement;
+      expect(editor.value).toBe("");
+
+      fireEvent.change(editor, { target: { value: "first entry" } });
+      // the placeholder clears as soon as there is something to save
+      expect(screen.queryByText("Nothing written on this day yet")).not.toBeInTheDocument();
+      // still no file-creation command: the SAVE (below) creates the file
+      expect(tauri.ran("ensure_note")).toBe(false);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(800);
+      });
+      expect(tauri.callCount("write_note")).toBe(1);
+      expect(tauri.args("write_note")).toEqual({ date: "2026-11-02", content: "first entry" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("with create (today), ensure runs BEFORE the save", async () => {
+    vi.useFakeTimers();
+    try {
+      const tauri = mockInvoke();
+      tauri.given("ensure_note", null);
+      tauri.given("read_note", { exists: false, content: "" });
+      render(<DailyNote date="2026-10-21" isToday create />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      // ensure_note ran, its file IS reported existing-free anyway: read said no.
+      expect(tauri.ran("ensure_note")).toBe(true);
+      const editor = screen.getByLabelText("Note") as HTMLTextAreaElement;
+      fireEvent.change(editor, { target: { value: "today words" } });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(800);
+      });
+      expect(tauri.callCount("write_note")).toBe(1);
+      expect(tauri.args("write_note")).toEqual({ date: "2026-10-21", content: "today words" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("DailyNote autosave (task 1.6.2)", () => {
