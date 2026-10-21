@@ -75,6 +75,10 @@ npm run tauri dev    # run the desktop app (needs Rust installed)
 
 Tests use Vitest + React Testing Library with the Tauri `invoke` API mocked; see `src/test/mocks.ts` for the shared `mockInvoke` helper.
 
+During development you can also open the dev-only design token page at `http://localhost:1420/?dev=tokens` (`npm run tauri dev` with Vite, or `npm run dev`) — it is gated to dev builds.
+
+Current status: all Phase-1 frontend tasks are `review` against the typed command contract (`src/lib/api.ts`); the Rust command implementations are the next step — see the "Morning Rust order" and the verifier manual checklist in the session notes at the end of [`now.md`](now.md).
+
 ## Roadmap
 
 **v1 (24 Oct 2026):** Everything listed above.

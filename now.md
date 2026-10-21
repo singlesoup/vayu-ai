@@ -491,6 +491,40 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
 
+### Overnight run — 2026-10-21 (Phase 1 frontend complete)
+
+**Final state:** `npm run check` green — **124 tests across 23 test files** (Vitest + jsdom), ESLint clean, tsc clean, Rust step SKIPPED (scripts/run-rust.mjs: `cargo` not installed). Branch `main`, all work committed locally (no push, no tag); working tree clean.
+
+**Tasks reviewed this session (all TDD: failing tests → `test(<id>)` commit → implementation → `feat(<id>)` → check green → status boards + plan.md change log):**
+- 1.6.2 debounced autosave (`createAutosaver`, 800ms, retry keeps text), 1.6.3 save on close/day switch (`onWindowClose` + unmount flush)
+- 1.7.2 calendar sidebar (Monday-first grid, today highlight, note marks, day-click), 1.7.3 empty days editable (first save creates the file)
+- 1.8.3 task UI (toggle/edit/add/delete rewrite the note and ride the autosave), 1.8.4 no-timer guard test
+- 1.9.2 Settings → Model status (Running/Not found, Refresh, 5s poll), 1.10.2 model list (3 PRD models Present/Missing, dev model line, no download UI), 1.11.3 Test AI UI (thinking → streaming tokens, Stop, calm errors, NoModel message)
+
+**Still `todo` / blocked (Rust, ~morning work):** 1.2.1/1.2.2 cargo-check, 1.4.1–1.4.3, 1.5.2/1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1/1.11.2. The UI side of every one of them is already done against the typed contract in `src/lib/api.ts` (header comments = the spec).
+
+**Morning Rust order (sequential):**
+1. Install Rust toolchain + tauri-cli prerequisites; run `cargo check` in `src-tauri/` (1.2.1/1.2.2 → review).
+2. 1.4.1 config storage → 1.4.2 default folder (`get_config` must return `{ notesDir, version, defaultNotesDir }` = `<documents>\Vayu` — contract decision recorded in Decisions + api.ts) → 1.4.3 validate folder.
+3. Add `tauri_plugin_dialog` (`.plugin(tauri_plugin_dialog::init())`) — required by FirstRunScreen's "Choose folder…".
+4. 1.5.2 ensure/read notes → 1.5.3 atomic writes (`write_note` creates the file) → 1.7.1 `list_notes`.
+5. 1.9.1 `ollama_status` (1.5s timeout) → 1.10.1 `list_models` (exact tag match; see Blockers) → `npm run tauri dev` and smoke-test the full manual checklist below.
+6. 1.11.1 stream parser → 1.11.2 generate/stop (model preference e4b → e2b → `VAYU_DEV_CHAT_MODEL` debug-only override).
+
+**Verifier manual checklist (run after Rust works, in this order):**
+1. `npm install` → `npm run check` → expect tests 124 passed, `SKIPPED: cargo not installed` line GONE (Rust step runs).
+2. `npm run tauri dev` → window "Vayu", Ink background, calendar left, note right. First-run screen shows default folder; install to it (or pick a folder via the dialog).
+3. Type in today's note → check the `.md` in Notepad ≤ ~1s later (autosave). It matches exactly what you typed.
+4. Type and immediately close the window (Alt+F4) → reopen → text is there (1.6.3 AC2). Kill the process in Task Manager instead → at most the last debounce window (<1s) is lost (AC3).
+5. Click 3 different calendar days → the matching `YYYY-MM-DD.md` opens; an empty past/future day shows the placeholder, creates NO file; type there → the file appears on first save.
+6. Add a task, tick a checkbox → Notepad shows `- [x]`; the reply streams over ~1s (AC2) and mids-quit survives (AC3).
+7. Settings (gear ⚙): Ollama running → "Running — Ollama vX"; the three PRD models Present/Missing as `ollama list` says; NO download buttons.
+8. Run Test AI → streams; press Stop → halts ~instantly; quit Ollama → calm error, app still usable; status → Not found within ~5s or on Refresh.
+9. Colour guard sanity: add `color: #fff` to any component → `npm run check` goes red with file+line; remove it again.
+10. When every step passes, mark CI-1 `verified` (only the verifier may), commit and tag `checkin-1`.
+
+**New decisions logged (see plan.md Decisions/change log):** autosave option named `onSaved`; onWindowClose degrades to a no-op without a Tauri runtime; `--width-calendar-rail: 240px` + `--space-half: 4px` tokens added; calendar rail width and note column width are agent-picked (flagged in Blockers).
+
 ---
 
 ## Blockers / questions
