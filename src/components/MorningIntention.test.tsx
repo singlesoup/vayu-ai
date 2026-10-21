@@ -2,7 +2,8 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { mockInvoke } from "../test/mocks";
-import { MorningIntention, parseIntention } from "./MorningIntention";
+import { MorningIntention } from "./MorningIntention";
+import { parseIntention } from "../lib/intention";
 
 const date = "2026-10-21";
 

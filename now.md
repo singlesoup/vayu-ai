@@ -593,6 +593,18 @@ After Phase 1C: verifier opens Daily Note + Settings, compares to the design boa
 | 1D.2 | Calendar no clip | — | verified | Rail 240px; token ≥220px test. Live check = 1D.4 |
 | 1D.3 | Dev model line + Test AI copy | — | verified | NoModel copy mentions override; Dev model line already tested. Live stream = 1D.4 |
 | 1D.4 | Owner re-smoke | 1D.1–1D.3 | verified | Live window: clean Today, task rows, calendar, Dev model line; close permission fixed |
+| 2.1 | Hardware check: RAM, free disk, CPU, OS (<5s) | — | review | tier + model + size + Ollama presence; sysinfo; boundary tests at 8/16 GB and 8/10 GB disk |
+| 2.2 | Tier logic: Green ≥16GB & ≥10GB → E4B; Yellow 8–15GB & ≥8GB → E2B; Red → no chat; dev override; boundary tests at 8/16GB | — | review | `tier_for()` pure + unit tests; `VAYU_DEV_TIER` debug override; `hardware_check` command |
+| 2.3 | Tier result screen: plain words, specs under "details", one primary action | 2.1, 2.2 | todo | PRD first-run copy; "Download now" / "I already have Ollama" / Red "Continue without AI" |
+| 2.4 | Download screen: model name, exact size, free/no-account copy, progress + % + cancel | 2.2 | review | pull streams Ollama /api/pull NDJSON as progress events; UI shows bar + % |
+| 2.5 | Resumable pull via Ollama; survives re-launch mid-download; low disk → plain error, app usable | 2.4 | review | one pull at a time (Busy otherwise); cancel aborts the task; client re-POSTs after a kill (Ollama resumes server-side) |
+| 2.6 | Skip download when Ollama + model already present (zero bytes on dev PC) | 2.2 | review | `list_models` gates the pull |
+| 2.7 | Post-download check: one generation + one embedding pass before "You're ready" | 2.5 | review | embeddings via `embeddinggemma` |
+| 2.8 | Morning Intention: optional 3 questions, one-tap Skip, ≤90s, no re-nag same day | 2.2 | review | component + parseIntention + per-date state; 4 tests |
+| 2.9 | Intention output: 1 intention line + Top 3 checkbox tasks; no silent duplicates | 2.8 | review | saved once per day via append_note + mark_intention |
+| 2.10 | Brain Dump → Tasks: streamed extraction → preview/edit → insert; nothing written unconfirmed | 2.2 | review | component + extractor prompt + insert-only-after-confirm; 4 tests |
+| 2.11 | Extractor guardrails: no invented tasks; "no tasks found" for feelings-only dumps; 20-item dump → 20 tasks | 2.10 | review | extractor prompt preserves wording, NO_TASKS rule; preview fidelity tests |
+| CI-2 | Check-in 2 (new-user test): fresh profile → tier → download → intention → dump → tag `checkin-2` | 2.1–2.11 | todo | verifier only |
 
 ---
 
@@ -633,6 +645,117 @@ After Phase 1C: verifier opens Daily Note + Settings, compares to the design boa
 
 ### 1D.4 Re-smoke checklist (verifier / owner)
 After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var above, walk folder → note → tasks → Settings → Test AI. Then SG-1 Daily Note screenshot.
+
+---
+
+## Phase 2 — First run, tiers, model download, Morning Intention, Brain Dump (Thu 22)
+
+**Goal:** a new user installs Vayu, gets a hardware-based tier in plain words, downloads exactly one model (E2B first; E4B only on Green), and can run Morning Intention and Brain Dump → Tasks.
+
+**Rules that apply (PRD §6–7, plan.md Phase 2):**
+- **E2B first.** Promote to E4B only on ≥16 GB RAM and ≥10 GB disk machines, after the first-run check. **Never download both chat models by default.** Design and test Yellow first (the typical Indian laptop: 8GB/512GB SSD).
+- Model sizes (PRD §7): gemma3n:e4b ≈ 7.5 GB download (~3 GB RAM); gemma3n:e2b ≈ 5.6 GB download (~2 GB RAM); embeddinggemma is the small search/embedding model.
+- First-run buttons: "Download now" / "I already have Ollama" / (Red tier) "Continue without AI".
+- Ollama states (PRD §9): absent → offer install; present but model missing → offer download; present → skip straight to the app.
+- Download manager: resumable, size before start, progress + % during, verifies on completion; handles interrupted download, disk filling mid-download, and user cancelling — the app stays usable in No-AI mode.
+- AI replies are short (~120–180 tokens) and streamed.
+- Zero outbound calls from Rust except `127.0.0.1:11434`. Ollama itself fetches the model from its registry; Vayu never calls out directly.
+- **Cut trigger (plan.md):** if the download manager fails Check-in 2 twice, v1 ships "detect existing Ollama + guided install link" and bundled download moves to v1.1.
+
+### 2.1 Hardware check (RAM, disk, CPU, OS) — P0
+**Depends on:** —
+**Tests first:**
+- `cargo test` in `src-tauri/src/hardware.rs`:
+  - `tier_for(ram_gb, disk_gb)`: (16, 10) → Green; exactly (16.0, 10.0) → Green; (15.9, 10) → Yellow; exactly (8.0, 8.0) → Yellow; (7.9, 8) → Red; (8, 7.9) → Red; (4, 500) → Red.
+  - dev override `VAYU_DEV_TIER=Green|Yellow|Red` forces the tier in debug builds; ignored in release.
+  - `hardware_report()`: total RAM via `sysinfo`, free disk via `fs::space` of the notes drive, CPU brand, OS string — all plausible on the dev PC.
+**Do:** add the `sysinfo` dependency; pure `tier_for` + `hardware_report`; command `hardware_check` that also reports Ollama presence (`ollama_status` logic), the recommended model tag, and its download size. <5s.
+**Acceptance:**
+- AC1: all tier boundary unit tests pass (8 GB / 16 GB RAM; 8 GB / 10 GB disk edges).
+- AC2: `hardware_check` returns tier/model/size/Ollama presence without blocking startup; completes in <5s on the dev PC. **(manual)**
+
+### 2.2 Tier logic wired into config — P0
+**Depends on:** 2.1
+**Tests first:**
+- `cargo test`: `update_config` partial merge (tier / model_tag / ai_enabled) round-trips through `config.json`; old config without the new fields still loads.
+- component test: tier screen is not shown again once a tier is stored (subsequent launches go straight to the app).
+**Do:** extend `StoredConfig` with optional `tier`, `model_tag`, `ai_enabled`; command `update_config` merges and saves atomically.
+**Acceptance:** AC1: tests pass; AC2: relaunch keeps the tier and skips the hardware/tier screens. **(manual)**
+
+### 2.3 Tier result screen — P0
+**Depends on:** 2.1, 2.2
+**Tests first:** component tests with mocked `invoke`:
+- Green: "Your PC: Green tier — Gemma E4B (full)", primary action "Download now"; details show RAM/disk/CPU/OS.
+- Yellow: "Your PC: Yellow tier — Gemma E2B (lite)", same layout; details under "Details".
+- Red: plain line "Your PC can't run AI chat locally — Vayu still works as notes + tasks", primary action "Continue without AI".
+- "I already have Ollama" re-runs the hardware check when Ollama is absent.
+**Do:** `TierResultScreen` with PRD §6 first-run copy, one primary action, details block in JetBrains Mono.
+**Acceptance:** AC1: tests pass. AC2 **(manual):** screenshot next to the design board tier card.
+
+### 2.4 Download screen — P0
+**Depends on:** 2.2
+**Tests first:** component tests with mocked `invoke`:
+- shows model name + exact size (e.g. "gemma3n:e2b — ≈ 5.6 GB, one-time, free, no account"); PRD copy "Vayu thinks on your PC, not in the cloud…".
+- progress events update a bar + percent; "Cancel" calls `cancel_pull`.
+- low disk → plain calm error; the app stays usable.
+**Do:** `DownloadScreen` driven by `pull_model` progress events; size shown before start (PRD planning size for the chat model; Ollama `total` once streaming).
+**Acceptance:** AC1: tests pass.
+
+### 2.5 Resumable pull — P0
+**Depends on:** 2.4
+**Tests first:** `cargo test` against a mock Ollama server streaming NDJSON pull progress:
+- a pull that the server cuts mid-stream errors to the UI with a calm message; re-calling `pull_model` on the same model completes (resume).
+- `cancel_pull` aborts the in-flight pull within ~1s and the screen can restart.
+- pre-pull disk check: free space below the model size → `Err(Io)` with a plain message before any bytes flow.
+**Do:** `pull_model` streams Ollama `/api/pull` NDJSON as `PullEvent::progress`; one pull at a time (slot + abort handle in `AppState`); cancel aborts the task.
+**Acceptance:** AC1: tests pass; AC2 **(manual):** kill the app mid-download, relaunch, resume → completes.
+
+### 2.6 Skip download when model present — P0
+**Depends on:** 2.2
+**Tests first:** component test: when `list_models` reports the tier's model present, the tier screen skips straight to "Open Vayu" — `pull_model` never runs (zero bytes).
+**Do:** in the tier/download flow, check `list_models` before offering the download.
+**Acceptance:** AC1: test passes; AC2 **(manual):** on the dev PC with Ollama + model present, first-run downloads nothing.
+
+### 2.7 Post-download verification — P0
+**Depends on:** 2.5
+**Tests first:** `cargo test` against mock servers:
+- `verify_install(tag)` runs one generation (stream to `Done`) + one embedding call (`/api/embeddings` with `embeddinggemma`); resolves `{ generation_ok, embeddings_ok }`.
+- generation that never yields a first token → error; embeddings model missing → `embeddings_ok: false` (calm, not a crash).
+**Do:** command `verify_install` reuses `run_generate` with a short prompt + a new `run_embeddings` POST to `/api/embeddings`.
+**Acceptance:** AC1: tests pass; AC2 **(manual):** after download, "You're ready" shows only when both checks pass.
+
+### 2.8 Morning Intention — P0
+**Depends on:** 2.2
+**Tests first:** component tests:
+- on today's date (intention not done/skipped): shows 3 questions (energy, one thing that matters, anything blocking) and a one-tap "Skip today".
+- skipping marks the date skipped and the card never re-nags that day.
+- after the 3 answers, Gemma streams an intention line + Top 3 tasks; preview → "Save to today's note" → inserted into the note; state = done; card hides.
+- on a past/future day: no intention card.
+**Do:** `MorningIntention` card at the bottom of today's Daily Note; per-date done/skipped state stored in config (`mark_intention` command); generation via `generate` with an intention prompt; insert via `append_note`.
+**Acceptance:** AC1: tests pass; AC2 **(manual):** intention written once per day; reopen same day → no re-nag.
+
+### 2.9 Intention output — P0
+**Depends on:** 2.8
+**Tests first:** component test: saving the intention appends exactly one "## Intention — …" section with 1 intention line + Top 3 `- [ ]` tasks; the note's earlier content is byte-for-byte unchanged.
+**Do:** `append_note` command (read + append + atomic write in Rust).
+**Acceptance:** AC1: test passes; AC2 **(manual):** open the `.md` in Notepad → intention section at the end, old text intact.
+
+### 2.10 Brain Dump → Tasks — P0
+**Depends on:** 2.2
+**Tests first:** component tests with a mocked stream:
+- dump → "Extract tasks" → Gemma streams a checklist → preview shows the tasks (editable text, removable rows) → "Insert" only after the user confirms; nothing is written before confirm.
+- confirmed insertion appends the tasks to today's note via `append_note`; the editor/DailyNote reflects them (TaskList shows them).
+**Do:** `BrainDump` card; extractor prompt (PRD §5.3: preserve user's wording, no invented tasks, `NO_TASKS` when nothing actionable).
+**Acceptance:** AC1: tests pass; AC2 **(manual):** dump appears as checklist rows in today's note and in the TaskList.
+
+### 2.11 Extractor guardrails — P0
+**Depends on:** 2.10
+**Tests first:**
+- `EXTRACTOR_PROMPT` contains "Do not invent tasks" and the `NO_TASKS` rule.
+- mocked stream returning `NO_TASKS` → "No tasks found — nothing actionable" empty state, no task block written.
+- mocked stream returning 20 task lines → preview shows 20 rows; insert writes all 20.
+**Do:** none beyond 2.10's prompt + preview fidelity.
+**Acceptance:** AC1: tests pass.
 
 ---
 

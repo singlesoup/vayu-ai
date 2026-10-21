@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { appendNote, generate, markIntention } from "../lib/api";
 import { isApiErrorLike } from "../lib/apiErrors";
+import { parseIntention } from "../lib/intention";
 import { formatNoteHeader } from "../lib/dateFormat";
 import { type NoteDate } from "../lib/noteFile";
 
@@ -20,16 +21,6 @@ type Props = {
   /** Fired when the intention is done or skipped, so the parent can hide the card. */
   onFinish: (status: "done" | "skipped") => void;
 };
-
-export function parseIntention(text: string): { intention: string; tasks: string[] } {
-  const m = text.match(/^intention:\s*(.+)$/im);
-  const tasks: string[] = [];
-  for (const line of text.split("\n")) {
-    const mm = line.match(/^-\s*\[( |x)\]\s+(.+)$/);
-    if (mm) tasks.push(mm[2]);
-  }
-  return { intention: (m?.[1] ?? "").trim(), tasks };
-}
 
 export function MorningIntention({ date, onFinish }: Props) {
   const [step, setStep] = useState<Step>("questions");
