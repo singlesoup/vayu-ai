@@ -37,8 +37,12 @@ describe("fonts (task 1.3.2 — bundled locally)", () => {
     expect(closeBrace, ":root block is closed").toBeGreaterThan(-1);
     const rootBlock = css.slice(braceStart, closeBrace + 1);
     expect(rootBlock, "@font-face must sit OUTSIDE :root").not.toMatch(/@font-face/);
-    // and the @font-face rules still exist at the top level
-    expect((css.match(/@font-face/g) ?? []).length, "all font faces survive the move").toBe(11);
+    // and the @font-face rules still exist at the top level (count actual
+    // at-rule openers — earlier draft counted the word inside comments too)
+    expect(
+      (css.match(/@font-face\s*\{/g) ?? []).length,
+      "all font faces survive the move",
+    ).toBe(11);
   });
 
   it("every @font-face src points to a file that exists in the repo", () => {
