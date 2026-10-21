@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { NoteDate } from "../lib/noteFile";
 import { Calendar } from "./Calendar";
 
@@ -66,5 +66,24 @@ describe("Calendar sidebar (task 1.7.2)", () => {
     render(<Harness today="2026-10-21" noteDates={["2026-10-20"]} />);
     fireEvent.click(screen.getByRole("button", { name: "20" }));
     expect(screen.getByText("CHOSEN:2026-10-20")).toBeInTheDocument();
+  });
+
+  // Task 1B.4: every week row used the SAME key — React logged a duplicate-key
+  // error for every month with more than one week row. This render-level test
+  // catches what the file-text tests could not.
+  it("week rows have unique React keys (no duplicate-key warning)", () => {
+    const errors: string[] = [];
+    const spy = vi
+      .spyOn(console, "error")
+      .mockImplementation((...args: unknown[]) => errors.push(args.map(String).join(" ")));
+    try {
+      render(<Harness today="2026-10-21" />);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(
+      errors.filter((e) => /same key|unique "key" prop/i.test(e)),
+      "React duplicate-key warnings",
+    ).toEqual([]);
   });
 });

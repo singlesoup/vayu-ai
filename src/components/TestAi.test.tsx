@@ -1,6 +1,8 @@
 // NOTE: `../test/mocks` must be imported before anything that pulls in
 // `@tauri-apps/api/core` (mocks.ts installs the invoke/Channel fakes).
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getInvokeMock, mockInvoke } from "../test/mocks";
 import { TestAi } from "./TestAi";
@@ -184,5 +186,11 @@ describe("Test AI UI (task 1.11.3)", () => {
       await vi.advanceTimersByTimeAsync(200);
     });
     expect(screen.getByTestId("test-ai-reply").textContent).toBe("ok.");
+  });
+
+  // Task 1B.4: the catch block logged to the console in production code.
+  it("the catch path never calls console.log", () => {
+    const src = readFileSync(resolve(__dirname, "TestAi.tsx"), "utf8");
+    expect(src).not.toMatch(/console\.log/);
   });
 });
