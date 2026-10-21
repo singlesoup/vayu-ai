@@ -10,7 +10,11 @@ import type { GenerateOutcome, StreamEvent } from "../lib/api";
 type Phase = "idle" | "thinking" | "streaming";
 
 const CALM_ERROR = "Vayu couldn't reach the local AI. Your notes are safe.";
-const NO_MODEL = "No model installed yet — see the list above.";
+// Task 1D.3: a PC can have no PRD model but a dev one via the debug override,
+// so the NoModel copy mentions it too (owner smoke: the old text only pointed
+// at the install list, which reads like Settings is "dummy" on dev machines).
+const NO_MODEL =
+  "No model installed yet. Install one from the list above, or set VAYU_DEV_CHAT_MODEL to use a dev model.";
 
 export function TestAi() {
   const [phase, setPhase] = useState<Phase>("idle");

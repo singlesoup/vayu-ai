@@ -151,3 +151,30 @@ describe("app entry actually imports the styles (task 1B.1)", () => {
     ).toBe(true);
   });
 });
+
+describe("daily note header and editor never overlap (task 1D.1)", () => {
+  it("the header paints above the editor; the editor is a clear block below it", () => {
+    const css = appCss();
+    const header = cssBlock(css, "\\.daily-note header");
+    expect(header, ".daily-note header is styled").not.toBeNull();
+    // stacking guarantee: the header always paints over anything below it
+    expect(header).toMatch(/position:\s*relative/);
+    expect(header).toMatch(/z-index:\s*1/);
+    // the editor is a normal block, pushed clear of the title with a token gap
+    const editor = cssBlock(css, "\\.note-editor");
+    expect(editor, ".note-editor is styled").not.toBeNull();
+    expect(editor).toMatch(/display:\s*block/);
+    expect(editor).toMatch(/margin-top:\s*var\(--space-\d+\)/);
+  });
+});
+
+describe("calendar rail fits the weekday labels and day cells (task 1D.2)", () => {
+  it("--width-calendar-rail is wide enough for 7 padded mono cells", () => {
+    // 7 cells × (2-digit mono text + 2 × 8px button padding) + 2 × 8px rail
+    // padding ≈ 238px, so anything below ~220 clips the right-hand column.
+    const tokens = readFileSync(resolve(__dirname, "tokens.css"), "utf8");
+    const rail = tokens.match(/--width-calendar-rail:\s*(\d+)px/);
+    expect(rail, "--width-calendar-rail exists in tokens.css").not.toBeNull();
+    expect(Number(rail?.[1])).toBeGreaterThanOrEqual(220);
+  });
+});

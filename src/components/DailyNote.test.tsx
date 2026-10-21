@@ -22,7 +22,7 @@ vi.mock("@tauri-apps/api/window", () => ({
 }));
 
 describe("DailyNote (task 1.5.4 — open to today)", () => {
-  it("ensures then reads the day's note, in that order, and shows the content", async () => {
+  it("ensures then reads the day's note; the editor shows PROSE only (1D.1)", async () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", {
@@ -32,7 +32,11 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     render(<DailyNote date="2026-10-21" isToday create />);
     const editor = (await screen.findByLabelText("Note")) as HTMLTextAreaElement;
     // exact value comparison (findByDisplayValue collapses newlines in RTL)
-    expect(editor.value).toBe("Watered the tomato plant.\n- [x] repot it");
+    expect(editor.value).toBe("Watered the tomato plant.");
+    // raw checkbox markdown never duplicates into the prose editor
+    expect(editor.value).not.toContain("- [");
+    // the task is still visible — in the TaskList, exactly once
+    expect(screen.getByRole("checkbox", { name: "Task: repot it" })).toBeChecked();
     expect(tauri.ran("ensure_note")).toBe(true);
     expect(tauri.ran("read_note")).toBe(true);
   });
@@ -82,6 +86,7 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     try {
       const tauri = mockInvoke();
       tauri.given("read_note", { exists: false, content: "" });
+      tauri.given("write_note", null);
       render(<DailyNote date="2026-11-02" isToday={false} create={false} />);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1);
@@ -103,6 +108,7 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
       expect(tauri.callCount("write_note")).toBe(1);
       expect(tauri.args("write_note")).toEqual({ date: "2026-11-02", content: "first entry" });
     } finally {
+      vi.clearAllTimers();
       vi.useRealTimers();
     }
   });
@@ -113,6 +119,7 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
       const tauri = mockInvoke();
       tauri.given("ensure_note", null);
       tauri.given("read_note", { exists: false, content: "" });
+      tauri.given("write_note", null);
       render(<DailyNote date="2026-10-21" isToday create />);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1);
@@ -127,6 +134,7 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
       expect(tauri.callCount("write_note")).toBe(1);
       expect(tauri.args("write_note")).toEqual({ date: "2026-10-21", content: "today words" });
     } finally {
+      vi.clearAllTimers();
       vi.useRealTimers();
     }
   });
@@ -138,6 +146,7 @@ describe("DailyNote task UI (task 1.8.3)", () => {
     vi.useFakeTimers();
   });
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -149,6 +158,7 @@ describe("DailyNote task UI (task 1.8.3)", () => {
       exists: true,
       content: "## Chores\n- [ ] call plumber\n- [x] pay rent",
     });
+    tauri.given("write_note", null);
     render(<DailyNote date="2026-10-21" isToday create />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
@@ -162,11 +172,13 @@ describe("DailyNote task UI (task 1.8.3)", () => {
     expect(screen.getByRole("checkbox", { name: "Task: pay rent" })).toBeChecked();
   });
 
-  it("checking a box rewrites the editor markdown and SAVES it", async () => {
+  it("checking a box saves the full markdown; the editor stays prose-only", async () => {
     const { tauri, editor } = await renderWithTasks();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Task: call plumber" }));
-    expect(editor.value).toBe("## Chores\n- [x] call plumber\n- [x] pay rent");
+    // the raw task lines never paint into the prose editor (1D.1)
+    expect(editor.value).toBe("## Chores");
+    expect(editor.value).not.toContain("- [");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(800);
     });
@@ -175,6 +187,21 @@ describe("DailyNote task UI (task 1.8.3)", () => {
       date: tauri.args("ensure_note")!["date"],
       content: "## Chores\n- [x] call plumber\n- [x] pay rent",
     });
+  });
+
+  it("editing the prose keeps the task lines in the saved markdown (1D.1)", async () => {
+    const { tauri, editor } = await renderWithTasks();
+
+    fireEvent.change(editor, { target: { value: "## Chores\n\njotted a few things" } });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+    expect(tauri.args("write_note")).toEqual({
+      date: tauri.args("ensure_note")!["date"],
+      content: "## Chores\n\njotted a few things\n- [ ] call plumber\n- [x] pay rent",
+    });
+    // and the editor keeps showing prose only on the merged content
+    expect(editor.value).toBe("## Chores\n\njotted a few things");
   });
 
   it("adding a task with Enter rewrites the editor and SAVES the new markdown", async () => {
@@ -202,6 +229,7 @@ describe("DailyNote autosave (task 1.6.2)", () => {
     vi.useFakeTimers();
   });
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -210,6 +238,7 @@ describe("DailyNote autosave (task 1.6.2)", () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
+    tauri.given("write_note", null);
     render(<DailyNote date="2026-10-21" isToday create />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
@@ -271,6 +300,7 @@ describe("DailyNote save on close / day switch (task 1.6.3)", () => {
     closeState.handlers.length = 0;
   });
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -279,6 +309,7 @@ describe("DailyNote save on close / day switch (task 1.6.3)", () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
+    tauri.given("write_note", null);
     render(<DailyNote date="2026-10-21" isToday create />);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
@@ -309,6 +340,7 @@ describe("DailyNote save on close / day switch (task 1.6.3)", () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
+    tauri.given("write_note", null);
     let switchTo: (date: string) => void = () => {};
     function Harness() {
       const [date, setDate] = useState("2026-10-21");

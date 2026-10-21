@@ -15,6 +15,7 @@ import { onWindowClose } from "../lib/windowClose";
 import type { NoteDate } from "../lib/noteFile";
 import { noteDateToDate } from "../lib/noteFile";
 import { formatNoteHeader, titleForDate } from "../lib/dateFormat";
+import { proseOf, withProse } from "../lib/tasks";
 import { Editor } from "./Editor";
 import { TaskList } from "./TaskList";
 
@@ -79,9 +80,22 @@ export function DailyNote({ date, isToday, create }: Props) {
 
   const title = isToday ? "Today" : titleForDate(noteDateToDate(date));
 
-  function onEditorChange(content: string) {
+  /** Task edits (TaskList) hand back FULL markdown — route it through the save. */
+  function onNoteChange(content: string) {
     setNote((n) => (n ? { ...n, content, exists: true } : n));
     saver.schedule(content);
+  }
+
+  /**
+   * Task 1D.1: the prose editor never shows task lines. What the user types is
+   * merged with the file's EXISTING task lines (`withProse`), so editing prose
+   * can never delete a task, and the disk markdown stays the source of truth.
+   */
+  function onProseChange(prose: string) {
+    if (note === null) return;
+    const merged = withProse(note.content, prose);
+    setNote({ ...note, content: merged, exists: true });
+    saver.schedule(merged);
   }
 
   return (
@@ -102,10 +116,10 @@ export function DailyNote({ date, isToday, create }: Props) {
           {/* Task 1.7.3: empty days stay editable — the placeholder shows
               until first typing; the day's FIRST SAVE creates the file. */}
           {!note.exists && <p className="empty-note">Nothing written on this day yet</p>}
-          <Editor value={note.content} onChange={onEditorChange} />
+          <Editor value={proseOf(note.content)} onChange={onProseChange} />
           {/* Task panel (1.8.3): edits flow through the same change handler,
               so they ride the same debounced save. */}
-          <TaskList markdown={note.content} onChange={onEditorChange} />
+          <TaskList markdown={note.content} onChange={onNoteChange} />
         </>
       )}
     </section>

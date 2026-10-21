@@ -153,7 +153,7 @@ describe("Test AI UI (task 1.11.3)", () => {
     expect(screen.getByRole("button", { name: "Test AI" })).not.toBeDisabled();
   });
 
-  it("NoModel gives a plain 'no model installed yet' message", async () => {
+  it("NoModel is calm and mentions the VAYU_DEV_CHAT_MODEL dev override (1D.3)", async () => {
     mockInvoke().on("generate", () => Promise.reject({ kind: "NoModel", message: "none" }));
     await renderPanel();
     fireEvent.click(screen.getByRole("button", { name: "Test AI" }));
@@ -161,6 +161,7 @@ describe("Test AI UI (task 1.11.3)", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(screen.getByText(/no model installed yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/VAYU_DEV_CHAT_MODEL/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Test AI" })).not.toBeDisabled();
   });
 

@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    vayu_scaffold_lib::run()
+    vayu_lib::run()
 }

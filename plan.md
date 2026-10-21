@@ -65,7 +65,9 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 |---|---|---|---|
 | 0. Repo setup | Wed 21 | verified | — |
 | 1. Foundation + walking skeleton | Wed 21 | in progress (frontend mostly done; Rust + failed fixes left) | Check-in 1 |
-| 1B. Visual pass (design board) | Wed 21 | in progress (1B.1 doing) | Screenshot gate |
+| 1B. Visual pass (design board) | Wed 21 | in progress (first-run passed; Daily Note not yet seen) | Screenshot gate |
+| 1C. Rust backend | Wed 21 | verified (automated); manual smoke open | Unblocks folder + Check-in 1 |
+| 1D. Smoke bugfix | Wed 21 | verified (automated); 1D.4 owner re-smoke open | Layout + Dev model for Test AI |
 | 2. First run, tiers, morning features | Thu 22 | todo | Check-in 2 |
 | 3. Journal, reflection, Ask, evals | Fri 23 | todo | Check-in 3 + freeze |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
@@ -114,11 +116,29 @@ Small tasks and the screenshot checklist are in [`now.md`](now.md) under **Phase
 
 | ID | Task | P | Status |
 |---|---|---|---|
-| 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | review |
+| 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | verified |
 | 1B.2 | Fix fonts: `@font-face` outside `:root`, and they render | P0 | review |
 | 1B.3 | Restyle first-run, Daily Note, calendar, tasks, Settings to the design board | P0 | review |
 | 1B.4 | Fix the known render bugs (calendar week keys, Test AI `console.log`) | P0 | review |
-| SG-1 | **Screenshot gate:** verifier compares the running app to the design board | Gate | todo |
+| SG-1 | **Screenshot gate:** first-run passed; Daily Note + Settings still unseen | Gate | todo |
+
+---
+
+## Phase 1C — Rust backend (Wed 21)
+
+**Goal:** Real config, `.md` files, Ollama status/models, streaming Test AI — matching `src/lib/api.ts`.
+
+**Status (21 Oct):** automated ACs **verified** (140 + 44 tests, `vayu.exe` launched). Manual smoke + CI-1 still open. Working tree still uncommitted.
+
+Details: [`now.md`](now.md) Phase 1C.
+
+| ID | Task | P | Status |
+|---|---|---|---|
+| 1C.0 | Rust + MSVC toolchain; `cargo check`; `npm run check` runs cargo tests | P0 | verified |
+| 1C.1 | Config storage, default folder, validate, dialog plugin (1.4.1–1.4.3) | P0 | verified |
+| 1C.2 | `read_note` / `ensure_note` / `write_note` / `list_notes` (1.5.2, 1.5.3, 1.7.1) | P0 | verified |
+| 1C.3 | `ollama_status` + `list_models` (1.9.1, 1.10.1) | P0 | verified |
+| 1C.4 | Stream parser + generate/stop (1.11.1, 1.11.2) | P0 | verified |
 
 ---
 
@@ -235,11 +255,19 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | 1D.1 | Daily Note: prose editor split. New pure `proseOf`/`withProse` in `tasks.ts` (fence-aware; `withProse` re-merges edited prose with existing task lines verbatim — prose edits can never delete tasks; round-trip `proseOf(withProse(md, p)) === p` covered). `DailyNote.tsx` editor now shows journal prose only — raw `- [ ]` lines no longer duplicate the TaskList; TaskList still rewrites full markdown (disk unchanged as source of truth). CSS: `.daily-note header` `position: relative; z-index: 1`, `.note-editor` `display: block` + token `margin-top`. 2 pre-existing tests updated to the prose-only contract (saved-markdown assertions unchanged); +11 tests, `npm run check` 151 FE + 44 Rust green | agent |
+| 2026-10-21 | 1D.2 | `--width-calendar-rail` 168px → 240px (token only, `tokens.css`). Flagged deviation: owner suggested ~200–220px, but real cells need 7 × (2-digit mono text + 2×8px button padding) + rail padding ≈ 238px — the board's 168px sidebar is a scaled mock; at 220 Sat/Sun still clips. New appStyles test pins the token ≥ 220px | agent |
+| 2026-10-21 | 1D.3 | `TestAi` NoModel copy now mentions the debug override: “No model installed yet. Install one from the list above, or set `VAYU_DEV_CHAT_MODEL` to use a dev model.” (test pins both parts). `Dev model: <tag>` line already live from 1.10.2 — no change. Generate order e4b → e2b → override unchanged (1C.4). Relaunch documented: `$env:VAYU_DEV_CHAT_MODEL="gemma4-e4b-fast:latest"; npm run tauri dev` | agent |
+| 2026-10-21 | 1C.0–1C.4 | Phase 1C Rust backend implemented (working tree only, no commits). Toolchain: Rust 1.99.1 stable-msvc + VS BuildTools 2022 VCTools/SDK, `CARGO_TARGET_DIR=%LOCALAPPDATA%\vayu-target`; fixed scaffold lib name, stale `opener:default` → `dialog:default`, added/registered `tauri-plugin-dialog`. New modules `config.rs` (config.json, corrupt → config.bad.json, default `<Documents>\Vayu`, folder validation), `notes.rs` (strict dates, read-never-creates, ensure-empty, unique-temp atomic writes, sorted date-only listing), `ollama.rs` (1.5s `/api/version`, exact `/api/tags` matching + `embeddinggemma:latest`, debug-only `VAYU_DEV_CHAT_MODEL`, proxy-free local-only HTTP, NDJSON parser, e4b→e2b→override model order, Stop polling, timeout/connection-lost). 44 Rust tests (tempfile + wiremock + raw TCP streaming mock) and 140 frontend tests green; clippy `-D warnings` and `cargo build` clean. Session notes + smoke steps in `now.md` | agent |
+| 2026-10-21 | test(1.6.2/1.8.3) | Test-hygiene fix for an intermittent autosave flake (no app change, assertions unchanged): the fake-timer `DailyNote` helpers never registered a `write_note` handler, so each save rejected and armed a retry timer that could leak past `vi.useRealTimers()` into later tests (expected 1 write, received 3/5). Added `given("write_note", null)` in the helpers and `vi.clearAllTimers()` before `vi.useRealTimers()` in teardown. 5/5 full runs and 3/3 file runs green after | agent |
 | 2026-10-21 | 1B.1 | `src/main.tsx` now imports `./App.css` (after tokens.css). New test `src/styles/appStyles.test.ts` pins the import itself — the class of failure the verifier found (styles on disk, dead in the running page) | agent |
 | 2026-10-21 | 1B.2 | All 11 `@font-face` rules moved above `:root` in `tokens.css` (brace-counting test in `fonts.test.ts` fails while any sits inside). Test fixed in its own `test(1B.2)` commit: the face-count counted the WORD "@font-face" including comment text — now matches `/@font-face\s*\{/` openers. Sidebar rail token narrowed to the board's 168px and `--text-note: 16px` added (both flagged in change log) | agent |
 | 2026-10-21 | 1B.3 | Restyled to the dark Daily Note board: App.css rewritten (token-only colours; ghost base buttons via `:where()` so `.btn-primary`/`.btn-ghost` win), Surface first-run card centred on Ink with Breeze-pill Continue + ghost "Choose folder…", Surface sidebar rail (mono Monday-first grid, today = Deep Teal/on-accent, noted days bold Text, empty days Muted, board's 168px rail width), mono uppercase muted date line, Inter "Today" title, Newsreader 16px body (`--text-note` token, agent-picked — board shows 15.5px on a 13px mock scale), custom 16px/5px checkbox (Deep Teal checked with ✓, done text line-through 0.55), muted gear, Surface settings card, Test AI reply in italic Newsreader, ≤700px stacking media query. Warm usage now banned outside tokens.css (guard test added; closes the 1.3.1 gap note). No behaviour changes | agent |
 | 2026-10-21 | 1B.3 | Test fixed in its own `test(1B.3)` commit: `cssBlock` escaped its selector argument although call sites already pass regex source — every rule was "missing". CSS fix, not a weaker assert | agent |
 | 2026-10-21 | 1B.4 | `Calendar.tsx` week rows keyed by row index (`key={i}`, was one shared key → React duplicate-key warnings — now caught by a render-time test that spies console.error); removed the debug `console.log` from the `TestAi.tsx` catch (a static no-`console.log` test guards it) | agent |
+| 2026-10-21 | 1D verify | `npm run check`: 151 FE + 44 Rust. 1D.1–1D.3 verified (prose/tasks split, rail 240px, NoModel copy). 1D.4 + SG-1 + CI-1 still need live window. Tree still uncommitted | verifier |
+| 2026-10-21 | 1C verify | `npm run check`: 140 frontend + 44 Rust, no SKIPPED. `tauri dev` launched `vayu.exe`. Automated 1C.0–1C.4 verified. Manual smoke + CI-1 still open. Tree still uncommitted | verifier |
+| 2026-10-21 | 1C | Phase 1C (Rust) added to now.md/plan.md; owner moves past folder-block screenshots; coding agent must not commit | verifier |
 | 2026-10-21 | 1B | Phase 1B visual pass complete: 1B.1–1B.4 `review`, SG-1 `todo` (verifier). `npm run check` green — 140/140 tests, lint+tsc clean, Rust SKIPPED. Session notes in `now.md` list the screens to screenshot and the two flagged token picks (168px rail, 16px note body) | agent |
 | 2026-10-21 | 1B | Added Phase 1B (visual pass + screenshot gate) to `plan.md` and `now.md` | verifier |
 | 2026-10-21 | verify | Overnight frontend verified. `npm run check` green: 124/124 tests, lint+tsc clean, Rust SKIPPED. **Verified:** 1.1, 1.2.2–1.2.4, 1.3.1, 1.3.3, 1.3.4, 1.5.1, 1.8.1, 1.8.2, 1.8.4, api. **Failed:** 1.3.2 (`@font-face` nested inside `:root` in `tokens.css` — fonts won't load); 1.7.2 (duplicate React `key` on calendar week rows). **Still review (UI OK, Rust/manual pending):** 1.2.1, 1.4.4, 1.5.4, 1.6.*, 1.7.3, 1.8.3, 1.9.2, 1.10.2, 1.11.3. **Blocked Rust:** 1.4.1–1.4.3, 1.5.2–1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1–1.11.2. Colour guard AC2 re-tested live. TDD order in git history is clean (test→feat). CI-1 not ready | verifier |

@@ -1,9 +1,9 @@
-# NOW — Phase 1B: Visual pass (do this next)
+# NOW — After Phase 1D (owner re-smoke, then Phase 2)
 
 **Day:** Wed 21 Oct 2026
-**Current work:** Phase 1B below. Phase 1 behaviour tasks stay as they are; do not reopen them except for the three bugs named in 1B.4.
-**Gate:** Screenshot gate (SG-1), then Check-in 1 once Rust exists.
-**Goal:** The screens that already exist look like the design board's dark Daily Note. A green test suite is not enough.
+**Current work:** 1D.1–1D.3 **verified** (automated). **You** run 1D.4 re-smoke, then we commit + Check-in 1, then Phase 2.
+**Gate:** 1D.4 owner smoke → SG-1 Daily Note → Check-in 1 (`checkin-1` tag) → Phase 2 (Thu).
+**Goal:** Confirm the live window matches the design board; then ship the walking skeleton.
 
 Full plan and status: [`plan.md`](plan.md)
 
@@ -493,13 +493,49 @@ Restyle only. Keep the existing behaviour.
 
 ### SG-1 — Screenshot gate (verifier)
 
-The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
+**Partial (21 Oct):** first-run passed in the browser. Daily Note + Settings still need `npm run tauri dev`.
 
-1. Runs `npm run dev` and opens the first-run screen.
-2. Opens the Daily Note (after a notes folder is set, or on the dev build once Rust can skip first-run).
-3. Opens Settings.
-4. Puts each screenshot beside the design board's dark Daily Note.
-5. Marks SG-1 `verified` only if AC2 of 1B.3 passes. Otherwise marks the failed task `failed` with the screenshot note.
+After Phase 1C: verifier opens Daily Note + Settings, compares to the design board, then marks SG-1.
+
+---
+
+## Phase 1C — Rust backend (current)
+
+**Status (21 Oct):** 1C.0–1C.4 implemented and `review`. 43 Rust + 140 frontend tests green; no commits (working tree only). Smoke-test steps in the session notes.
+
+**Contract:** implement exactly what `src/lib/api.ts` documents (command names, shapes, error kinds). Do not invent a second API.
+
+**No commits.** Leave all changes unstaged/uncommitted for the owner and verifier. Update status boards and the change log in the working tree only.
+
+### 1C.0 Toolchain
+- Install Rust (stable-msvc) + MSVC C++ build tools if missing. Prefer user approval for winget/admin prompts.
+- Set `CARGO_TARGET_DIR` to `%LOCALAPPDATA%\vayu-target` so OneDrive does not sync build output.
+- **Done when:** `cargo --version` works; `cargo check` in `src-tauri/` passes; `npm run check` no longer prints `SKIPPED: cargo not installed`.
+
+### 1C.1 Config + notes folder (1.4.1 → 1.4.3)
+- `get_config` / `set_notes_dir` per api.ts: `{ notesDir, version, defaultNotesDir }` with `defaultNotesDir` = `<Documents>\Vayu`.
+- Corrupt config → rename to `config.bad.json`, return null notesDir; no panic.
+- Validate folder (create missing dir; reject file paths; leave existing `.md` files alone).
+- Register `tauri_plugin_dialog` so "Choose folder…" works.
+- **Tests first:** `cargo test` with tempfile (see original 1.4.1–1.4.3 criteria earlier in this file).
+- **Done when:** those tests pass; first-run Continue can set a folder and relaunch keeps it.
+
+### 1C.2 Notes read/write/list (1.5.2, 1.5.3, 1.7.1)
+- `read_note` never creates a file; `ensure_note` creates empty today; `write_note` atomic (temp + rename); `list_notes` date files only.
+- Invalid dates → `Err(InvalidDate)`, no path escape.
+- **Done when:** cargo tests pass; Notepad round-trip matches typed text.
+
+### 1C.3 Ollama status + models (1.9.1, 1.10.1)
+- `ollama_status` against `127.0.0.1:11434`, 1.5s timeout, never blocks startup.
+- `list_models`: exact tags `gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma` (+ `:latest` for embeddinggemma); report `devChatModel` from `VAYU_DEV_CHAT_MODEL` in debug only.
+- **Done when:** cargo tests with mock HTTP; Settings matches `ollama list` on the machine.
+
+### 1C.4 Generate / Stop (1.11.1, 1.11.2)
+- NDJSON stream parser; token events; Stop within ~1s; Busy if double-fire; model order e4b → e2b → debug `VAYU_DEV_CHAT_MODEL`.
+- **Done when:** cargo tests with slow mock stream; Test AI streams in the real window.
+
+### Order
+1C.0 → 1C.1 → 1C.2 → 1C.3 → 1C.4. After each block: set those IDs to `review` in the status board (no git commit). When all are `review`, write a Session note listing what to smoke-test.
 
 ---
 
@@ -513,47 +549,191 @@ The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
 | 1.2.3 | Ink window background | 1.2.2 | verified | Config + body token OK. AC3 (no white flash on launch) still (manual) after Rust |
 | 1.2.4 | CSP / network lockdown | 1.2.2 | verified | Strict CSP/devCsp; no remote hosts. AC2 (app loads) still (manual) after Rust |
 | 1.3.1 | Design token file | 1.2.2 | verified | All 8 colours + supporting + type/shape/motion match PRD. Gap: AC3 claimed a `--color-warm` *usage* ban test — colour guard only bans hard-coded hex/rgb/named colours, not `var(--color-warm)`. State is OK (nothing uses Warm); add the usage assert later |
-| 1.3.2 | Bundle fonts locally | 1.3.1 | failed | Files + licences present (11 woff2, 3 OFL). **Bug:** every `@font-face` is nested inside `:root { }` in `tokens.css` — invalid CSS, browsers ignore nested `@font-face`, so fonts will not load. Fix: move all `@font-face` blocks above/outside `:root`. String-matching tests still pass (they don't parse CSS) |
+| 1.3.2 | Bundle fonts locally | 1.3.1 | verified | Fixed in 1B.2; fonts load on first-run |
 | 1.3.3 | Hard-coded colour guard | 1.3.1 | verified | Verifier confirmed AC2: temp `color: #fff` in `App.css` → check fails with `App.css: line …: hex colour`; restored clean |
 | 1.3.4 | Dev token page | 1.3.1 | verified | Component + DEV gate tests pass. Visual (manual) after Rust/`npm run dev` |
-| 1.4.1 | Config storage | 1.2.2 | todo | Blocked: Rust not installed |
-| 1.4.2 | Default notes folder | 1.4.1 | todo | Blocked: Rust not installed |
-| 1.4.3 | Validate folder | 1.4.1 | todo | Blocked: Rust not installed |
+| 1.4.1 | Config storage | 1.2.2 | verified | cargo tests: load/save, corrupt → config.bad.json |
+| 1.4.2 | Default notes folder | 1.4.1 | verified | `<Documents>\Vayu` |
+| 1.4.3 | Validate folder | 1.4.1 | verified | create/missing/file/existing.md cases |
 | 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | review | UI + mocked tests OK. Real dialog + config persistence need Rust (+ `tauri_plugin_dialog`) |
 | 1.5.1 | Date → file name | 1.2.2 | verified | Local-date helpers; only builder in the UI |
-| 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | Blocked: Rust not installed |
-| 1.5.3 | Safe note writes | 1.5.2 | todo | Blocked: Rust not installed |
+| 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | verified | read never creates; ensure empty; InvalidDate |
+| 1.5.3 | Safe note writes | 1.5.2 | verified | atomic write; UTF-8/CRLF round-trip |
 | 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | review | UI/mocks OK (`ensure` only when `create`/`isToday`). Real open + <2s timing need Rust |
 | 1.6.1 | Editor component | 1.5.4 | review | Plain textarea + Newsreader column OK. Disk byte-fidelity needs Rust |
 | 1.6.2 | Debounced autosave | 1.6.1 | review | Autosaver + wiring tests OK. Real disk writes need Rust |
 | 1.6.3 | Save on close / day switch | 1.6.2 | review | Flush wiring + degrade-without-runtime OK. Force-close / kill-process ACs need Rust |
-| 1.7.1 | List notes | 1.5.2 | todo | Blocked: Rust not installed |
-| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | failed | Monday-first math + UI tests OK, but **bug:** in `Calendar.tsx` every week row uses the same React `key={view.year * 12 + view.month}` — duplicate keys across weeks. Fix: `key={i}` (or year-month-week). Then back to review until Rust for AC2 |
+| 1.7.1 | List notes | 1.5.2 | verified | sorted date files only |
+| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | review | Week keys fixed in 1B.4; AC2 (real files) waits on 1.7.1 |
 | 1.7.3 | Empty-day state | 1.7.2 | review | Placeholder + editable empty day OK in tests. Real "no phantom files" needs Rust |
 | 1.8.1 | Parse tasks | 1.2.2 | verified | Fences skipped; `- [ ]`/`- [x]`/`* [ ]` |
 | 1.8.2 | Task edits | 1.8.1 | verified | Pure toggle/add/edit/delete; other lines unchanged |
 | 1.8.3 | Task UI | 1.8.2, 1.6.2 | review | Panel + save wiring OK. Notepad round-trip ACs need Rust |
 | 1.8.4 | No-timer guard | 1.8.3 | verified | Guard-only task; test green on absence of timer UI |
-| 1.9.1 | Ollama status | 1.2.2 | todo | Blocked: Rust not installed |
-| 1.9.2 | Settings: status | 1.9.1 | review | UI/poll/refresh tests OK. Real Ollama status needs Rust |
-| 1.10.1 | Detect models | 1.9.1 | todo | Blocked: Rust not installed |
-| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | Present/Missing + dev line, no download UI. Real `ollama list` match needs Rust |
-| 1.11.1 | Stream parser | 1.2.2 | todo | Blocked: Rust not installed |
-| 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | Blocked: Rust not installed |
-| 1.11.3 | Test AI UI | 1.11.2 | review | UI tests OK. Polish before verify: remove debug `console.log` in `TestAi.tsx` catch. Streaming/Stop/Ollama-kill ACs need Rust |
-| CI-1 | Check-in 1 | all above | todo | Blocked until Rust + Phase 1B screenshot gate + manual checklist |
+| 1.9.1 | Ollama status | 1.2.2 | verified | mock HTTP: Running / NotFound / timeout |
+| 1.9.2 | Settings: status | 1.9.1 | review | UI OK; confirm live Ollama in smoke |
+| 1.10.1 | Detect models | 1.9.1 | verified | exact tags + embedding:latest; quantised excluded |
+| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | UI OK; confirm vs `ollama list` in smoke |
+| 1.11.1 | Stream parser | 1.2.2 | verified | NDJSON split lines / done / error |
+| 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | verified | stream timing, Stop &lt;1s, Busy, timeout, drop |
+| 1.11.3 | Test AI UI | 1.11.2 | review | confirm live stream in smoke |
+| CI-1 | Check-in 1 | all above | todo | Needs Phase 1C + SG-1 Daily Note + manual checklist |
 | api | Typed command contract (`src/lib/api.ts`) | — | verified | Contract + tests OK; is the morning Rust spec |
-| 1B.1 | Import App.css | — | review | Styles exist but `main.tsx` never imports them |
-| 1B.2 | Fonts render | 1.3.2 | review | `@font-face` is nested inside `:root` |
-| 1B.3 | Restyle to design board | 1B.1, 1B.2 | review | First-run, Daily Note, calendar, tasks, Settings |
-| 1B.4 | Calendar keys + Test AI log | — | review | |
-| SG-1 | Screenshot gate | 1B.1–1B.4 | todo | Verifier only |
+| 1B.1 | Import App.css | — | verified | Running page uses the stylesheet: input is Surface, not a white browser box |
+| 1B.2 | Fonts render | 1.3.2 | review | `@font-face` is outside `:root`. Inter + JetBrains Mono confirmed on first-run. Newsreader still unseen (it only appears on the note body) |
+| 1B.3 | Restyle to design board | 1B.1, 1B.2 | review | First-run matches. Daily Note, calendar, tasks, and Settings were not on screen — no Rust, so the app cannot leave first-run |
+| 1B.4 | Calendar keys + Test AI log | — | review | Code fixes are in git. Not visible in the browser yet |
+| SG-1 | Screenshot gate | 1B.1–1B.4 | todo | First-run passed 21 Oct. Gate stays open until Daily Note + Settings are screenshotted |
+| 1C.0 | Rust toolchain + cargo check | — | verified | Rust 1.99.1; `npm run check` runs 44 cargo tests (no SKIPPED); `vayu.exe` launched |
+| 1C.1 | Config + dialog plugin | 1C.0 | verified | automated ACs; dialog click is manual smoke |
+| 1C.2 | Notes read/write/list | 1C.1 | verified | automated ACs; Notepad round-trip is manual smoke |
+| 1C.3 | Ollama status + models | 1C.0 | verified | automated ACs; live Settings is manual smoke |
+| 1C.4 | Generate / Stop stream | 1C.2, 1C.3 | verified | automated ACs; live Test AI is manual smoke |
+| 1D.1 | Daily Note layout + no double tasks | — | verified | `proseOf`/`withProse` + CSS stack; 151 FE tests. Live screenshot = 1D.4 |
+| 1D.2 | Calendar no clip | — | verified | Rail 240px; token ≥220px test. Live check = 1D.4 |
+| 1D.3 | Dev model line + Test AI copy | — | verified | NoModel copy mentions override; Dev model line already tested. Live stream = 1D.4 |
+| 1D.4 | Owner re-smoke | 1D.1–1D.3 | todo | Launch line in session notes; then SG-1 + Check-in 1 |
+
+---
+
+## Phase 1D — Smoke-test bugfix (current)
+
+**Owner screenshots (21 Oct):** Daily Note has overlapping text; calendar days clip; Settings looks “dummy” but is not.
+
+**Settings is real, not dummy:**
+- `Running — Ollama v0.32.14` proves `ollama_status` hit the live server.
+- The three PRD tags show **Missing** because this PC has `gemma4-e4b-fast:latest`, not `gemma3n:e4b` / `e2b` / `embeddinggemma`. Exact-tag matching is intentional (plan Q6).
+- Test AI says “No model installed yet” because neither PRD chat model nor a debug `VAYU_DEV_CHAT_MODEL` override is available to the running process.
+
+**No commits.** Leave the working tree dirty (same rule as 1C).
+
+### 1D.1 Daily Note layout — no overlaps
+**Bug:** “Today” collides with Newsreader text that looks like `11 [] Testing the task!` (raw markdown from the editor). Tasks also appear again in the TaskList below → double display feels broken.
+**Do:**
+1. Layout: header (date + title) stacks cleanly above the editor; nothing from the editor paints through the title. Give the editor a clear block (min-height, margin-top from tokens, no absolute positioning that can collide).
+2. Product fix (match the design board): the note body editor shows **journal prose only**. Checkbox task lines (`- [ ]` / `- [x]` / `* [ ]`) are edited only via the TaskList UI. Markdown on disk stays the single source of truth (TaskList still rewrites the full file via the pure helpers). When the user types in the editor, task lines already in the file must not be deleted.
+**Acceptance**
+- AC1: automated layout/regression tests where practical (e.g. DailyNote render: title and editor are separate; task lines are not duplicated as visible raw `- [ ]` in the editor value shown to the user).
+- AC2 **(manual):** screenshot — “Today” is clean; one checkbox row for “Testing the task!”; no serif ghost text over the title.
+
+### 1D.2 Calendar rail — no clipping
+**Bug:** Sat/Sun (and day numbers) clip at the rail edge; 168px is too tight for the mono grid + padding.
+**Do:** widen `--width-calendar-rail` enough that all 7 weekday labels and day cells are fully visible (try ~200–220px; keep it a token). Cells must not overflow the Surface rail.
+**Acceptance:** AC1 token + CSS; AC2 **(manual)** full week labels visible.
+
+### 1D.3 Settings + Test AI on this PC
+**Do:**
+1. Always show the three PRD model rows (Present/Missing) — keep exact matching.
+2. When `list_models` returns a non-null `devChatModel`, show a clear line: `Dev model: <tag>` (debug builds).
+3. Ensure `generate` already prefers e4b → e2b → debug override (1C.4). For local smoke without a PRD pull: document that the owner must launch with  
+   `$env:VAYU_DEV_CHAT_MODEL="gemma4-e4b-fast:latest"; npm run tauri dev`  
+   and that Settings then shows the Dev model line and Test AI streams.
+4. Optional UX polish: if Ollama is Running but all PRD models are Missing and there is no dev override, the Test AI message should mention the override (one calm sentence), not only “No model installed yet.”
+**Acceptance:** AC1 tests for the Dev model line + NoModel copy; AC2 **(manual)** with the env var set — Refresh stays live, Test AI streams, Stop works.
+
+### 1D.4 Re-smoke checklist (verifier / owner)
+After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var above, walk folder → note → tasks → Settings → Test AI. Then SG-1 Daily Note screenshot.
 
 ---
 
 ## Session notes (coding agent writes here at the end of each session)
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Verifier — Phase 1D automated pass, 21 Oct 16:15
+
+**Ran:** `npm run check` → **151** frontend + **44** Rust, lint/tsc clean, no SKIPPED. Spot-checked `proseOf`/`withProse` (tasks preserved on prose edit), rail token 240px, Test AI NoModel copy mentions `VAYU_DEV_CHAT_MODEL`, header `z-index` + editor `margin-top`.
+
+**Verified:** 1D.1, 1D.2, 1D.3 (automated ACs).
+
+**Still open:** 1D.4 owner re-smoke in a real window; SG-1 Daily Note; CI-1. Working tree still uncommitted (1C + 1D).
+
+---
+
+### Phase 1D session — smoke-test bugfix, 21 Oct (coding agent)
+
+All of 1D.1–1D.3 are done with tests first; `npm run check` is green (151 frontend + 44 Rust, no SKIPPED). No commits — the whole tree (1C + 1D) is left for the owner/verifier.
+
+**1D.1 Daily Note (layout + double tasks)**
+- New pure helpers in `src/lib/tasks.ts`: `proseOf(md)` (note body WITHOUT checkbox lines, fence-aware) and `withProse(md, prose)` (re-merges edited prose with the file's existing task lines, verbatim, after the prose — a prose edit can never delete a task). 10 new pure tests, including round-trip `proseOf(withProse(md, p)) === p` (trailing newlines preserved).
+- `DailyNote.tsx`: the editor now gets `proseOf(note.content)` (journal prose only — raw `- [ ]` markdown no longer duplicates under the TaskList); TaskList keeps rewriting the full markdown, so disk stays the single source of truth. A task line typed into the prose simply becomes a task on the next save (documented behaviour).
+- CSS: `.daily-note header` is `position: relative; z-index: 1` (the title always paints above the editor) and `.note-editor` is `display: block` with `margin-top: var(--space-2)` — a clear block, no absolute positioning. Pinned by new appStyles tests.
+- Two pre-existing DailyNote tests were updated to the new contract (editor shows prose, not raw markdown): the 1.5.4 load test and the 1.8.3 checkbox test. Assertions about SAVED markdown are unchanged.
+
+**1D.2 Calendar rail**
+- `--width-calendar-rail: 168px → 240px` in `tokens.css` (only token touched). Flagged deviation: the owner suggested ~200–220px, but real cells need 7 × (2-digit mono text + 2×8px button padding) + 16px rail padding ≈ 238px — at 220 the Sat/Sun column would still clip. The board's 168px sidebar is a scaled mock. New appStyles test pins the token ≥ 220px.
+
+**1D.3 Dev model + Test AI copy**
+- The `Dev model: <tag>` line was already live from 1.10.2 (test at `Settings.test.tsx`); nothing to build.
+- `TestAi` NoModel copy now reads: “No model installed yet. Install one from the list above, or set `VAYU_DEV_CHAT_MODEL` to use a dev model.” Test updated to pin both parts. Generate order (e4b → e2b → override) is unchanged Rust from 1C.4, still covered by its own tests.
+
+**Relaunch for the re-smoke (1D.4) — exact PowerShell line:**
+```powershell
+$env:VAYU_DEV_CHAT_MODEL="gemma4-e4b-fast:latest"; npm run tauri dev
+```
+
+**What the owner should see:** a clean “Today” header with the serif prose below it and nothing painted over the title; the task “Testing the task!” appears ONCE, as a TaskList checkbox row, not as raw `- [ ]` text in the editor; the full Mon–Sun calendar (and day numbers) fully inside the rail; Settings with the three PRD rows plus `Dev model: gemma4-e4b-fast:latest`; Test AI streams via the dev model, Stop works. Typing prose then saving keeps the checkbox lines in the file (check in Notepad). Also re-verify the 1C smoke steps below if not done yet.
+
+---
+
+### Owner smoke — UI issues, 21 Oct ~15:50
+
+Live `tauri dev` window: folder flow works; notes/tasks persist. Daily Note: title overlaps editor markdown; calendar clips; tasks appear twice (raw md + TaskList). Settings: Ollama Running is real; PRD models Missing is correct for this PC; Test AI blocked without `VAYU_DEV_CHAT_MODEL`. Phase 1D opened to fix.
+
+---
+
+### Verifier — Phase 1C automated pass, 21 Oct 15:45
+
+**Ran:** `npm run check` with cargo on PATH → lint+tsc green, **140/140** frontend, **44/44** Rust, **no SKIPPED**. Spot-checked contract: camelCase config, `dialog:default` capability, exact model tags, Busy/NoModel, NDJSON + Stop tests.
+
+**Also:** `npm run tauri dev` compiled and started `%LOCALAPPDATA%\vayu-target\debug\vayu.exe` (process running). Desktop automation unavailable here, so folder → Daily Note → Test AI click-through is still for the owner.
+
+**Verified:** 1C.0–1C.4, 1.3.2, 1.4.1–1.4.3, 1.5.2–1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1–1.11.2.
+
+**Still open:** CI-1 + SG-1 Daily Note/Settings (need the live window). Working tree still uncommitted (as instructed for the agent).
+
+---
+
+### Coding agent — Phase 1C complete (1C.0–1C.4 `review`), 21 Oct
+
+**No commits made.** Everything is in the working tree for the owner/verifier (as instructed). `src-tauri/Cargo.lock` is newly generated and untracked — commit it with the rest (normal for a Tauri app).
+
+**Toolchain (1C.0)**
+- Installed rustup 1.29.1 → Rust **1.99.1 stable-x86_64-pc-windows-msvc**; installed **VS BuildTools 2022 17.14.42** with the `VCTools` workload + Windows SDK (winget, UAC approved).
+- Persisted user env: `%USERPROFILE%\.cargo\bin` on `PATH`, `CARGO_TARGET_DIR=%LOCALAPPDATA%\vayu-target` (keeps `target/` out of OneDrive). A fresh terminal inherits both.
+- Fixed the scaffold so `cargo check` passes: `main.rs` called `vayu_scaffold_lib` (real lib is `vayu_lib`); `capabilities/default.json` still asked for `opener:default` although the opener plugin is gone — replaced with `dialog:default`; added `tauri-plugin-dialog = "2"` and registered it.
+- `cargo check`, `cargo build` (produces `%LOCALAPPDATA%\vayu-target\debug\vayu.exe`), `cargo clippy --all-targets -- -D warnings`, and `cargo fmt --check` all clean. `npm run check` no longer prints `SKIPPED`.
+
+**What was built (all `review`)**
+- **1C.1 (1.4.1–1.4.3)** `src-tauri/src/config.rs` + commands `get_config` / `set_notes_dir`. Config is `config.json` in Tauri's app config dir (`%APPDATA%\app.vayu.desktop\`), `{ notesDir, version }`. Missing → `notesDir: null`; corrupt JSON → renamed to `config.bad.json`, `notesDir: null`, no panic. `defaultNotesDir = <Documents>\Vayu`. Choosing a folder: missing folder is created, existing folder kept (`.md` files untouched), a file path → `NotADirectory`. Dialog plugin registered.
+- **1C.2 (1.5.2, 1.5.3, 1.7.1)** `src-tauri/src/notes.rs` + `read_note` / `ensure_note` / `write_note` / `list_notes`. Strict `YYYY-MM-DD` + real calendar day (leap years) before any filesystem access, so `../secret` and `2026-10-21.md` → `InvalidDate` and nothing is touched. `read_note` never creates. `ensure_note` creates an empty file only when missing. `write_note` is temp-file + rename with a unique temp name per write, removes the temp on failure, and preserves content byte-for-byte (UTF-8 incl. Devanagari/emoji, CRLF). `list_notes` returns sorted dates of real `YYYY-MM-DD.md` files only.
+- **1C.3 (1.9.1, 1.10.1)** `src-tauri/src/ollama.rs` + `ollama_status` / `list_models`. `GET /api/version` on `127.0.0.1:11434` with a hard 1.5s client timeout; refused/non-200/timeout → `NotFound` (with a reason), never throws. `GET /api/tags`; exact tags only (`gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma` + `embeddinggemma:latest`; quantised variants do not count). `devChatModel` comes from `VAYU_DEV_CHAT_MODEL` in debug builds only. Both HTTP clients use `.no_proxy()` and the `VAYU_OLLAMA_URL` test override only accepts `http://127.0.0.1:…` / `http://localhost:…`, so the app can never be routed to a remote host.
+- **1C.4 (1.11.1, 1.11.2)** `generate` / `stop_generation` in `src-tauri/src/lib.rs` + `run_generate` in `ollama.rs`. Incremental NDJSON parser (split lines re-composed, multiple lines per chunk, blank/malformed ignored), `token`/`done`/`error` events over a Tauri `Channel`, model order **e4b → e2b → debug override → `NoModel`**, `Busy` on a second run, first token must arrive within 60s (`VAYU_GENERATE_TIMEOUT_MS` overrides for tests), stop polled every 100ms so Stop lands well under 1s, mid-stream drop → `error` event + `Err(Io, "connection lost")`, timeout → `Err(Io, "timed out")`.
+
+**Tests / checks**
+- **44 Rust tests** (config 8, notes 10, ollama 23, state/harness 3) and **140 frontend tests / 24 files**. `npm run check` green; clippy `-D warnings` clean; `cargo build` clean. Rust tests use `tempfile` and real mock servers: `wiremock` for `/api/version` + `/api/tags`, and a raw TCP server for timed NDJSON chunks (token timing, Stop, timeout, dropped connection). No models were pulled or deleted; no outbound calls except `127.0.0.1:11434` in tests.
+- **Flake fix (test-only, `DailyNote.test.tsx`):** full-suite runs intermittently failed autosave call-count assertions (expected 1, received 3 or 5). Root cause: the fake-timer helpers never registered a `write_note` handler, so every save rejected and armed a retry timer that could leak past `vi.useRealTimers()` into later tests. Fix: `tauri.given("write_note", null)` in the helpers plus `vi.clearAllTimers()` before `vi.useRealTimers()` in teardown. Assertions are unchanged (not weakened); after the fix **5/5 full runs and 3/3 DailyNote runs** passed. No app behaviour changed.
+
+**Smoke test for the verifier (`npm run tauri dev`)**
+1. Fresh terminal (PATH/CARGO_TARGET_DIR already persisted). Run `npm run check` → expect 140 + 44 passing, **no `SKIPPED`**.
+2. `npm run tauri dev` → first-run screen. Default path shows `<Documents>\Vayu`; use **Choose folder…** (dialog now real) to pick/create a folder, then **Continue**.
+3. Check `%APPDATA%\app.vayu.desktop\config.json` contains `notesDir` + `version`.
+4. Daily Note opens on today. Type a few words; after ~700ms the file `<notesDir>\YYYY-MM-DD.md` appears with the exact text. Reopen/restart → text is still there. Viewing an empty day must **not** create a file (only typing does).
+5. Settings (gear) → model status. With Ollama running: `Running — Ollama v…` and the three tags as Present/Missing; stop Ollama and press Refresh → calm `Not found` + reason. Test AI: send a prompt → tokens stream in; **Stop** returns to idle within ~1s; no model installed → calm `No model installed yet`.
+6. Corrupt-config check: quit, overwrite `config.json` with `{not json`, relaunch → first-run again and `config.bad.json` exists.
+7. Optional: `echo $env:VAYU_DEV_CHAT_MODEL` set to a dev tag (debug build) shows `Dev model: …` in Settings and is used only when neither PRD chat model is installed.
+
+**Blockers:** none. **Next:** verifier runs the smoke test + SG-1 screenshots; Phase 2 has not been started.
+
+---
+
+### Verifier — SG-1 partial, 21 Oct afternoon
+
+Opened `http://localhost:1420/` in the in-app browser. First-run matches the spec: Ink page `rgb(14,17,22)`, centered Surface card, 12px radius, Inter 22/700 heading, muted body, JetBrains Mono path field, ghost "Choose folder…", Breeze pill Continue (`rgb(94,234,212)` on `rgb(6,35,31)`). Fonts are actually loading.
+
+Daily Note, calendar, tasks, and Settings never render: without Rust, `get_config` fails and the app stays on first-run. Newsreader and the checkbox styling were not seen. SG-1 stays open.
+
+---
 
 ### Phase 1B visual pass — 2026-10-21 afternoon
 

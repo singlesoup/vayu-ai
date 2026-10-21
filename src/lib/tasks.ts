@@ -85,3 +85,45 @@ export function deleteTask(md: string, line: number): string {
   lines.splice(line, 1);
   return lines.join("\n");
 }
+
+/* ── Task 1D.1: journal prose vs task lines ──────────────────────────────────
+   The prose editor shows the note WITHOUT checkbox lines (they are edited only
+   via the TaskList UI), while the markdown on disk stays the single source of
+   truth. `proseOf` strips task lines for display; `withProse` re-merges edited
+   prose with the file's EXISTING task lines — a prose edit can never delete a
+   task. Fence-aware: task-like lines inside ```/~~~ code blocks are prose. */
+
+/** Per-line task flags, honouring fenced code blocks (same rule as parseTasks). */
+function taskLineFlags(md: string): boolean[] {
+  let inFence = false;
+  return splitLines(md).map((line) => {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      return false;
+    }
+    return !inFence && TASK_LINE.test(line);
+  });
+}
+
+/** The note body without any task line — exactly what the prose editor shows. */
+export function proseOf(md: string): string {
+  const flags = taskLineFlags(md);
+  return splitLines(md)
+    .filter((_, i) => !flags[i])
+    .join("\n");
+}
+
+/**
+ * Re-merge edited prose with the note's existing task lines, keeping every
+ * task line verbatim and in order, after the prose. Task-free notes pass the
+ * prose through unchanged. A task line typed into the prose simply becomes a
+ * task on the next parse — one source of truth, nothing is lost.
+ */
+export function withProse(md: string, prose: string): string {
+  const lines = splitLines(md);
+  const flags = taskLineFlags(md);
+  const tasks = lines.filter((_, i) => flags[i]);
+  if (tasks.length === 0) return prose;
+  if (prose === "") return tasks.join("\n");
+  return `${prose}\n${tasks.join("\n")}`;
+}

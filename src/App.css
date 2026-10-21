@@ -232,6 +232,13 @@
   min-width: 0;
 }
 
+/* Task 1D.1: the date/title header always paints above the editor, so the
+   journal text can never show through it. */
+.daily-note header {
+  position: relative;
+  z-index: 1;
+}
+
 .daily-note header,
 .task-list {
   max-width: var(--width-note-column);
@@ -261,8 +268,12 @@
   color: var(--color-text);
 }
 
-/* Journal writing: Newsreader, single column. */
+/* Journal writing: Newsreader, single column. Task 1D.1: a clear block below
+   the header — display: block plus a token margin-top so nothing from the
+   editor can paint through the date/title. */
 .note-editor {
+  display: block;
+  margin-top: var(--space-2);
   font-family: var(--font-body);
   font-size: var(--text-note);
   line-height: 1.5;

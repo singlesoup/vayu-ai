@@ -118,8 +118,10 @@
 
   /* ---- Shape and motion ---- */
   --radius: 12px; /* cards and windows; no hard square corners */
-  --width-calendar-rail: 168px; /* calendar sidebar width — from the design
-     board's dark Daily Note (168px sidebar); task 1B.3 narrowed it from 240px */
+  --width-calendar-rail: 240px; /* calendar sidebar width. Task 1D.2: the
+     board's 168px sidebar is a scaled mock; real 13px mono cells need
+     7 × (2-digit text + 2×8px button padding) + rail padding ≈ 238px, so
+     anything narrower clips the right-hand weekday column */
   --space-1: 8px; /* 8pt spacing grid */
   --space-half: 4px; /* half-step of the 8pt grid */
   --space-2: 16px;
