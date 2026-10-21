@@ -114,7 +114,7 @@ Small tasks and the screenshot checklist are in [`now.md`](now.md) under **Phase
 
 | ID | Task | P | Status |
 |---|---|---|---|
-| 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | doing |
+| 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | review |
 | 1B.2 | Fix fonts: `@font-face` outside `:root`, and they render | P0 | todo |
 | 1B.3 | Restyle first-run, Daily Note, calendar, tasks, Settings to the design board | P0 | todo |
 | 1B.4 | Fix the known render bugs (calendar week keys, Test AI `console.log`) | P0 | todo |
@@ -235,6 +235,7 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | 1B.1 | `src/main.tsx` now imports `./App.css` (after tokens.css). New test `src/styles/appStyles.test.ts` pins the import itself — the class of failure the verifier found (styles on disk, dead in the running page) | agent |
 | 2026-10-21 | 1B | Added Phase 1B (visual pass + screenshot gate) to `plan.md` and `now.md` | verifier |
 | 2026-10-21 | verify | Overnight frontend verified. `npm run check` green: 124/124 tests, lint+tsc clean, Rust SKIPPED. **Verified:** 1.1, 1.2.2–1.2.4, 1.3.1, 1.3.3, 1.3.4, 1.5.1, 1.8.1, 1.8.2, 1.8.4, api. **Failed:** 1.3.2 (`@font-face` nested inside `:root` in `tokens.css` — fonts won't load); 1.7.2 (duplicate React `key` on calendar week rows). **Still review (UI OK, Rust/manual pending):** 1.2.1, 1.4.4, 1.5.4, 1.6.*, 1.7.3, 1.8.3, 1.9.2, 1.10.2, 1.11.3. **Blocked Rust:** 1.4.1–1.4.3, 1.5.2–1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1–1.11.2. Colour guard AC2 re-tested live. TDD order in git history is clean (test→feat). CI-1 not ready | verifier |
 | 2026-10-21 | 1.11.3 | Test AI panel (`src/components/TestAi.tsx`, rendered under Settings → Model in `src/components/Settings.tsx`). Phases: idle → `Thinking…` until the first `token` StreamEvent (arrives via the mocked `Channel.onmessage` from Rust) → streaming → idle when the command's outcome resolves (Done/Stopped; Error → calm message). While running the "Test AI" button is disabled and a "Stop" button appears (`stop_generation`); Rust settling the run returns Test AI to idle. Error text contract: `Vayu couldn't reach the local AI. Your notes are safe.` for Io/Busy/mid-stream, `No model installed yet — see the list above.` for NoModel. Test gotchas (test fixes in own commit): (1) TWO `mockInvoke()` calls in one test ARRANGE reset — the 2nd call wipes the 1st handler; use one handle for all `on()`s. (2) RTL `getByText("Hello ")` failed against DOM that literally contained `Hello ` — assert `getByTestId("test-ai-reply").textContent` instead. AC2/AC3 (manual streaming + mid-quit pending real Ollama) | agent |
