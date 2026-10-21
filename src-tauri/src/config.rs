@@ -15,6 +15,15 @@ pub const CONFIG_VERSION: u32 = 1;
 pub struct StoredConfig {
     pub notes_dir: String,
     pub version: u32,
+    /// Hardware tier from the first-run check: `Green`, `Yellow`, `Red`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    /// Recommended model tag for the tier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_tag: Option<String>,
+    /// Whether AI chat is enabled for this tier.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ai_enabled: Option<bool>,
 }
 
 /// `<documents>\Vayu` — the default shown on the first-run screen (1.4.2).
@@ -41,18 +50,42 @@ pub fn load_config(config_dir: &Path) -> Option<StoredConfig> {
     }
 }
 
-/// Save `{ notesDir, version }` atomically (temp file + rename).
-pub fn save_config(config_dir: &Path, notes_dir: &Path) -> Result<(), VayuError> {
+/// Save the whole config atomically (temp file + rename). Fields that are
+/// `None` are not written, so older config files stay minimal.
+pub fn save_config(config_dir: &Path, cfg: &StoredConfig) -> Result<(), VayuError> {
     std::fs::create_dir_all(config_dir)?;
-    let cfg = StoredConfig {
-        notes_dir: notes_dir.to_string_lossy().into_owned(),
-        version: CONFIG_VERSION,
-    };
-    let json = serde_json::to_string_pretty(&cfg).map_err(|e| VayuError::other(e.to_string()))?;
+    let json = serde_json::to_string_pretty(cfg).map_err(|e| VayuError::other(e.to_string()))?;
     let tmp = config_dir.join("config.json.tmp");
     std::fs::write(&tmp, json)?;
     std::fs::rename(&tmp, config_path(config_dir))?;
     Ok(())
+}
+
+/// Partially update `tier` / `model_tag` / `ai_enabled` in the stored config,
+/// keeping everything else (notably `notes_dir`) intact.
+pub fn update_config(
+    config_dir: &Path,
+    tier: Option<String>,
+    model_tag: Option<String>,
+    ai_enabled: Option<bool>,
+) -> Result<(), VayuError> {
+    let mut cfg = load_config(config_dir).unwrap_or_else(|| StoredConfig {
+        notes_dir: String::new(),
+        version: CONFIG_VERSION,
+        tier: None,
+        model_tag: None,
+        ai_enabled: None,
+    });
+    if let Some(t) = tier {
+        cfg.tier = Some(t);
+    }
+    if let Some(m) = model_tag {
+        cfg.model_tag = Some(m);
+    }
+    if let Some(a) = ai_enabled {
+        cfg.ai_enabled = Some(a);
+    }
+    save_config(config_dir, &cfg)
 }
 
 /// Validate a chosen notes folder (1.4.3): a missing folder is created, an
@@ -141,5 +174,62 @@ mod tests {
         fs::write(&note, "existing text").unwrap();
         validate_notes_dir(dir.path()).unwrap();
         assert_eq!(fs::read_to_string(&note).unwrap(), "existing text");
+    }
+
+    #[test]
+    fn config_round_trips_with_tier_fields() {
+        let dir = tempdir().unwrap();
+        let notes = tempdir().unwrap();
+        save_config(
+            dir.path(),
+            &StoredConfig {
+                notes_dir: notes.path().to_string_lossy().into_owned(),
+                version: CONFIG_VERSION,
+                tier: Some("Yellow".to_string()),
+                model_tag: Some("gemma3n:e2b".to_string()),
+                ai_enabled: Some(true),
+            },
+        )
+        .unwrap();
+        let loaded = load_config(dir.path()).expect("config loads");
+        assert_eq!(loaded.tier.as_deref(), Some("Yellow"));
+        assert_eq!(loaded.model_tag.as_deref(), Some("gemma3n:e2b"));
+        assert_eq!(loaded.ai_enabled, Some(true));
+    }
+
+    #[test]
+    fn old_config_without_tier_fields_still_loads() {
+        let dir = tempdir().unwrap();
+        fs::write(
+            config_path(dir.path()),
+            r#"{ "notesDir": "C:\Users\samon\Documents\Vayu", "version": 1 }"#,
+        )
+        .unwrap();
+        let loaded = load_config(dir.path()).expect("config loads");
+        assert_eq!(loaded.tier, None);
+        assert_eq!(loaded.model_tag, None);
+        assert_eq!(loaded.ai_enabled, None);
+    }
+
+    #[test]
+    fn update_config_merges_without_wiping_notes_dir() {
+        let dir = tempdir().unwrap();
+        let notes = tempdir().unwrap();
+        save_config(
+            dir.path(),
+            &StoredConfig {
+                notes_dir: notes.path().to_string_lossy().into_owned(),
+                version: CONFIG_VERSION,
+                tier: None,
+                model_tag: None,
+                ai_enabled: None,
+            },
+        )
+        .unwrap();
+        update_config(dir.path(), Some("Green".into()), None, None).unwrap();
+        let loaded = load_config(dir.path()).expect("config loads");
+        assert_eq!(loaded.tier.as_deref(), Some("Green"));
+        assert_eq!(loaded.notes_dir, notes.path().to_string_lossy());
+        assert_eq!(loaded.model_tag, None);
     }
 }
