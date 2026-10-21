@@ -24,6 +24,16 @@ pub struct StoredConfig {
     /// Whether AI chat is enabled for this tier.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ai_enabled: Option<bool>,
+    /// Per-date Morning Intention state: `done` or `skipped`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intention: Option<Vec<IntentionRecord>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct IntentionRecord {
+    pub date: String,
+    pub status: String,
 }
 
 /// `<documents>\Vayu` — the default shown on the first-run screen (1.4.2).
@@ -57,6 +67,9 @@ pub fn save_config(config_dir: &Path, cfg: &StoredConfig) -> Result<(), VayuErro
     let json = serde_json::to_string_pretty(cfg).map_err(|e| VayuError::other(e.to_string()))?;
     let tmp = config_dir.join("config.json.tmp");
     std::fs::write(&tmp, json)?;
+    // On Windows, `rename` cannot replace an existing file, so clear the
+    // target first (a config file is not worth a fancy atomic replace).
+    let _ = std::fs::remove_file(config_path(config_dir));
     std::fs::rename(&tmp, config_path(config_dir))?;
     Ok(())
 }
@@ -75,6 +88,7 @@ pub fn update_config(
         tier: None,
         model_tag: None,
         ai_enabled: None,
+        intention: None,
     });
     if let Some(t) = tier {
         cfg.tier = Some(t);
@@ -84,6 +98,34 @@ pub fn update_config(
     }
     if let Some(a) = ai_enabled {
         cfg.ai_enabled = Some(a);
+    }
+    save_config(config_dir, &cfg)
+}
+
+/// Record that the user did (or skipped) the Morning Intention for a date,
+/// so the app does not re-nag the same day (task 2.8).
+pub fn mark_intention(
+    config_dir: &Path,
+    date: String,
+    status: String,
+) -> Result<(), VayuError> {
+    let mut cfg = load_config(config_dir).unwrap_or_else(|| StoredConfig {
+        notes_dir: String::new(),
+        version: CONFIG_VERSION,
+        tier: None,
+        model_tag: None,
+        ai_enabled: None,
+        intention: None,
+    });
+    match cfg.intention.as_mut() {
+        Some(entries) => {
+            if let Some(entry) = entries.iter_mut().find(|e| e.date == date) {
+                entry.status = status;
+            } else {
+                entries.push(IntentionRecord { date, status });
+            }
+        }
+        None => cfg.intention = Some(vec![IntentionRecord { date, status }]),
     }
     save_config(config_dir, &cfg)
 }
@@ -137,6 +179,7 @@ mod tests {
                 tier: None,
                 model_tag: None,
                 ai_enabled: None,
+                intention: None,
             },
         )
         .unwrap();
@@ -198,6 +241,7 @@ mod tests {
                 tier: Some("Yellow".to_string()),
                 model_tag: Some("gemma3n:e2b".to_string()),
                 ai_enabled: Some(true),
+                intention: None,
             },
         )
         .unwrap();
@@ -233,6 +277,7 @@ mod tests {
                 tier: None,
                 model_tag: None,
                 ai_enabled: None,
+                intention: None,
             },
         )
         .unwrap();
@@ -241,5 +286,37 @@ mod tests {
         assert_eq!(loaded.tier.as_deref(), Some("Green"));
         assert_eq!(loaded.notes_dir, notes.path().to_string_lossy());
         assert_eq!(loaded.model_tag, None);
+    }
+
+    #[test]
+    fn mark_intention_upserts_per_date() {
+        let dir = tempdir().unwrap();
+        let notes = tempdir().unwrap();
+        save_config(
+            dir.path(),
+            &StoredConfig {
+                notes_dir: notes.path().to_string_lossy().into_owned(),
+                version: CONFIG_VERSION,
+                tier: None,
+                model_tag: None,
+                ai_enabled: None,
+                intention: None,
+            },
+        )
+        .unwrap();
+        mark_intention(dir.path(), "2026-10-21".into(), "done".into()).unwrap();
+        mark_intention(dir.path(), "2026-10-22".into(), "skipped".into()).unwrap();
+        // same date replaces, does not duplicate
+        mark_intention(dir.path(), "2026-10-21".into(), "skipped".into()).unwrap();
+
+        let loaded = load_config(dir.path()).expect("config loads");
+        let entries = loaded.intention.expect("intention stored");
+        assert_eq!(
+            entries,
+            vec![
+                IntentionRecord { date: "2026-10-21".into(), status: "skipped".into() },
+                IntentionRecord { date: "2026-10-22".into(), status: "skipped".into() },
+            ]
+        );
     }
 }

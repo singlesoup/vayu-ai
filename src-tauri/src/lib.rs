@@ -132,6 +132,7 @@ fn set_notes_dir(app: tauri::AppHandle, path: String) -> Result<(), VayuError> {
         tier: None,
         model_tag: None,
         ai_enabled: None,
+        intention: None,
     });
     cfg.notes_dir = path;
     config::save_config(&config_dir, &cfg)
@@ -171,6 +172,17 @@ fn ensure_note(app: tauri::AppHandle, date: String) -> Result<(), VayuError> {
 #[tauri::command]
 fn write_note(app: tauri::AppHandle, date: String, content: String) -> Result<(), VayuError> {
     notes::write_note(&notes_dir(&app)?, &date, &content)
+}
+
+/// Record that the user did (or skipped) the Morning Intention for a date,
+/// so the app does not re-nag the same day (task 2.8).
+#[tauri::command]
+fn mark_intention(
+    app: tauri::AppHandle,
+    date: String,
+    status: String,
+) -> Result<(), VayuError> {
+    config::mark_intention(&config_dir(&app)?, date, status)
 }
 
 /// Append to a note (intention block, task block); atomic, creates if missing.
@@ -297,6 +309,7 @@ pub fn run() {
             pull_model,
             cancel_pull,
             verify_install,
+            mark_intention,
             append_note,
             read_note,
             ensure_note,
