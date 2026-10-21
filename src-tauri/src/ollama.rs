@@ -920,4 +920,135 @@ mod tests {
         assert!(err.message.contains("not found"));
         assert_eq!(messages, vec!["model 'x' not found".to_string()]);
     }
+
+    // ── model pull (2.4, 2.5) ─────────────────────────────────────────
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct PullProgress {
+        status: String,
+        total: Option<u64>,
+        completed: u64,
+        percent: Option<u32>,
+    }
+
+    #[tokio::test]
+    async fn pull_streams_progress_until_success() {
+        let base = spawn_stream_server(
+            vec![
+                (0, r#"{"status":"pulling","total":1000,"completed":0}"#.to_string() + "\n"),
+                (50, r#"{"status":"pulling","total":1000,"completed":400}"#.to_string() + "\n"),
+                (0, r#"{"status":"pulling","total":1000,"completed":1000}"#.to_string() + "\n"),
+                (0, r#"{"status":"success"}"#.to_string() + "\n"),
+            ],
+            0,
+        )
+        .await;
+
+        let mut events = Vec::new();
+        let result = run_pull(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_secs(5),
+            STOP_POLL,
+            |event| events.push(event),
+        )
+        .await;
+
+        assert!(result.is_ok(), "pull should complete: {result:?}");
+        assert_eq!(
+            events,
+            vec![
+                PullEvent::Progress(PullProgress {
+                    status: "pulling".into(),
+                    total: Some(1000),
+                    completed: 0,
+                    percent: Some(0)
+                }),
+                PullEvent::Progress(PullProgress {
+                    status: "pulling".into(),
+                    total: Some(1000),
+                    completed: 400,
+                    percent: Some(40)
+                }),
+                PullEvent::Progress(PullProgress {
+                    status: "pulling".into(),
+                    total: Some(1000),
+                    completed: 1000,
+                    percent: Some(100)
+                }),
+                PullEvent::Progress(PullProgress {
+                    status: "success".into(),
+                    total: Some(1000),
+                    completed: 1000,
+                    percent: Some(100)
+                }),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn pull_can_be_cancelled() {
+        let base = spawn_stream_server(
+            vec![(20, r#"{"status":"pulling","total":1000,"completed":100}"#.to_string() + "\n")],
+            30_000,
+        )
+        .await;
+
+        let handle = tokio::spawn(async move {
+            run_pull(&base, "gemma3n:e2b", Duration::from_secs(5), STOP_POLL, |_| {}).await
+        });
+
+        // Let the first progress line arrive, then cancel.
+        for _ in 0..500 {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        handle.abort();
+
+        let waited = tokio::time::timeout(Duration::from_secs(2), handle)
+            .await
+            .expect("cancelled pull task did not end");
+        assert!(waited.is_err(), "aborted pull should surface as an error");
+    }
+
+    #[tokio::test]
+    async fn pull_times_out_when_ollama_never_replies() {
+        let base = spawn_stream_server(Vec::new(), 30_000).await;
+        let started = Instant::now();
+        let err = run_pull(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_millis(300),
+            STOP_POLL,
+            |_| {},
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.kind, "Io");
+        assert!(err.message.contains("timed out"), "{}", err.message);
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[tokio::test]
+    async fn pull_reports_ollama_error_lines() {
+        let base =
+            spawn_stream_server(vec![(0, "{\"error\":\"model not found\"}\n".into())], 0).await;
+        let mut saw_error_status = false;
+        let err = run_pull(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_secs(5),
+            STOP_POLL,
+            |event| {
+                if let PullEvent::Progress(p) = &event {
+                    if p.status == "error" {
+                        saw_error_status = true;
+                    }
+                }
+            },
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.kind, "Io");
+        assert!(saw_error_status);
+    }
 }
