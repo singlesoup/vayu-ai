@@ -1,8 +1,9 @@
-# NOW — Phase 1: Foundation + Walking Skeleton
+# NOW — Phase 1B: Visual pass (do this next)
 
 **Day:** Wed 21 Oct 2026
-**Gate:** Check-in 1 (tonight)
-**Goal:** Vayu opens to today's note, saves it as a real `.md` file, and can stream a reply from Ollama. The UI only needs the design tokens, not polish.
+**Current work:** Phase 1B below. Phase 1 behaviour tasks stay as they are; do not reopen them except for the three bugs named in 1B.4.
+**Gate:** Screenshot gate (SG-1), then Check-in 1 once Rust exists.
+**Goal:** The screens that already exist look like the design board's dark Daily Note. A green test suite is not enough.
 
 Full plan and status: [`plan.md`](plan.md)
 
@@ -444,6 +445,64 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 ---
 
+## Phase 1B — Visual pass
+
+**Reference:** the dark Daily Note on the design board (`Vayu — Design & Architecture Visuals.html`, section "The Daily Note — the home screen", DARK — DEFAULT). Reflect is the feel for spacing and calm. Do not add features. Do not use Warm (`#F5C97A`) anywhere.
+
+**Do not** add a fake backend or a `?preview=` data mode. Style the real components. The verifier will open `npm run dev` and compare screenshots.
+
+### 1B.1 Styles must actually load
+- **Tests first:** a test that fails unless `src/main.tsx` (or `App.tsx`) imports `./App.css`.
+- **Acceptance**
+  - AC1: That import test passes.
+  - AC2 **(manual, screenshot):** in the running app, the notes-folder input is not a default white browser box. It uses Surface background, Text colour, and the card border token.
+
+### 1B.2 Fonts must render
+- **Fix:** move every `@font-face` block in `tokens.css` to sit **outside** `:root`. Nested `@font-face` is invalid and browsers ignore it.
+- **Tests first:** parse `tokens.css` and assert no `@font-face` appears between `:root {` and its matching close. The existing "file contains url()" test is not enough.
+- **Acceptance**
+  - AC1: The new test passes, and the old font-file tests still pass.
+  - AC2 **(manual, screenshot):** the heading renders in Inter and the note body in Newsreader, with Wi-Fi off.
+
+### 1B.3 Match the design board (dark)
+Restyle only. Keep the existing behaviour.
+
+**First-run**
+- Centered Surface card, 12px radius, Ink page behind it.
+- Heading in Inter. Body copy in the muted token. Path field in JetBrains Mono.
+- Primary action ("Continue") is a Breeze pill (`#5EEAD4` background, `#06231F` text). "Choose folder…" is a ghost button (border token, no fill).
+- No default grey browser buttons.
+
+**Daily Note (the home screen)**
+- Two columns: Surface sidebar on the left, Ink main column on the right. At a wide window they sit side by side. Below ~700px the sidebar stacks above the note (that is fine).
+- Sidebar heading like `OCTOBER 2026`, small and muted. Monday-first calendar in JetBrains Mono. Today has a Deep Teal background and `#06231F` text. Days with a note are bold in the Text colour. Empty days are Muted.
+- Date line above the title: JetBrains Mono, 12px, uppercase, Muted (`WED 21 OCT 2026`). Title "Today" in Inter.
+- Note body in Newsreader, about 16px, line-height 1.5, in a single column (max width stays the token).
+- Task row: 16px checkbox, 5px radius. Unchecked border is the checkbox token. Checked fill is Deep Teal with a check mark. Done text is struck through at about 55% opacity. No timer control.
+- Settings gear is quiet (Muted), top of the window, not a default browser button.
+- Settings panel is a Surface card with 12px radius. Text uses the tokens. Test AI's primary button is a Breeze pill.
+
+**Acceptance**
+- AC1: No new hard-coded colours (the colour guard stays green). No `var(--color-warm)` outside `tokens.css`.
+- AC2 **(manual, screenshot):** verifier opens the app next to the design board and can point at sidebar, today cell, date line, title, body font, and a checked task and say each one matches. Native grey buttons anywhere on these screens = fail.
+
+### 1B.4 Bugs found in verification (fix in the same pass)
+- Calendar week rows in `Calendar.tsx` share one React `key`. Use a unique key per week.
+- Remove the `console.log` in the `TestAi.tsx` catch.
+- **Acceptance:** both are gone, and `npm run check` is green.
+
+### SG-1 — Screenshot gate (verifier)
+
+The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
+
+1. Runs `npm run dev` and opens the first-run screen.
+2. Opens the Daily Note (after a notes folder is set, or on the dev build once Rust can skip first-run).
+3. Opens Settings.
+4. Puts each screenshot beside the design board's dark Daily Note.
+5. Marks SG-1 `verified` only if AC2 of 1B.3 passes. Otherwise marks the failed task `failed` with the screenshot note.
+
+---
+
 ## Status board
 
 | ID | Task | Depends on | Status | Verifier notes |
@@ -482,8 +541,13 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 | 1.11.1 | Stream parser | 1.2.2 | todo | Blocked: Rust not installed |
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | Blocked: Rust not installed |
 | 1.11.3 | Test AI UI | 1.11.2 | review | UI tests OK. Polish before verify: remove debug `console.log` in `TestAi.tsx` catch. Streaming/Stop/Ollama-kill ACs need Rust |
-| CI-1 | Check-in 1 | all above | todo | Blocked until Rust + failed fixes + manual checklist |
+| CI-1 | Check-in 1 | all above | todo | Blocked until Rust + Phase 1B screenshot gate + manual checklist |
 | api | Typed command contract (`src/lib/api.ts`) | — | verified | Contract + tests OK; is the morning Rust spec |
+| 1B.1 | Import App.css | — | doing | Styles exist but `main.tsx` never imports them |
+| 1B.2 | Fonts render | 1.3.2 | todo | `@font-face` is nested inside `:root` |
+| 1B.3 | Restyle to design board | 1B.1, 1B.2 | todo | First-run, Daily Note, calendar, tasks, Settings |
+| 1B.4 | Calendar keys + Test AI log | — | todo | |
+| SG-1 | Screenshot gate | 1B.1–1B.4 | todo | Verifier only |
 
 ---
 

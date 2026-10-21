@@ -64,7 +64,8 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 | Phase | Day | Status | Gate |
 |---|---|---|---|
 | 0. Repo setup | Wed 21 | verified | — |
-| 1. Foundation + walking skeleton | Wed 21 | in progress (frontend mostly done; Rust + 2 fails left) | Check-in 1 |
+| 1. Foundation + walking skeleton | Wed 21 | in progress (frontend mostly done; Rust + failed fixes left) | Check-in 1 |
+| 1B. Visual pass (design board) | Wed 21 | in progress (1B.1 doing) | Screenshot gate |
 | 2. First run, tiers, morning features | Thu 22 | todo | Check-in 2 |
 | 3. Journal, reflection, Ask, evals | Fri 23 | todo | Check-in 3 + freeze |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
@@ -100,6 +101,24 @@ Parent tasks are below. The small test-first tasks (1.2.1, 1.2.2, …) with acce
 | 1.10 | Detect installed models (`gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma`) | P0 | review | UI 1.10.2 review; Rust 1.10.1 blocked |
 | 1.11 | "Test AI" button: streamed reply, Stop within ~1s, calm error if Ollama dies | P0 | review | UI 1.11.3 review (drop console.log); Rust 1.11.1/1.11.2 blocked |
 | CI-1 | **Check-in 1:** note + 3 tasks survive restart, Test AI streams, no crash on Ollama on/off → tag `checkin-1` | Gate | todo | |
+
+---
+
+## Phase 1B — Visual pass (Wed 21, before Check-in 1)
+
+**Goal:** The screens that already exist look like the design board's dark Daily Note, not like unstyled browser controls. No new features.
+
+**Why it exists:** Phase 1 tests checked file contents. `App.css` was never imported, and `@font-face` was nested inside `:root`, so the running app ignored the design system. A task is not done here until the verifier screenshots the running UI next to the design board.
+
+Small tasks and the screenshot checklist are in [`now.md`](now.md) under **Phase 1B**.
+
+| ID | Task | P | Status |
+|---|---|---|---|
+| 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | doing |
+| 1B.2 | Fix fonts: `@font-face` outside `:root`, and they render | P0 | todo |
+| 1B.3 | Restyle first-run, Daily Note, calendar, tasks, Settings to the design board | P0 | todo |
+| 1B.4 | Fix the known render bugs (calendar week keys, Test AI `console.log`) | P0 | todo |
+| SG-1 | **Screenshot gate:** verifier compares the running app to the design board | Gate | todo |
 
 ---
 
@@ -190,6 +209,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Design system adopted from PRD §8 (owner: "open to these for now, may revisit later"): Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. Later changes go through `tokens.css` only, with a log row | Keeps a later revisit cheap without reopening components |
 | 2026-10-21 | Dev PC has only `gemma4-e4b-fast:latest` (no PRD models). Owner: use it for Test AI via a dev-only `VAYU_DEV_CHAT_MODEL` override; model detection still checks the PRD models | Unblocks Check-in 1 without a 7.5GB download |
 | 2026-10-21 | Dev PC is missing Rust and the MSVC C++ build tools. Owner: overnight run is **frontend-only** (no installs, nobody to approve prompts). Frontend tasks are built against a typed API contract with mocked calls; Rust tasks wait for the owner to install Rust in the morning | Keep making progress overnight without hanging on permission prompts |
+| 2026-10-21 | Phase 1B visual pass added before Check-in 1. Home screens must match the design board; a screenshot comparison is the gate. File-content tests are not enough | The running app shipped unstyled because `App.css` was never imported |
 | 2026-10-21 | Editor = plain controlled `<textarea>` (not CodeMirror/TipTap) | Smallest path that keeps disk bytes = typed Markdown |
 | 2026-10-21 | `get_config` returns `{ notesDir, version, defaultNotesDir }` in one call | First-run screen can pre-fill without a second command |
 
@@ -215,6 +235,7 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | 1B | Added Phase 1B (visual pass + screenshot gate) to `plan.md` and `now.md` | verifier |
 | 2026-10-21 | verify | Overnight frontend verified. `npm run check` green: 124/124 tests, lint+tsc clean, Rust SKIPPED. **Verified:** 1.1, 1.2.2–1.2.4, 1.3.1, 1.3.3, 1.3.4, 1.5.1, 1.8.1, 1.8.2, 1.8.4, api. **Failed:** 1.3.2 (`@font-face` nested inside `:root` in `tokens.css` — fonts won't load); 1.7.2 (duplicate React `key` on calendar week rows). **Still review (UI OK, Rust/manual pending):** 1.2.1, 1.4.4, 1.5.4, 1.6.*, 1.7.3, 1.8.3, 1.9.2, 1.10.2, 1.11.3. **Blocked Rust:** 1.4.1–1.4.3, 1.5.2–1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1–1.11.2. Colour guard AC2 re-tested live. TDD order in git history is clean (test→feat). CI-1 not ready | verifier |
 | 2026-10-21 | 1.11.3 | Test AI panel (`src/components/TestAi.tsx`, rendered under Settings → Model in `src/components/Settings.tsx`). Phases: idle → `Thinking…` until the first `token` StreamEvent (arrives via the mocked `Channel.onmessage` from Rust) → streaming → idle when the command's outcome resolves (Done/Stopped; Error → calm message). While running the "Test AI" button is disabled and a "Stop" button appears (`stop_generation`); Rust settling the run returns Test AI to idle. Error text contract: `Vayu couldn't reach the local AI. Your notes are safe.` for Io/Busy/mid-stream, `No model installed yet — see the list above.` for NoModel. Test gotchas (test fixes in own commit): (1) TWO `mockInvoke()` calls in one test ARRANGE reset — the 2nd call wipes the 1st handler; use one handle for all `on()`s. (2) RTL `getByText("Hello ")` failed against DOM that literally contained `Hello ` — assert `getByTestId("test-ai-reply").textContent` instead. AC2/AC3 (manual streaming + mid-quit pending real Ollama) | agent |
 | 2026-10-21 | 1.10.2 | Settings → Model list. `ModelStatus` in `src/components/Settings.tsx` now fetches `ollama_status` + `list_models` together (Promise.allSettled with calm NotFound fallbacks) and renders the three PRD models as rows `<code>tag</code> Present|Missing`, plus `Dev model: <override>` when `devChatModel` is non-null. NO download/install/pull affordance anywhere (guard exists in the test: container text must not match). Refresh/poll cover both commands. Test-vs-mock consistency gotcha: mock `ollama_status` Running but `list_models.status` NotFound is incoherent — the panel shows the status from `ollama_status`, so the "Ollama down" test arms BOTH as NotFound (helper takes a status param). AC2 (manual, dev PC with `gemma4-e4b-fast:latest` only) | agent |
