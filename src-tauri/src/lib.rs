@@ -27,6 +27,10 @@ struct ConfigResult {
     notes_dir: Option<String>,
     version: u32,
     default_notes_dir: String,
+    /// `None` until the first-run tier screen has been completed.
+    tier: Option<String>,
+    ai_enabled: Option<bool>,
+    intention: Vec<config::IntentionRecord>,
 }
 
 /// One generation at a time (1.11.2); one model pull at a time (2.4/2.5).
@@ -112,8 +116,17 @@ fn get_config(app: tauri::AppHandle) -> Result<ConfigResult, VayuError> {
     let stored = config::load_config(&dir);
     Ok(ConfigResult {
         notes_dir: stored.as_ref().map(|c| c.notes_dir.clone()),
-        version: stored.map(|c| c.version).unwrap_or(config::CONFIG_VERSION),
+        version: stored
+            .as_ref()
+            .map(|c| c.version)
+            .unwrap_or(config::CONFIG_VERSION),
         default_notes_dir: default_notes_dir.to_string_lossy().into_owned(),
+        tier: stored.as_ref().and_then(|c| c.tier.clone()),
+        ai_enabled: stored.as_ref().and_then(|c| c.ai_enabled),
+        intention: stored
+            .as_ref()
+            .and_then(|c| c.intention.clone())
+            .unwrap_or_default(),
     })
 }
 

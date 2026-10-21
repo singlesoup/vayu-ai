@@ -68,8 +68,8 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 | 1B. Visual pass (design board) | Wed 21 | verified (SG-1) | Screenshot gate |
 | 1C. Rust backend | Wed 21 | verified | — |
 | 1D. Smoke bugfix | Wed 21 | verified | Layout + Dev model for Test AI |
-| 2. First run, tiers, morning features | Thu 22 | todo (unblocked) | Check-in 2 |
-| 3. Journal, reflection, Ask, evals | Fri 23 | todo | Check-in 3 + freeze |
+| 2. First run, tiers, morning features | Thu 22 | verified (tag `checkin-2`) | Check-in 2 |
+| 3. Journal, reflection, Ask, evals | Fri 23 | todo (unblocked) | Check-in 3 + freeze |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
 
 ---
@@ -159,7 +159,7 @@ Details: [`now.md`](now.md) Phase 1C.
 | 2.9 | Intention output: 1 intention line + Top 3 checkbox tasks; no silent duplicates | P0 | review | saved once per day via append_note + mark_intention |
 | 2.10 | Brain Dump → Tasks: streamed extraction → preview/edit → insert; nothing written unconfirmed | P0 | review | component + extractor prompt + insert-only-after-confirm; 4 tests |
 | 2.11 | Extractor guardrails: no invented tasks; "no tasks found" for feelings-only dumps; 20-item dump → 20 tasks | P0 | review | extractor prompt preserves wording, NO_TASKS rule; preview fidelity tests |
-| CI-2 | **Check-in 2 (new-user test):** fresh profile → install → tier → download → intention → dump → tags `checkin-2` | Gate | todo |
+| CI-2 | **Check-in 2 (new-user test):** fresh profile → install → tier → download → intention → dump → tags `checkin-2` | Gate | verified | Owner smoke + App wiring; tag `checkin-2` |
 
 **Cut trigger:** if the download manager fails Check-in 2 twice, v1 ships with "detect existing Ollama + guided install link"; bundled download moves to v1.1.
 
@@ -222,6 +222,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 
 | Date | Decision | Why |
 |---|---|---|
+| 2026-10-21 | Coding-agent commit default is **do not commit** (`AGENTS.md`). Owner must say "commits are OK". Prefer one commit per user-visible slice; never mark UI `review` until mounted in `App.tsx`. Check-in tags stay verifier-only | Phase 2 left ~19 micro-commits and unmounted screens claiming review-ready |
 | 2026-10-21 | 4-day plan replaces PRD §12 7-day plan; Laya, BYOK, voice, compat checker moved to P2 | Fit the 24 Oct ship date |
 | 2026-10-21 | Repo on `main`, LF line endings | Consistent diffs across tools |
 | 2026-10-21 | Test-driven development for every task; tests committed before code | Gives the verifier evidence and protects the core loop |
@@ -255,6 +256,7 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | CI-2 | Check-in 2 verified. Wired SetupFlow + Morning Intention + Brain Dump into App; owner smoke showed intention/tasks in note. Tag `checkin-2`. `AGENTS.md` added. Phase 3 unblocked | verifier |
 | 2026-10-21 | CI-1 | Check-in 1 verified. Code commit `802554e` (Phase 1C Rust + 1D smoke fixes + window close perms). Owner live screenshots: Daily Note + Settings (Ollama Running, Dev model). Tag `checkin-1`. Phase 2 unblocked | verifier |
 | 2026-10-21 | 1D.1 | Daily Note: prose editor split. New pure `proseOf`/`withProse` in `tasks.ts` (fence-aware; `withProse` re-merges edited prose with existing task lines verbatim — prose edits can never delete tasks; round-trip `proseOf(withProse(md, p)) === p` covered). `DailyNote.tsx` editor now shows journal prose only — raw `- [ ]` lines no longer duplicate the TaskList; TaskList still rewrites full markdown (disk unchanged as source of truth). CSS: `.daily-note header` `position: relative; z-index: 1`, `.note-editor` `display: block` + token `margin-top`. 2 pre-existing tests updated to the prose-only contract (saved-markdown assertions unchanged); +11 tests, `npm run check` 151 FE + 44 Rust green | agent |
 | 2026-10-21 | 1D.2 | `--width-calendar-rail` 168px → 240px (token only, `tokens.css`). Flagged deviation: owner suggested ~200–220px, but real cells need 7 × (2-digit mono text + 2×8px button padding) + rail padding ≈ 238px — the board's 168px sidebar is a scaled mock; at 220 Sat/Sun still clips. New appStyles test pins the token ≥ 220px | agent |

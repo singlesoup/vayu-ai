@@ -477,6 +477,88 @@
   gap: var(--space-1);
 }
 
+/* ---------- Phase 2: tier already uses .first-run; morning + dump sit above the note ---------- */
+
+.workspace > .note-column {
+  flex: 1;
+  max-width: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-6);
+}
+
+.workspace > .note-column .daily-note {
+  padding: 0;
+}
+
+.morning-intention,
+.brain-dump {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-card);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 640px;
+}
+
+.morning-intention h2,
+.brain-dump h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  color: var(--color-text);
+}
+
+.morning-intention textarea,
+.brain-dump textarea,
+.brain-dump input[type="text"] {
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--color-ink);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-note);
+}
+
+.morning-intention textarea,
+.brain-dump textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.download-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}
+
+.download-progress-track {
+  height: 8px;
+  background: var(--color-ink);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.download-progress-fill {
+  height: 100%;
+  background: var(--color-breeze);
+}
+
+.setup-error {
+  text-align: center;
+  margin-top: var(--space-4);
+}
+
 /* ---------- narrow windows: sidebar stacks above the note ---------- */
 
 @media (max-width: 700px) {

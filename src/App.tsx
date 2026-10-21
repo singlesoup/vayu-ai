@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { getConfig, listNotes } from "./lib/api";
+import { getConfig, listNotes, type ConfigResult, type Tier } from "./lib/api";
 import { shouldShowTokenPage } from "./tokenPageGate";
 import { TokenPage } from "./components/TokenPage";
 import { FirstRunScreen } from "./components/FirstRunScreen";
+import { SetupFlow } from "./components/SetupFlow";
+import { MorningIntention } from "./components/MorningIntention";
+import { BrainDump } from "./components/BrainDump";
 import { DailyNote } from "./components/DailyNote";
 import { Calendar } from "./components/Calendar";
 import { Settings } from "./components/Settings";
@@ -16,7 +19,21 @@ type ConfigState = {
   state: "ready";
   notesDir: string | null;
   defaultNotesDir: string;
+  tier: Tier | null;
+  aiEnabled: boolean | null;
+  intention: { date: string; status: string }[];
 };
+
+function readyConfig(c: ConfigResult): ConfigState {
+  return {
+    state: "ready",
+    notesDir: c.notesDir,
+    defaultNotesDir: c.defaultNotesDir,
+    tier: c.tier ?? null,
+    aiEnabled: c.aiEnabled ?? null,
+    intention: c.intention ?? [],
+  };
+}
 
 type DayState = {
   /** The day the clock says it is right now. */
@@ -48,15 +65,24 @@ function AppBody() {
   const [noteDates, setNoteDates] = useState<NoteDate[]>([]);
   // Settings panel (task 1.9.2): Phase 1 holds the Model (Ollama) section.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Bumped when Morning Intention or Brain Dump writes into today's file,
+  // so the note reloads and the new tasks show up.
+  const [noteRevision, setNoteRevision] = useState(0);
+  const [intentionClosed, setIntentionClosed] = useState(false);
 
   function loadConfig() {
     void getConfig()
-      .then((c) =>
-        setConfig({ state: "ready", notesDir: c.notesDir, defaultNotesDir: c.defaultNotesDir }),
-      )
+      .then((c) => setConfig(readyConfig(c)))
       .catch(() =>
         // A failed config read should not strand the user; ask for a folder.
-        setConfig({ state: "ready", notesDir: null, defaultNotesDir: "" }),
+        setConfig({
+          state: "ready",
+          notesDir: null,
+          defaultNotesDir: "",
+          tier: null,
+          aiEnabled: null,
+          intention: [],
+        }),
       );
   }
 
@@ -112,7 +138,17 @@ function AppBody() {
     return <FirstRunScreen defaultPath={config.defaultNotesDir} onSaved={() => loadConfig()} />;
   }
 
+  // Tier has never been chosen: hardware screen, then download or straight in.
+  if (config.tier === null) {
+    return <SetupFlow notesDir={config.notesDir} onComplete={() => loadConfig()} />;
+  }
+
   const isToday = days.current === days.today;
+  const aiOn = config.aiEnabled !== false && config.tier !== "Red";
+  const intentionToday = config.intention.find((entry) => entry.date === days.today)?.status;
+  const showIntention =
+    isToday && aiOn && !intentionClosed && intentionToday !== "done" && intentionToday !== "skipped";
+
   return (
     <main className="app workspace">
       <button
@@ -131,7 +167,26 @@ function AppBody() {
           onSelect={(date) => setDays((prev) => (prev ? { ...prev, current: date } : prev))}
         />
       </aside>
-      <DailyNote key={days.current} date={days.current} isToday={isToday} create={isToday} />
+      <div className="note-column">
+        {showIntention && (
+          <MorningIntention
+            date={days.today}
+            onFinish={() => {
+              setIntentionClosed(true);
+              setNoteRevision((n) => n + 1);
+            }}
+          />
+        )}
+        {isToday && aiOn && (
+          <BrainDump date={days.today} onFinish={() => setNoteRevision((n) => n + 1)} />
+        )}
+        <DailyNote
+          key={`${days.current}-${noteRevision}`}
+          date={days.current}
+          isToday={isToday}
+          create={isToday}
+        />
+      </div>
     </main>
   );
 }

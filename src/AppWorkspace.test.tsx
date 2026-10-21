@@ -25,6 +25,9 @@ describe("Workspace launch (task 1.5.4)", () => {
       notesDir: "C:/notes",
       version: 1,
       defaultNotesDir: "C:/docs/Vayu",
+      tier: "Yellow",
+      aiEnabled: false,
+      intention: [{ date: "2026-10-21", status: "skipped" }],
     });
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "started at 9" });

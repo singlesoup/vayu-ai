@@ -29,6 +29,9 @@ describe("First-run flow (task 1.4.4)", () => {
       notesDir: "C:/Users/samon/Documents/Vayu",
       version: 1,
       defaultNotesDir: "C:/Users/samon/Documents/Vayu",
+      tier: "Yellow",
+      aiEnabled: false,
+      intention: [],
     });
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });

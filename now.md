@@ -1,9 +1,9 @@
-# NOW — Check-in 1 done → Phase 2
+# NOW — Check-in 2 done → Phase 3
 
 **Day:** Wed 21 Oct 2026
-**Current work:** Check-in 1 **verified** (tag `checkin-1` on `802554e`). Phase 2 agent may start: write the Phase 2 TDD checklist into this file first (2.1–2.11 + CI-2), then code.
-**Gate:** Phase 2 → Check-in 2 (`checkin-2`).
-**Goal:** First-run tiers, model download, Morning Intention, Brain Dump → Tasks.
+**Current work:** Check-in 2 **verified** (tag `checkin-2`). Phase 3 agent may start: write the Phase 3 TDD checklist into this file first (3.1–3.12 + CI-3), then code. Read `AGENTS.md` — default is **do not commit**.
+**Gate:** Phase 3 → Check-in 3 (`checkin-3`) + freeze.
+**Goal:** Journal chat, Evening Reflection, Ask Your Notes, embeddings, Settings polish, evals.
 
 Full plan and status: [`plan.md`](plan.md)
 
@@ -604,7 +604,7 @@ After Phase 1C: verifier opens Daily Note + Settings, compares to the design boa
 | 2.9 | Intention output: 1 intention line + Top 3 checkbox tasks; no silent duplicates | 2.8 | review | saved once per day via append_note + mark_intention |
 | 2.10 | Brain Dump → Tasks: streamed extraction → preview/edit → insert; nothing written unconfirmed | 2.2 | review | component + extractor prompt + insert-only-after-confirm; 4 tests |
 | 2.11 | Extractor guardrails: no invented tasks; "no tasks found" for feelings-only dumps; 20-item dump → 20 tasks | 2.10 | review | extractor prompt preserves wording, NO_TASKS rule; preview fidelity tests |
-| CI-2 | Check-in 2 (new-user test): fresh profile → tier → download → intention → dump → tag `checkin-2` | 2.1–2.11 | todo | verifier only |
+| CI-2 | Check-in 2 (new-user test): fresh profile → tier → download → intention → dump → tag `checkin-2` | 2.1–2.11 | verified | Owner smoke + wiring commit; tag `checkin-2` |
 
 ---
 
@@ -762,6 +762,16 @@ After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var abov
 ## Session notes (coding agent writes here at the end of each session)
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Verifier — Check-in 2, 21 Oct 20:05
+
+**Wiring fix (verifier):** Phase 2 components were built but never mounted. Wired `SetupFlow` (tier → download / Open Vayu), `MorningIntention`, and `BrainDump` into `App.tsx`; `get_config` now returns `tier` / `aiEnabled` / `intention`. Owner smoke: intention + dump tasks landed in today's note. UX is thin but features are present.
+
+**Tagged:** `checkin-2`. **Commit policy:** added `AGENTS.md` — default no commits; UI must be mounted before `review`.
+
+**Phase 3 unblocked.**
+
+---
 
 ### Phase 2 session — first-run tiers, download, Morning Intention, Brain Dump → Tasks, 22 Oct (coding agent)
 

@@ -59,10 +59,16 @@ export const COMMANDS = {
  * first-run screen. The config lives in the Tauri app config dir, NEVER inside
  * the notes folder.
  */
+export type IntentionRecord = { date: string; status: string };
+
 export type ConfigResult = {
   notesDir: string | null;
   version: number;
   defaultNotesDir: string;
+  /** `null` / omitted until the tier screen has been completed. */
+  tier?: Tier | null;
+  aiEnabled?: boolean | null;
+  intention?: IntentionRecord[];
 };
 
 /**
