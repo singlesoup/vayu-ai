@@ -115,7 +115,7 @@ Small tasks and the screenshot checklist are in [`now.md`](now.md) under **Phase
 | ID | Task | P | Status |
 |---|---|---|---|
 | 1B.1 | Import `App.css`; prove the running page actually applies it | P0 | review |
-| 1B.2 | Fix fonts: `@font-face` outside `:root`, and they render | P0 | todo |
+| 1B.2 | Fix fonts: `@font-face` outside `:root`, and they render | P0 | doing |
 | 1B.3 | Restyle first-run, Daily Note, calendar, tasks, Settings to the design board | P0 | todo |
 | 1B.4 | Fix the known render bugs (calendar week keys, Test AI `console.log`) | P0 | todo |
 | SG-1 | **Screenshot gate:** verifier compares the running app to the design board | Gate | todo |

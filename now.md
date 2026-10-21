@@ -544,7 +544,7 @@ The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
 | CI-1 | Check-in 1 | all above | todo | Blocked until Rust + Phase 1B screenshot gate + manual checklist |
 | api | Typed command contract (`src/lib/api.ts`) | — | verified | Contract + tests OK; is the morning Rust spec |
 | 1B.1 | Import App.css | — | review | Styles exist but `main.tsx` never imports them |
-| 1B.2 | Fonts render | 1.3.2 | todo | `@font-face` is nested inside `:root` |
+| 1B.2 | Fonts render | 1.3.2 | doing | `@font-face` is nested inside `:root` |
 | 1B.3 | Restyle to design board | 1B.1, 1B.2 | todo | First-run, Daily Note, calendar, tasks, Settings |
 | 1B.4 | Calendar keys + Test AI log | — | todo | |
 | SG-1 | Screenshot gate | 1B.1–1B.4 | todo | Verifier only |
