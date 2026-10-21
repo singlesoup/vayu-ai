@@ -20,7 +20,8 @@ function armStream(
   outcome: unknown,
   stopOutcome: unknown = outcome,
 ) {
-  mockInvoke().on("generate", (args) => {
+  const tauri = mockInvoke();
+  tauri.on("generate", (args) => {
     const ch = args["onEvent"] as Handler;
     return new Promise((resolve) => {
       resolveRun = resolve;
@@ -43,7 +44,7 @@ function armStream(
       }
     });
   });
-  mockInvoke().on("stop_generation", () => {
+  tauri.on("stop_generation", () => {
     resolveRun(stopOutcome);
     return null;
   });
@@ -51,7 +52,8 @@ function armStream(
 
 /** Variant whose stream NEVER ends on its own (only Stop resolves it). */
 function armEndlessStream() {
-  mockInvoke().on("generate", (args) => {
+  const tauri = mockInvoke();
+  tauri.on("generate", (args) => {
     const ch = args["onEvent"] as Handler;
     return new Promise((resolve) => {
       resolveRun = resolve;
@@ -60,7 +62,7 @@ function armEndlessStream() {
       }, 300);
     });
   });
-  mockInvoke().on("stop_generation", () => {
+  tauri.on("stop_generation", () => {
     resolveRun({ status: "Stopped" });
     return null;
   });
@@ -104,12 +106,13 @@ describe("Test AI UI (task 1.11.3)", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(400);
     });
-    expect(screen.getByText("Hello ")).toBeInTheDocument();
+    const reply = screen.getByTestId("test-ai-reply");
+    expect(reply.textContent).toBe("Hello ");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(200);
     });
     // the whole reply is there and the run ended
-    expect(screen.getByText(/Hello .*from Vayu\./s)).toBeInTheDocument();
+    expect(reply.textContent).toBe("Hello from Vayu.");
     expect(screen.getByRole("button", { name: "Test AI" })).not.toBeDisabled();
   });
 
@@ -180,6 +183,6 @@ describe("Test AI UI (task 1.11.3)", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(200);
     });
-    expect(screen.getByText("ok.")).toBeInTheDocument();
+    expect(screen.getByTestId("test-ai-reply").textContent).toBe("ok.");
   });
 });

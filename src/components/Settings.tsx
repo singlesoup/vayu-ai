@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listModels, ollamaStatus } from "../lib/api";
 import type { DetectedModels, OllamaStatus } from "../lib/api";
+import { TestAi } from "./TestAi";
 
 const POLL_MS = 5_000;
 
@@ -33,6 +34,11 @@ export function Settings({ open, onClose }: Props) {
         <div className="settings-section">
           <h3>Model</h3>
           <ModelStatus />
+        </div>
+        {/* Task 1.11.3: the Test AI panel lives with the Model section. */}
+        <div className="settings-section">
+          <h3>Test AI</h3>
+          <TestAi />
         </div>
       </section>
     </div>
