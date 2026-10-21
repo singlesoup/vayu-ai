@@ -14,7 +14,8 @@ function appCss(): string {
 }
 
 function cssBlock(css: string, selector: string): string | null {
-  return css.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*{[^}]*}"))?.[0] ?? null;
+  // `selector` is regex SOURCE (callers escape it), e.g. "\\.first-run input".
+  return css.match(new RegExp(selector + "\\s*{[^}]*}"))?.[0] ?? null;
 }
 
 describe("first-run screen matches the design board (task 1B.3)", () => {
@@ -75,6 +76,7 @@ describe("daily note screen matches the design board (task 1B.3)", () => {
 
   it("the note body is Newsreader at the note size", () => {
     const block = cssBlock(appCss(), "\\.note-editor");
+    expect(block).not.toBeNull();
     expect(block).toMatch(/font-family:\s*var\(--font-body\)/);
     expect(block).toMatch(/font-size:\s*var\(--text-note\)/);
   });
