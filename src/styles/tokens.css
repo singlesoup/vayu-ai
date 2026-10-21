@@ -3,28 +3,11 @@
    Any design change is made here plus a Decisions log row in plan.md;
    no component ever needs editing for a token change. */
 
-:root {
-  /* ---- Core colours (the 8 PRD §8 tokens) ---- */
-  --color-ink: #0E1116; /* app background (dark, default) */
-  --color-surface: #171B22; /* cards, sidebar */
-  --color-text: #EDEFF3; /* primary text */
-  --color-muted: #9BA3AF; /* secondary text, metadata */
-  --color-breeze: #5EEAD4; /* primary accent, links, everything AI */
-  --color-deep-teal: #14B8A6; /* pressed / active states, checked checkbox, today */
-  --color-paper: #FAF9F6; /* light-mode background (light mode is P1, Friday) */
-  --color-warm: #F5C97A; /* Evening Reflection ONLY (Phase 3). The colour guard
-     test fails `npm run check` if any file outside tokens.css uses this token. */
-
-  /* ---- Supporting shades from the design board ---- */
-  --color-border: #262C36; /* dividers */
-  --color-border-card: #2B323E; /* card and window borders */
-  --color-checkbox-border: #4A5261; /* unchecked checkbox border */
-  --color-on-accent: #06231F; /* text on Deep Teal / Breeze */
-
-  /* ---- Bundled fonts (task 1.3.2, SIL OFL licences in src/assets/fonts/) ----
+/* ---- Bundled fonts (task 1.3.2, SIL OFL licences in src/assets/fonts/) ----
    Files are downloaded once by scripts/fetch-fonts.mjs during setup and
-   committed; the app never loads fonts from the network (see fonts.test.ts). */
-
+   committed; the app never loads fonts from the network (see fonts.test.ts).
+   @font-face rules MUST sit at the TOP LEVEL (task 1B.2): nested @font-face
+   is invalid CSS and browsers ignore it, so the fonts would never load. */
 @font-face {
   font-family: Inter;
   font-style: normal;
@@ -103,7 +86,25 @@
   font-display: swap;
 }
 
-/* ---- Fonts (files bundled locally, task 1.3.2) ---- */
+:root {
+  /* ---- Core colours (the 8 PRD §8 tokens) ---- */
+  --color-ink: #0E1116; /* app background (dark, default) */
+  --color-surface: #171B22; /* cards, sidebar */
+  --color-text: #EDEFF3; /* primary text */
+  --color-muted: #9BA3AF; /* secondary text, metadata */
+  --color-breeze: #5EEAD4; /* primary accent, links, everything AI */
+  --color-deep-teal: #14B8A6; /* pressed / active states, checked checkbox, today */
+  --color-paper: #FAF9F6; /* light-mode background (light mode is P1, Friday) */
+  --color-warm: #F5C97A; /* Evening Reflection ONLY (Phase 3). The colour guard
+     test fails `npm run check` if any file outside tokens.css uses this token. */
+
+  /* ---- Supporting shades from the design board ---- */
+  --color-border: #262C36; /* dividers */
+  --color-border-card: #2B323E; /* card and window borders */
+  --color-checkbox-border: #4A5261; /* unchecked checkbox border */
+  --color-on-accent: #06231F; /* text on Deep Teal / Breeze */
+
+  /* ---- Fonts (files bundled locally, task 1.3.2) ---- */
   --font-ui: Inter;
   --font-body: Newsreader;
   --font-mono: JetBrains Mono;
@@ -117,7 +118,8 @@
 
   /* ---- Shape and motion ---- */
   --radius: 12px; /* cards and windows; no hard square corners */
-  --width-calendar-rail: 240px; /* calendar sidebar width (task 1.7.2) */
+  --width-calendar-rail: 168px; /* calendar sidebar width — from the design
+     board's dark Daily Note (168px sidebar); task 1B.3 narrowed it from 240px */
   --space-1: 8px; /* 8pt spacing grid */
   --space-half: 4px; /* half-step of the 8pt grid */
   --space-2: 16px;
@@ -129,6 +131,9 @@
   /* ---- Layout ---- */
   /* Single-column note width (added for 1.6.1; see plan.md Decisions log). */
   --width-note-column: 680px;
+  /* Note body size — now.md 1B.3 asks for "about 16px" (board: 15.5px on a
+     13px mock scale); the 15px UI body token is for chrome, not the journal. */
+  --text-note: 16px;
 }
 
 /* Global surface: the app window must never flash white (task 1.2.3). */
