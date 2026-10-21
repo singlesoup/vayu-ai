@@ -129,7 +129,17 @@ mod tests {
     fn save_then_load_round_trips() {
         let dir = tempdir().unwrap();
         let notes = tempdir().unwrap();
-        save_config(dir.path(), notes.path()).unwrap();
+        save_config(
+            dir.path(),
+            &StoredConfig {
+                notes_dir: notes.path().to_string_lossy().into_owned(),
+                version: CONFIG_VERSION,
+                tier: None,
+                model_tag: None,
+                ai_enabled: None,
+            },
+        )
+        .unwrap();
         let loaded = load_config(dir.path()).expect("config loads");
         assert_eq!(loaded.notes_dir, notes.path().to_string_lossy());
         assert_eq!(loaded.version, CONFIG_VERSION);
@@ -202,7 +212,7 @@ mod tests {
         let dir = tempdir().unwrap();
         fs::write(
             config_path(dir.path()),
-            r#"{ "notesDir": "C:\Users\samon\Documents\Vayu", "version": 1 }"#,
+            r#"{ "notesDir": "C:/Users/samon/Documents/Vayu", "version": 1 }"#,
         )
         .unwrap();
         let loaded = load_config(dir.path()).expect("config loads");

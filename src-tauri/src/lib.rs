@@ -14,6 +14,7 @@ use serde::Serialize;
 use tauri::{Manager, State};
 
 use error::VayuError;
+use hardware::HardwareReport;
 use notes::NoteResult;
 use ollama::{DetectedModels, GenerateOutcome, OllamaStatus, StreamEvent};
 
@@ -94,7 +95,36 @@ fn set_notes_dir(app: tauri::AppHandle, path: String) -> Result<(), VayuError> {
     }
     let chosen = PathBuf::from(&path);
     config::validate_notes_dir(&chosen)?;
-    config::save_config(&config_dir(&app)?, &chosen)
+    // Preserve any already-stored tier info (first run has none yet).
+    let config_dir = config_dir(&app)?;
+    let mut cfg = config::load_config(&config_dir).unwrap_or(config::StoredConfig {
+        notes_dir: path.clone(),
+        version: config::CONFIG_VERSION,
+        tier: None,
+        model_tag: None,
+        ai_enabled: None,
+    });
+    cfg.notes_dir = path;
+    config::save_config(&config_dir, &cfg)
+}
+
+/// Hardware check (task 2.1): RAM, free disk, CPU, OS, tier, Ollama
+/// presence. <5s, never blocks startup.
+#[tauri::command]
+async fn hardware_check(notes_dir: Option<String>) -> Result<HardwareReport, VayuError> {
+    hardware::hardware_check(notes_dir).await
+}
+
+/// Persist a tier decision (task 2.2): merges tier / model_tag / ai_enabled
+/// into the stored config without touching notes_dir.
+#[tauri::command]
+fn update_config(
+    app: tauri::AppHandle,
+    tier: Option<String>,
+    model_tag: Option<String>,
+    ai_enabled: Option<bool>,
+) -> Result<(), VayuError> {
+    config::update_config(&config_dir(&app)?, tier, model_tag, ai_enabled)
 }
 
 // ── 1C.2 notes (1.5.2, 1.5.3, 1.7.1) ────────────────────────────────────────
@@ -180,6 +210,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_config,
             set_notes_dir,
+            update_config,
+            hardware_check,
             read_note,
             ensure_note,
             write_note,
