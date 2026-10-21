@@ -35,6 +35,20 @@ export const COMMANDS = {
   listModels: "list_models",
   generate: "generate",
   stopGeneration: "stop_generation",
+  /** Task 2.1: hardware check → tier + model + size. */
+  hardwareCheck: "hardware_check",
+  /** Task 2.4/2.5: resumable model pull via Ollama /api/pull. */
+  pullModel: "pull_model",
+  /** Task 2.5: cancel an in-flight pull. */
+  cancelPull: "cancel_pull",
+  /** Task 2.7: post-download verify (one generation + one embedding). */
+  verifyInstall: "verify_install",
+  /** Task 2.2: persist the tier decision. */
+  updateConfig: "update_config",
+  /** Task 2.8: per-date done/skipped Morning Intention state. */
+  markIntention: "mark_intention",
+  /** Task 2.9/2.10: append an intention or task block to a note. */
+  appendNote: "append_note",
 } as const;
 
 /**
@@ -87,6 +101,36 @@ export type GenerateOutcome =
   | { status: "Done" }
   | { status: "Stopped" }
   | { status: "Error"; message: string };
+
+/** Hardware tier reported by `hardware_check` (PRD §7). */
+export type Tier = "Green" | "Yellow" | "Red";
+
+export type HardwareReport = {
+  ramGb: number;
+  freeDiskGb: number;
+  cpu: string;
+  os: string;
+  tier: Tier;
+  /** Recommended model tag for the tier; `null` on Red. */
+  model: string | null;
+  /** One-time download size in GB for the recommended model. */
+  sizeGb: number;
+  ollamaPresent: boolean;
+};
+
+export type PullProgress = {
+  status: string; // "pulling" | "success" | "error" | "connection lost"
+  total?: number;
+  completed: number;
+  percent?: number;
+};
+
+export type PullEvent = { event: "progress"; value: PullProgress };
+
+export type VerifyResult = {
+  generationOk: boolean;
+  embeddingsOk: boolean;
+};
 
 /**
  * Streaming events pushed from Rust while `generate` runs, in order:
@@ -198,4 +242,67 @@ export function generate(prompt: string, onEvent: (e: StreamEvent) => void): Pro
 /** `stop_generation()` — ends the current generation within ~1s, final state Stopped. */
 export function stopGeneration(): Promise<void> {
   return invoke<void>(COMMANDS.stopGeneration);
+}
+
+/** `hardware_check(notesDir?)` → HardwareReport (task 2.1). */
+export function hardwareCheck(notesDir?: string): Promise<HardwareReport> {
+  const args: Record<string, unknown> = {};
+  if (notesDir !== undefined) args.notesDir = notesDir;
+  return invoke<HardwareReport>(COMMANDS.hardwareCheck, args);
+}
+
+/**
+ * `pull_model(model, on_event)` → streams `PullEvent` progress while Ollama
+ * pulls the model (task 2.4/2.5). Resolves when the pull finishes, fails, or
+ * is cancelled.
+ */
+export function pullModel(
+  model: string,
+  onEvent: (e: PullEvent) => void,
+): Promise<void> {
+  const channel = new Channel<PullEvent>();
+  channel.onmessage = onEvent;
+  return invoke<void>(COMMANDS.pullModel, { model, onEvent: channel });
+}
+
+/** `cancel_pull()` — aborts the in-flight pull (task 2.5). */
+export function cancelPull(): Promise<void> {
+  return invoke<void>(COMMANDS.cancelPull);
+}
+
+/**
+ * `verify_install(tag)` → VerifyResult (task 2.7): one generation plus one
+ * embedding must pass before "You're ready".
+ */
+export function verifyInstall(tag: string): Promise<VerifyResult> {
+  return invoke<VerifyResult>(COMMANDS.verifyInstall, { tag });
+}
+
+/**
+ * `update_config` — persist a tier decision (task 2.2). Only the fields that
+ * changed are sent.
+ */
+export function updateConfig(patch: {
+  tier?: Tier;
+  modelTag?: string;
+  aiEnabled?: boolean;
+}): Promise<void> {
+  const args: Record<string, unknown> = {};
+  if (patch.tier !== undefined) args.tier = patch.tier;
+  if (patch.modelTag !== undefined) args.modelTag = patch.modelTag;
+  if (patch.aiEnabled !== undefined) args.aiEnabled = patch.aiEnabled;
+  return invoke<void>(COMMANDS.updateConfig, args);
+}
+
+/** `mark_intention(date, status)` — done/skipped per date (task 2.8). */
+export function markIntention(
+  date: NoteDate,
+  status: "done" | "skipped",
+): Promise<void> {
+  return invoke<void>(COMMANDS.markIntention, { date, status });
+}
+
+/** `append_note(date, appendix)` — atomic append of an intention/task block (task 2.9/2.10). */
+export function appendNote(date: NoteDate, appendix: string): Promise<void> {
+  return invoke<void>(COMMANDS.appendNote, { date, appendix });
 }

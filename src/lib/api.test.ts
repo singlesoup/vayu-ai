@@ -8,11 +8,9 @@ import {
   cancelPull,
   ensureNote,
   generate,
-  getConfig,
   hardwareCheck,
   listModels,
   listNotes,
-  markIntention,
   ollamaStatus,
   pullModel,
   readNote,
@@ -41,6 +39,7 @@ describe("api contract (src/lib/api.ts)", () => {
         "list_models",
         "generate",
         "stop_generation",
+        "set_notes_dir",
         "update_config",
         "verify_install",
       ].sort(),
@@ -54,7 +53,7 @@ describe("api contract (src/lib/api.ts)", () => {
       tier: "Yellow", model: "gemma3n:e2b", sizeGb: 5.6, ollamaPresent: true,
     });
     await expect(hardwareCheck()).resolves.toMatchObject({ tier: "Yellow" });
-    expect(getInvokeMock().mock.calls[0]).toEqual(["hardware_check", undefined]);
+    expect(getInvokeMock().mock.calls[0]).toEqual(["hardware_check", {}]);
     await hardwareCheck("C:/notes");
     expect(getInvokeMock().mock.calls[1]).toEqual(["hardware_check", { notesDir: "C:/notes" }]);
   });
@@ -97,7 +96,7 @@ describe("api contract (src/lib/api.ts)", () => {
     await updateConfig({ tier: "Green" });
     expect(getInvokeMock().mock.calls[0]).toEqual([
       "update_config",
-      { tier: "Green", modelTag: undefined, aiEnabled: undefined },
+      { tier: "Green" },
     ]);
   });
 
