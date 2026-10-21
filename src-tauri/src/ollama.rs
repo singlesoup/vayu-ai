@@ -1233,4 +1233,107 @@ mod tests {
         assert_eq!(err.kind, "Io");
         assert!(saw_error_status);
     }
+
+    // ── install verification (2.7) ────────────────────────────────────
+
+    /// Accepts one connection at a time; `/api/generate` and `/api/embeddings`
+    /// each get their own canned NDJSON lines.
+    async fn spawn_dual_server(
+        gen_lines: Vec<(u64, String)>,
+        emb_lines: Vec<(u64, String)>,
+    ) -> String {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            loop {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let gen_lines = gen_lines.clone();
+                let emb_lines = emb_lines.clone();
+                tokio::spawn(async move {
+                    let mut request = [0u8; 8192];
+                    let _ = socket.read(&mut request).await;
+                    let text = String::from_utf8_lossy(&request);
+                    let lines = if text.contains("/api/generate") {
+                        gen_lines
+                    } else if text.contains("/api/embeddings") {
+                        emb_lines
+                    } else {
+                        Vec::new()
+                    };
+                    let mut body = String::new();
+                    for (_, line) in &lines {
+                        body.push_str(line);
+                    }
+                    socket
+                        .write_all(
+                            format!(
+                                "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{}",
+                                body.len(),
+                                body
+                            )
+                            .as_bytes(),
+                        )
+                        .await
+                        .ok();
+                    let _ = socket.shutdown().await;
+                });
+            }
+        });
+        format!("http://{addr}")
+    }
+
+    #[tokio::test]
+    async fn verify_install_passes_when_generate_and_embeddings_succeed() {
+        let base = spawn_dual_server(
+            vec![(0, "{\"response\":\"pong\",\"done\":true}\n".into())],
+            vec![(0, r#"{"embedding":[0.1,0.2]}"#.into())],
+        )
+        .await;
+        let result = verify_install(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_secs(5),
+            STOP_POLL,
+        )
+        .await;
+        assert!(result.is_ok(), "verify should succeed: {result:?}");
+        let v = result.unwrap();
+        assert!(v.generation_ok);
+        assert!(v.embeddings_ok);
+    }
+
+    #[tokio::test]
+    async fn verify_install_fails_when_generate_stalls() {
+        let base = spawn_dual_server(vec![], vec![]).await;
+        let started = Instant::now();
+        let err = verify_install(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_millis(300),
+            STOP_POLL,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(err.kind, "Io");
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[tokio::test]
+    async fn verify_install_reports_embeddings_ok_false_when_embeddings_model_missing() {
+        let base = spawn_dual_server(
+            vec![(0, "{\"response\":\"pong\",\"done\":true}\n".into())],
+            vec![(0, "{\"error\":\"model not found\"}\n".into())],
+        )
+        .await;
+        let result = verify_install(
+            &base,
+            "gemma3n:e2b",
+            Duration::from_secs(5),
+            STOP_POLL,
+        )
+        .await
+        .unwrap();
+        assert!(result.generation_ok);
+        assert!(!result.embeddings_ok);
+    }
 }
