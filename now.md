@@ -546,7 +546,7 @@ The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
 | 1B.1 | Import App.css | — | review | Styles exist but `main.tsx` never imports them |
 | 1B.2 | Fonts render | 1.3.2 | review | `@font-face` is nested inside `:root` |
 | 1B.3 | Restyle to design board | 1B.1, 1B.2 | review | First-run, Daily Note, calendar, tasks, Settings |
-| 1B.4 | Calendar keys + Test AI log | — | doing | |
+| 1B.4 | Calendar keys + Test AI log | — | review | |
 | SG-1 | Screenshot gate | 1B.1–1B.4 | todo | Verifier only |
 
 ---
@@ -554,6 +554,29 @@ The coding agent sets 1B.1–1B.4 to `review` and stops. The verifier:
 ## Session notes (coding agent writes here at the end of each session)
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Phase 1B visual pass — 2026-10-21 afternoon
+
+**Done (all TDD, `test(1B.x)` → `feat(1B.x)`, 1B.1–1B.4 now `review`; SG-1 stays `todo` for the verifier):**
+- **1B.1** — `src/main.tsx` imports `./App.css` (after tokens.css). New `src/styles/appStyles.test.ts` pins the import itself, the failure class the verifier caught (styles on disk, dead in the running page).
+- **1B.2** — all 11 `@font-face` rules moved ABOVE `:root` in `tokens.css`; a brace-counting test in `fonts.test.ts` fails while any `@font-face` sits inside `:root`. Old font-file tests untouched and green. (One `test(1B.2)` fix commit: the face count matched the word in comments too — now counts `/@font-face\s*\{/` openers only.)
+- **1B.3** — restyle only, no behaviour changes. First-run: centred Surface card (12px radius, border-card edge) on Ink, Inter heading, muted body, JetBrains Mono path field, **Continue = Breeze pill** (`--color-breeze` bg / `--color-on-accent` text), **Choose folder… = ghost pill** (border token, no fill). Daily Note: Surface calendar rail (168px, from the board) beside the Ink column, stacks below 700px; month heading small-caps muted; Monday-first mono grid — today Deep Teal bg + on-accent text, noted days bold Text, empty days Muted; date line mono 12px uppercase muted; "Today" title Inter 22/700; body Newsreader 16px lh 1.5; custom checkbox 16px/5px radius (unchecked = checkbox-border token, checked = Deep Teal fill + ✓, done text line-through at 0.55 opacity); quiet muted gear; Settings = Surface card, Test AI = Breeze pill, AI reply in italic Newsreader. **No Warm anywhere** — the guard now also bans `var(--color-warm)` outside tokens.css (closes the 1.3.1 gap note). Two new tokens, both flagged below.
+- **1B.4** — `Calendar.tsx` week rows now `key={i}` (was one shared key; a new render-time test spies `console.error` and fails on React's duplicate-key warnings — caught 4 live warnings before the fix); `console.log` removed from the `TestAi.tsx` catch (static no-`console.log` guard test).
+
+**Final state:** `npm run check` green — **140 tests / 24 files**, lint + tsc clean, Rust step prints `SKIPPED: cargo not installed`. `vite build` clean (fonts bundle as local woff2). Dev server smoke-checked: `http://localhost:1420/` serves both stylesheets with `@font-face` at top level. Git history is clean TDD; working tree clean.
+
+**Screens to open for the screenshot gate (SG-1):**
+1. **First-run** — `npm run dev`, open `http://localhost:1420/` in a plain browser (no Tauri runtime → `get_config` fails → the folder screen shows). Centred Surface card on Ink.
+2. **Daily Note** — needs a notes dir, which needs Rust (`get_config`/`set_notes_dir`). Without Rust the browser always shows first-run. To eyeball the Daily Note early, run `npm run tauri dev` once Rust exists and set a folder; sidebar = calendar (today teal), main column = mono date line, "Today", Newsreader body, task checkboxes.
+3. **Settings** — gear top-right (quiet, muted); Surface card; Model status + model list; Test AI pill.
+
+**Could not fully match from the board / flagged:**
+- `--width-calendar-rail` narrowed 240px → **168px** (the board's dark mock uses a 168px sidebar).
+- `--text-note: 16px` added for the note body (now.md says "about 16px"; the board shows 15.5px on a 13px-scaled mock — one token to change if the owner disagrees).
+- The board's AI bar and Backlinks section are Phase 3 — space is left, nothing built.
+- The checked-checkbox ✓ is drawn with `::before` on an `appearance: none` input — works in Chromium (WebView2); verify visually in SG-1.
+
+---
 
 ### Verifier pass — 2026-10-21 midday
 
