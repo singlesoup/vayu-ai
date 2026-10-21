@@ -8,14 +8,12 @@
 use std::path::Path;
 
 use serde::Serialize;
-use sysinfo::{Disks, System};
 
 use crate::error::VayuError;
 use crate::ollama;
 
 pub const E4B_TAG: &str = "gemma3n:e4b";
 pub const E2B_TAG: &str = "gemma3n:e2b";
-pub const EMBEDDING_TAG: &str = "embeddinggemma";
 
 /// Download sizes from PRD §7, in gigabytes (one-time).
 pub const E4B_SIZE_GB: f64 = 7.5;

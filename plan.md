@@ -148,17 +148,17 @@ Details: [`now.md`](now.md) Phase 1C.
 
 | ID | Task | P | Status |
 |---|---|---|---|
-| 2.1 | Hardware check before any download (RAM, free disk, CPU, OS), <5s, debug screen | P0 | todo |
-| 2.2 | Tier logic: Green (≥16GB RAM & ≥10GB disk → E4B), Yellow (8–15GB & ≥8GB → E2B), Red (otherwise → no chat); dev override; boundary tests at 8GB/16GB | P0 | todo |
-| 2.3 | Tier result screen in plain words, specs under "details", one primary action | P0 | todo |
-| 2.4 | Download screen: model name, exact size, free/no-account copy, progress + % + cancel | P0 | todo |
-| 2.5 | Resumable pull via Ollama; survives 2 mid-download kills; low-disk → plain error, app usable | P0 | todo |
-| 2.6 | Skip download when Ollama + model already present (zero bytes on dev PC) | P0 | todo |
-| 2.7 | Post-download check: one generation + one embedding must pass before "You're ready" | P0 | todo |
-| 2.8 | Morning Intention: optional 3 questions, one-tap Skip, ≤90s, no re-nag same day | P0 | todo |
-| 2.9 | Intention output: 1 intention line + Top 3 checkbox tasks; no silent duplicates | P0 | todo |
-| 2.10 | Brain Dump → Tasks: streamed extraction → preview/edit → insert; nothing written unconfirmed | P0 | todo |
-| 2.11 | Extractor guardrails: no invented tasks; "no tasks found" for feelings-only dumps; 20-item dump → 20 tasks | P0 | todo |
+| 2.1 | Hardware check before any download (RAM, free disk, CPU, OS), <5s, debug screen | P0 | review | sysinfo; tier + model + size + Ollama presence |
+| 2.2 | Tier logic: Green (≥16GB RAM & ≥10GB disk → E4B), Yellow (8–15GB & ≥8GB → E2B), Red (otherwise → no chat); dev override; boundary tests at 8GB/16GB | P0 | review | `tier_for()` pure + boundary unit tests; `VAYU_DEV_TIER` debug override; `hardware_check` command |
+| 2.3 | Tier result screen in plain words, specs under "details", one primary action | P0 | review | Plain words per tier; PRD first-run copy; 5 tests |
+| 2.4 | Download screen: model name, exact size, free/no-account copy, progress + % + cancel | P0 | review | `pull_model` streams progress; one pull at a time; cancel aborts |
+| 2.5 | Resumable pull via Ollama; survives 2 mid-download kills; low-disk → plain error, app usable | P0 | review | client re-POSTs after failure; Ollama resumes server-side |
+| 2.6 | Skip download when Ollama + model already present (zero bytes on dev PC) | P0 | review | `list_models` gates the pull; frontend flow skips the download screen |
+| 2.7 | Post-download check: one generation + one embedding must pass before "You're ready" | P0 | review | `verify_install` command; embeddings failure soft-fails (search later) |
+| 2.8 | Morning Intention: optional 3 questions, one-tap Skip, ≤90s, no re-nag same day | P0 | review | component + per-date state; 4 tests |
+| 2.9 | Intention output: 1 intention line + Top 3 checkbox tasks; no silent duplicates | P0 | review | saved once per day via append_note + mark_intention |
+| 2.10 | Brain Dump → Tasks: streamed extraction → preview/edit → insert; nothing written unconfirmed | P0 | review | component + extractor prompt + insert-only-after-confirm; 4 tests |
+| 2.11 | Extractor guardrails: no invented tasks; "no tasks found" for feelings-only dumps; 20-item dump → 20 tasks | P0 | review | extractor prompt preserves wording, NO_TASKS rule; preview fidelity tests |
 | CI-2 | **Check-in 2 (new-user test):** fresh profile → install → tier → download → intention → dump → tags `checkin-2` | Gate | todo |
 
 **Cut trigger:** if the download manager fails Check-in 2 twice, v1 ships with "detect existing Ollama + guided install link"; bundled download moves to v1.1.
@@ -299,3 +299,11 @@ Newest first. One line per meaningful change or verification result.
 | 2026-10-21 | 1.x | Reviewed PRD v1, build checklist PDF, and design board. Added design values, layout reference, and doc conflicts. Phase 1 split into test-first tasks in `now.md` | verifier |
 | 2026-10-21 | 0.2 | Added `plan.md` and `now.md` | verifier |
 | 2026-10-21 | 0.1 | Initial commit: README, `.gitignore`, `.gitattributes` | verifier |
+| 2026-10-22 | feat(2.1/2.2) | Hardware check + E2B-first tier logic: `sysinfo` RAM/CPU/disk, pure `tier_for()` (Green >=16 GB && >=10 GB → E4B ~7.5 GB; Yellow 8-15 GB && >=8 GB → E2B ~5.6 GB; Red → no chat), debug-only `VAYU_DEV_TIER` override, `hardware_check` command reports Ollama presence; boundary tests at exactly 8/16 GB RAM and 8/10 GB disk | agent |
+| 2026-10-22 | feat(2.2 config) | `StoredConfig` gains optional `tier`/`model_tag`/`ai_enabled` (old files still load); atomic `save_config` of the whole struct; `update_config` command merges tier fields without wiping `notes_dir`; `set_notes_dir` preserves stored tier | agent |
+| 2026-10-22 | feat(2.4/2.5) | Resumable model pull: `run_pull` streams Ollama `/api/pull` NDJSON as `PullEvent::progress`; `pull_model`/`cancel_pull` commands; one pull at a time (`Busy` otherwise), cancel aborts the task; tests against a raw TCP mock server | agent |
+| 2026-10-22 | feat(2.7) | Post-download install verification: `VerifyResult`, `run_embeddings` via POST `/api/embeddings`, `verify_install` command; generation failure hard-fails, embeddings failure soft-fails | agent |
+| 2026-10-22 | feat(2.api) | Typed contract: `hardwareCheck`, `pullModel`, `cancelPull`, `verifyInstall`, `updateConfig`, `markIntention`, `appendNote` with exact invoke shapes; `PullEvent` streams progress via Tauri Channel; 12 contract tests, tsc clean | agent |
+| 2026-10-22 | feat(2.3) | Tier result screen: plain words per tier (Green E4B / Yellow E2B / Red no-chat), PRD first-run copy, one primary action, specs under Details; 5 tests | agent |
+| 2026-10-22 | feat(2.8/2.9) | Morning Intention: 3 questions + one-tap Skip, streams intention line + Top 3 tasks, saved once per day via append_note/mark_intention, no re-nag same day; `parseIntention` in src/lib/intention.ts; 4 tests | agent |
+| 2026-10-22 | feat(2.10/2.11) | Brain Dump → Tasks: streamed extraction → editable preview → insert only after confirm; extractor guardrails (no invented tasks, NO_TASKS empty state); 4 tests | agent |
