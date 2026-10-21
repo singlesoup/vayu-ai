@@ -64,7 +64,7 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 | Phase | Day | Status | Gate |
 |---|---|---|---|
 | 0. Repo setup | Wed 21 | verified | — |
-| 1. Foundation + walking skeleton | Wed 21 | todo | Check-in 1 |
+| 1. Foundation + walking skeleton | Wed 21 | in progress (frontend mostly done; Rust + 2 fails left) | Check-in 1 |
 | 2. First run, tiers, morning features | Thu 22 | todo | Check-in 2 |
 | 3. Journal, reflection, Ask, evals | Fri 23 | todo | Check-in 3 + freeze |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
@@ -86,20 +86,20 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 
 Parent tasks are below. The small test-first tasks (1.2.1, 1.2.2, …) with acceptance criteria are in [`now.md`](now.md). A parent task is `verified` when all of its small tasks are.
 
-| ID | Task | P | Status |
-|---|---|---|---|
-| 1.1 | Adopt design system (PRD §8): record decision in Decisions log | P0 | review |
-| 1.2 | Tauri skeleton; `dev` opens a window named Vayu with Ink BG `#0E1116` | P0 | todo |
-| 1.3 | Design tokens as CSS variables (8 colours, Inter / Newsreader / JetBrains Mono, 12px radius, 8pt spacing) + token test page | P0 | todo |
-| 1.4 | Notes folder: ask or default on first launch, store path in local config | P0 | todo |
-| 1.5 | App opens to today's note (`YYYY-MM-DD.md`); new day creates a new file | P0 | todo |
-| 1.6 | Editor: single column, Newsreader body, debounced autosave + save on close | P0 | review |
-| 1.7 | Calendar sidebar: open any past/future day; empty state for missing days | P0 | review |
-| 1.8 | Checkbox tasks stored as `- [ ]` / `- [x]`; add/edit/delete; no timer UI | P0 | review |
-| 1.9 | Ollama detection on `localhost:11434`, status in Settings → Model | P0 | doing |
-| 1.10 | Detect installed models (`gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma`) | P0 | todo |
-| 1.11 | "Test AI" button: streamed reply, Stop within ~1s, calm error if Ollama dies | P0 | review |
-| CI-1 | **Check-in 1:** note + 3 tasks survive restart, Test AI streams, no crash on Ollama on/off → tag `checkin-1` | Gate | todo |
+| ID | Task | P | Status | Verifier notes |
+|---|---|---|---|---|
+| 1.1 | Adopt design system (PRD §8): record decision in Decisions log | P0 | verified | |
+| 1.2 | Tauri skeleton; `dev` opens a window named Vayu with Ink BG `#0E1116` | P0 | review | harness/CSP/Ink verified; window launch pending Rust |
+| 1.3 | Design tokens as CSS variables (8 colours, Inter / Newsreader / JetBrains Mono, 12px radius, 8pt spacing) + token test page | P0 | failed | tokens/guard/page verified; **1.3.2 fonts failed** (`@font-face` nested in `:root`) |
+| 1.4 | Notes folder: ask or default on first launch, store path in local config | P0 | review | UI (1.4.4) done; Rust 1.4.1–1.4.3 blocked |
+| 1.5 | App opens to today's note (`YYYY-MM-DD.md`); new day creates a new file | P0 | review | pure 1.5.1 verified; UI 1.5.4 review; Rust 1.5.2/1.5.3 blocked |
+| 1.6 | Editor: single column, Newsreader body, debounced autosave + save on close | P0 | review | UI + unit tests OK; disk ACs pending Rust |
+| 1.7 | Calendar sidebar: open any past/future day; empty state for missing days | P0 | failed | **1.7.2 duplicate React week keys**; 1.7.3 review; Rust 1.7.1 blocked |
+| 1.8 | Checkbox tasks stored as `- [ ]` / `- [x]`; add/edit/delete; no timer UI | P0 | review | 1.8.1/1.8.2/1.8.4 verified; 1.8.3 UI review (disk ACs pending) |
+| 1.9 | Ollama detection on `localhost:11434`, status in Settings → Model | P0 | review | UI 1.9.2 review; Rust 1.9.1 blocked |
+| 1.10 | Detect installed models (`gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma`) | P0 | review | UI 1.10.2 review; Rust 1.10.1 blocked |
+| 1.11 | "Test AI" button: streamed reply, Stop within ~1s, calm error if Ollama dies | P0 | review | UI 1.11.3 review (drop console.log); Rust 1.11.1/1.11.2 blocked |
+| CI-1 | **Check-in 1:** note + 3 tasks survive restart, Test AI streams, no crash on Ollama on/off → tag `checkin-1` | Gate | todo | |
 
 ---
 
@@ -190,7 +190,8 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Design system adopted from PRD §8 (owner: "open to these for now, may revisit later"): Ink `#0E1116`, Surface `#171B22`, Text `#EDEFF3`, Muted `#9BA3AF`, Breeze `#5EEAD4`, Deep Teal `#14B8A6`, Paper `#FAF9F6`, Warm `#F5C97A`; Inter / Newsreader / JetBrains Mono 12px; 12px radius; 8pt grid; 200ms fade. Later changes go through `tokens.css` only, with a log row | Keeps a later revisit cheap without reopening components |
 | 2026-10-21 | Dev PC has only `gemma4-e4b-fast:latest` (no PRD models). Owner: use it for Test AI via a dev-only `VAYU_DEV_CHAT_MODEL` override; model detection still checks the PRD models | Unblocks Check-in 1 without a 7.5GB download |
 | 2026-10-21 | Dev PC is missing Rust and the MSVC C++ build tools. Owner: overnight run is **frontend-only** (no installs, nobody to approve prompts). Frontend tasks are built against a typed API contract with mocked calls; Rust tasks wait for the owner to install Rust in the morning | Keep making progress overnight without hanging on permission prompts |
-| | _Editor approach (textarea vs. Markdown editor) — record when chosen in 1.6.1_ | |
+| 2026-10-21 | Editor = plain controlled `<textarea>` (not CodeMirror/TipTap) | Smallest path that keeps disk bytes = typed Markdown |
+| 2026-10-21 | `get_config` returns `{ notesDir, version, defaultNotesDir }` in one call | First-run screen can pre-fill without a second command |
 
 ---
 
@@ -214,6 +215,7 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | verify | Overnight frontend verified. `npm run check` green: 124/124 tests, lint+tsc clean, Rust SKIPPED. **Verified:** 1.1, 1.2.2–1.2.4, 1.3.1, 1.3.3, 1.3.4, 1.5.1, 1.8.1, 1.8.2, 1.8.4, api. **Failed:** 1.3.2 (`@font-face` nested inside `:root` in `tokens.css` — fonts won't load); 1.7.2 (duplicate React `key` on calendar week rows). **Still review (UI OK, Rust/manual pending):** 1.2.1, 1.4.4, 1.5.4, 1.6.*, 1.7.3, 1.8.3, 1.9.2, 1.10.2, 1.11.3. **Blocked Rust:** 1.4.1–1.4.3, 1.5.2–1.5.3, 1.7.1, 1.9.1, 1.10.1, 1.11.1–1.11.2. Colour guard AC2 re-tested live. TDD order in git history is clean (test→feat). CI-1 not ready | verifier |
 | 2026-10-21 | 1.11.3 | Test AI panel (`src/components/TestAi.tsx`, rendered under Settings → Model in `src/components/Settings.tsx`). Phases: idle → `Thinking…` until the first `token` StreamEvent (arrives via the mocked `Channel.onmessage` from Rust) → streaming → idle when the command's outcome resolves (Done/Stopped; Error → calm message). While running the "Test AI" button is disabled and a "Stop" button appears (`stop_generation`); Rust settling the run returns Test AI to idle. Error text contract: `Vayu couldn't reach the local AI. Your notes are safe.` for Io/Busy/mid-stream, `No model installed yet — see the list above.` for NoModel. Test gotchas (test fixes in own commit): (1) TWO `mockInvoke()` calls in one test ARRANGE reset — the 2nd call wipes the 1st handler; use one handle for all `on()`s. (2) RTL `getByText("Hello ")` failed against DOM that literally contained `Hello ` — assert `getByTestId("test-ai-reply").textContent` instead. AC2/AC3 (manual streaming + mid-quit pending real Ollama) | agent |
 | 2026-10-21 | 1.10.2 | Settings → Model list. `ModelStatus` in `src/components/Settings.tsx` now fetches `ollama_status` + `list_models` together (Promise.allSettled with calm NotFound fallbacks) and renders the three PRD models as rows `<code>tag</code> Present|Missing`, plus `Dev model: <override>` when `devChatModel` is non-null. NO download/install/pull affordance anywhere (guard exists in the test: container text must not match). Refresh/poll cover both commands. Test-vs-mock consistency gotcha: mock `ollama_status` Running but `list_models.status` NotFound is incoherent — the panel shows the status from `ollama_status`, so the "Ollama down" test arms BOTH as NotFound (helper takes a status param). AC2 (manual, dev PC with `gemma4-e4b-fast:latest` only) | agent |
 | 2026-10-21 | 1.9.2 | Settings → Model status (`src/components/Settings.tsx`, opened by a gear button top-right in `src/App.tsx`). Labels: `Running — Ollama v<version>` from `ollama_status`, `Not found` + reason + hint from NotFound; `Checking Ollama…` while in flight; Refresh re-checks on demand; while open the status re-checks every 5s. Structure: nested `<ModelStatus />` mounts fresh per opening and unmounts on close — polling stops with NO cleanup-state side effects; this design also resolved an ESLint `react-hooks/set-state-in-effect` error (don't setState synchronously inside effects — use a fresh mount / the async `.then` instead). Locked state on close so reopening never shows stale labels. Tests: closed renders nothing; labels; Refresh callCount grows to 2 and updates the label; ~5s poll (two cycles within 10s) and no further calls after unmount; Close hands control back | agent |

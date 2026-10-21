@@ -448,48 +448,63 @@ Font weights to bundle: Inter 400/500/600/700/800 · Newsreader 400/500 + italic
 
 | ID | Task | Depends on | Status | Verifier notes |
 |---|---|---|---|---|
-| 1.1 | Adopt design system | — | review | AC1 done 21 Oct; AC2 checked via 1.3.3 |
-| 1.2.1 | Scaffold Tauri app | — | review | UI scaffold done; `cargo check` + window launch pending Rust install |
-| 1.2.2 | Test harness + `npm run check` | 1.2.1 | review | `npm run check` green; Rust step prints `SKIPPED: cargo not installed` |
-| 1.2.3 | Ink window background | 1.2.2 | review | config test in `src/tauri-config.test.ts`; body bg = `var(--color-ink)` via new `src/styles/tokens.css`; no-white-flash launch is (manual) pending Rust |
-| 1.2.4 | CSP / network lockdown | 1.2.2 | review | strict `csp` + `devCsp` in `src/tauri.conf.json` (`devCsp` only adds `'unsafe-inline'` scripts + `ws:` for the Vite/React-refresh preamble). App-loads-in-dev/release is (manual) pending Rust |
-| 1.3.1 | Design token file | 1.2.2 | review | all tokens asserted in `src/styles/tokens.test.ts`; only colour definitions in `src/styles/tokens.css` (`--color-warm` defined but its use anywhere outside tokens.css is banned and guarded in 1.3.3) |
-| 1.3.2 | Bundle fonts locally | 1.3.1 | review | 11 woff2 (latin subset) + 3 OFL licences in `src/assets/fonts/`, wired via @font-face in `tokens.css`; "correct fonts with Wi-Fi off" is (manual) pending Rust |
-| 1.3.3 | Hard-coded colour guard | 1.3.1 | review | guard test `src/styles/colours.test.ts` (+ keyword list file); a temp `#fff` + named colour in a component previously made it fail with file+line; AC2 (verifier) can re-add `color: #fff` anywhere to see `check` go red |
-| 1.3.4 | Dev token page | 1.3.1 | review | `src/components/TokenPage.tsx` + `tokenData.ts` + `src/tokenPageGate.ts` (AC3 gate helper tests); opens at `?dev=tokens` in dev — (manual) visual check pending Rust |
+| 1.1 | Adopt design system | — | verified | Decisions log + colour guard AC2 re-checked by verifier (injected `#fff` → test failed with file:line, then restored) |
+| 1.2.1 | Scaffold Tauri app | — | review | Scaffold present (`app.vayu.desktop`, title Vayu). AC1/AC2 blocked on Rust. AC3/AC4 OK |
+| 1.2.2 | Test harness + `npm run check` | 1.2.1 | verified | Verifier ran `npm run check`: lint+tsc green, **124/124 tests**, Rust prints `SKIPPED: cargo not installed`. mockInvoke in `src/test/mocks.ts` |
+| 1.2.3 | Ink window background | 1.2.2 | verified | Config + body token OK. AC3 (no white flash on launch) still (manual) after Rust |
+| 1.2.4 | CSP / network lockdown | 1.2.2 | verified | Strict CSP/devCsp; no remote hosts. AC2 (app loads) still (manual) after Rust |
+| 1.3.1 | Design token file | 1.2.2 | verified | All 8 colours + supporting + type/shape/motion match PRD. Gap: AC3 claimed a `--color-warm` *usage* ban test — colour guard only bans hard-coded hex/rgb/named colours, not `var(--color-warm)`. State is OK (nothing uses Warm); add the usage assert later |
+| 1.3.2 | Bundle fonts locally | 1.3.1 | failed | Files + licences present (11 woff2, 3 OFL). **Bug:** every `@font-face` is nested inside `:root { }` in `tokens.css` — invalid CSS, browsers ignore nested `@font-face`, so fonts will not load. Fix: move all `@font-face` blocks above/outside `:root`. String-matching tests still pass (they don't parse CSS) |
+| 1.3.3 | Hard-coded colour guard | 1.3.1 | verified | Verifier confirmed AC2: temp `color: #fff` in `App.css` → check fails with `App.css: line …: hex colour`; restored clean |
+| 1.3.4 | Dev token page | 1.3.1 | verified | Component + DEV gate tests pass. Visual (manual) after Rust/`npm run dev` |
 | 1.4.1 | Config storage | 1.2.2 | todo | Blocked: Rust not installed |
 | 1.4.2 | Default notes folder | 1.4.1 | todo | Blocked: Rust not installed |
 | 1.4.3 | Validate folder | 1.4.1 | todo | Blocked: Rust not installed |
-| 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | review | UI only — Rust side pending. Tests in `src/components/FirstRunScreen.test.tsx` + `src/App.test.tsx`; dialog mocked; AC2/AC3 (manual) pending Rust |
-| 1.5.1 | Date → file name | 1.2.2 | review | `src/lib/noteFile.ts` (`noteFileName`, `isNoteDate`, plus `noteDateToDate` for parsing validated dates — local-time based) |
-| 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | |
-| 1.5.3 | Safe note writes | 1.5.2 | todo | |
-| 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | review | UI only — Rust side pending. Launch/ensure/read/title/midnight-refocus/non-blocking tests in `src/AppWorkspace.test.tsx` + `src/components/DailyNote.test.tsx`; AC2 timing is (manual) |
-| 1.6.1 | Editor component | 1.5.4 | review | UI only — Rust side pending. Plain textarea (Decisions log); content typed = bytes written (AC2 manual until Rust) |
-| 1.6.2 | Debounced autosave | 1.6.1 | review | UI only — Rust side pending |
-| 1.6.3 | Save on close / day switch | 1.6.2 | review | UI only — Rust side pending. `onWindowClose` (`src/lib/windowClose.ts`) fires the flush on close request; unmount flush covers day switches. AC2/AC3 are (manual) — need the real runtime |
-| 1.7.1 | List notes | 1.5.2 | todo | |
-| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | review | UI only — Rust side pending. `list_notes` data drives the note marks (mocked); AC2 is (manual) |
-| 1.7.3 | Empty-day state | 1.7.2 | review | UI only — Rust side pending. Empty day = placeholder + editable textarea; first save (`write_note`) creates the file (Rust 1.5.3 side pending). AC1 covered; (manual) click-through AC with real files pending Rust |
-| 1.8.1 | Parse tasks | 1.2.2 | review | `src/lib/tasks.ts` `parseTasks`; fenced blocks skipped; `line` is 0-based |
-| 1.8.2 | Task edits | 1.8.1 | review | `toggleTask` / `addTask` / `editTask` / `deleteTask` pure, other lines byte-identical |
-| 1.8.3 | Task UI | 1.8.2, 1.6.2 | review | UI only — Rust side pending. Task panel under the editor; every edit rewrites the note markdown and rides the same debounced save. AC2/AC3 are (manual) |
-| 1.8.4 | No-timer guard | 1.8.3 | review | Guard test in `src/AppWorkspace.test.tsx` (shell): no timer/Pomodoro/countdown text, label, or placeholder anywhere |
-| 1.9.1 | Ollama status | 1.2.2 | todo | |
-| 1.9.2 | Settings: status | 1.9.1 | review | UI only — Rust side pending. `src/components/Settings.tsx`: Running/Not found labels, Refresh, 5s poll while open (poll stops on close). AC2 is (manual) |
-| 1.10.1 | Detect models | 1.9.1 | todo | |
-| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | UI only — Rust side pending. Three rows Present/Missing + "Dev model: …" line; NO download UI. AC2 is (manual, dev PC) |
-| 1.11.1 | Stream parser | 1.2.2 | todo | |
-| 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | |
-| 1.11.3 | Test AI UI | 1.11.2 | review | UI only — Rust side pending. Panel under Settings → Model: thinking → streaming, Stop calls `stop_generation`, calm errors, NoModel message. AC2/AC3 are (manual) |
-| CI-1 | Check-in 1 | all above | todo | |
-| api | Typed command contract (`src/lib/api.ts`) | — | review | All invoke shapes tested in `src/lib/api.test.ts`; mocks.ts also fakes `Channel` for tests |
+| 1.4.4 | First-run folder screen | 1.4.2, 1.4.3 | review | UI + mocked tests OK. Real dialog + config persistence need Rust (+ `tauri_plugin_dialog`) |
+| 1.5.1 | Date → file name | 1.2.2 | verified | Local-date helpers; only builder in the UI |
+| 1.5.2 | Read / create notes | 1.4.1, 1.5.1 | todo | Blocked: Rust not installed |
+| 1.5.3 | Safe note writes | 1.5.2 | todo | Blocked: Rust not installed |
+| 1.5.4 | Open to today + new day | 1.4.4, 1.5.3 | review | UI/mocks OK (`ensure` only when `create`/`isToday`). Real open + <2s timing need Rust |
+| 1.6.1 | Editor component | 1.5.4 | review | Plain textarea + Newsreader column OK. Disk byte-fidelity needs Rust |
+| 1.6.2 | Debounced autosave | 1.6.1 | review | Autosaver + wiring tests OK. Real disk writes need Rust |
+| 1.6.3 | Save on close / day switch | 1.6.2 | review | Flush wiring + degrade-without-runtime OK. Force-close / kill-process ACs need Rust |
+| 1.7.1 | List notes | 1.5.2 | todo | Blocked: Rust not installed |
+| 1.7.2 | Calendar sidebar | 1.7.1, 1.6.3 | failed | Monday-first math + UI tests OK, but **bug:** in `Calendar.tsx` every week row uses the same React `key={view.year * 12 + view.month}` — duplicate keys across weeks. Fix: `key={i}` (or year-month-week). Then back to review until Rust for AC2 |
+| 1.7.3 | Empty-day state | 1.7.2 | review | Placeholder + editable empty day OK in tests. Real "no phantom files" needs Rust |
+| 1.8.1 | Parse tasks | 1.2.2 | verified | Fences skipped; `- [ ]`/`- [x]`/`* [ ]` |
+| 1.8.2 | Task edits | 1.8.1 | verified | Pure toggle/add/edit/delete; other lines unchanged |
+| 1.8.3 | Task UI | 1.8.2, 1.6.2 | review | Panel + save wiring OK. Notepad round-trip ACs need Rust |
+| 1.8.4 | No-timer guard | 1.8.3 | verified | Guard-only task; test green on absence of timer UI |
+| 1.9.1 | Ollama status | 1.2.2 | todo | Blocked: Rust not installed |
+| 1.9.2 | Settings: status | 1.9.1 | review | UI/poll/refresh tests OK. Real Ollama status needs Rust |
+| 1.10.1 | Detect models | 1.9.1 | todo | Blocked: Rust not installed |
+| 1.10.2 | Settings: model list | 1.10.1, 1.9.2 | review | Present/Missing + dev line, no download UI. Real `ollama list` match needs Rust |
+| 1.11.1 | Stream parser | 1.2.2 | todo | Blocked: Rust not installed |
+| 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | todo | Blocked: Rust not installed |
+| 1.11.3 | Test AI UI | 1.11.2 | review | UI tests OK. Polish before verify: remove debug `console.log` in `TestAi.tsx` catch. Streaming/Stop/Ollama-kill ACs need Rust |
+| CI-1 | Check-in 1 | all above | todo | Blocked until Rust + failed fixes + manual checklist |
+| api | Typed command contract (`src/lib/api.ts`) | — | verified | Contract + tests OK; is the morning Rust spec |
 
 ---
 
 ## Session notes (coding agent writes here at the end of each session)
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Verifier pass — 2026-10-21 midday
+
+**Ran:** `npm run check` → 124/124 tests, lint+tsc green, Rust SKIPPED. Colour guard AC2 re-tested (temp `#fff` fails, restore passes). Git history shows clean TDD for almost every task (`test` commit before `feat`).
+
+**Actually verified:** 1.1, 1.2.2, 1.2.3, 1.2.4, 1.3.1, 1.3.3, 1.3.4, 1.5.1, 1.8.1, 1.8.2, 1.8.4, api.
+
+**Failed (fix before morning Rust / before treating UI as done):**
+1. **1.3.2** — move all `@font-face` blocks outside `:root` in `src/styles/tokens.css`.
+2. **1.7.2** — unique React keys on calendar week rows (`key={i}`).
+3. **1.11.3 polish** — remove `console.log` in `TestAi.tsx` catch.
+
+**Not done (cannot claim Check-in 1):** no real window, no real `.md` files, no real Ollama. All of that waits on Rust install + the blocked Rust tasks.
+
+---
 
 ### Overnight run — 2026-10-21 (Phase 1 frontend complete)
 
