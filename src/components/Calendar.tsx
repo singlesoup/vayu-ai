@@ -66,7 +66,7 @@ export function Calendar({ today, noteDates, onSelect }: Props) {
         </thead>
         <tbody>
           {weeks.map((week, i) => (
-            <tr key={view.year * 12 + view.month} className="cal-week">
+            <tr key={i} className="cal-week">
               {week.map((day, j) =>
                 day === null ? (
                   <td key={i * 7 + j} className="cal-blank" />

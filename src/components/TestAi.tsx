@@ -37,7 +37,6 @@ export function TestAi() {
         if (outcome.status === "Error") setMessage(CALM_ERROR);
       })
       .catch((err: { kind?: string }) => {
-        console.log("TESTAI-CATCH", JSON.stringify(err), new Error().stack?.split("\n")[1]);
         setPhase("idle");
         setMessage(err?.kind === "NoModel" ? NO_MODEL : CALM_ERROR);
       });
