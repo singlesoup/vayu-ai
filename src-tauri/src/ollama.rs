@@ -682,6 +682,29 @@ pub async fn verify_install(
     })
 }
 
+/// Delete a model via Ollama `POST /api/delete` (task 3.8).
+pub async fn delete_model(base_url: &str, model: &str) -> Result<(), VayuError> {
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|err| VayuError::io(err.to_string()))?;
+    let body = serde_json::json!({ "model": model });
+    let response = client
+        .delete(endpoint(base_url, "/api/delete"))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|err| VayuError::io(format!("Couldn't reach Ollama: {err}")))?;
+    if !response.status().is_success() {
+        return Err(VayuError::io(format!(
+            "Ollama returned HTTP {}",
+            response.status()
+        )));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1312,13 +1335,11 @@ mod tests {
             Duration::from_secs(5),
             STOP_POLL,
             |event| {
-                if let PullEvent::Progress(p) = &event {
-                    if p.status == "error" {
-                        saw_error_status = true;
-                    }
+                let PullEvent::Progress(p) = &event;
+                if p.status == "error" {
+                    saw_error_status = true;
                 }
-            },
-        )
+            },        )
         .await
         .unwrap_err();
         assert_eq!(err.kind, "Io");

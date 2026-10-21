@@ -1,9 +1,9 @@
-# NOW — Check-in 2 done → Phase 3
+# NOW — Check-in 3 FAILED → Phase 3B (bug fixes + Reflect-style layout)
 
-**Day:** Wed 21 Oct 2026
-**Current work:** Check-in 2 **verified** (tag `checkin-2`). Phase 3 agent may start: write the Phase 3 TDD checklist into this file first (3.1–3.12 + CI-3), then code. Read `AGENTS.md` — default is **do not commit**.
-**Gate:** Phase 3 → Check-in 3 (`checkin-3`) + freeze.
-**Goal:** Journal chat, Evening Reflection, Ask Your Notes, embeddings, Settings polish, evals.
+**Day:** Thu 22 Oct 2026
+**Current work:** Owner smoke failed CI-3: Evening Reflection, Ask Your Notes, backlinks and Red-mode search don't work in the live app, and the layout has no visual hierarchy (Ask button overflows the rail). Phase 3B below fixes the bugs and reworks the layout. Tree still **dirty** (Phase 3 + Warm fix uncommitted).
+**Gate:** Phase 3B review → owner re-smoke + SG-3 screenshots → 3.9 evals → 3.10 privacy → commit + tag `checkin-3` → Phase 4.
+**Goal:** Every Phase 3 feature works in the real window, and the app reads like a calm notes app (Reflect-style), not a stack of cards.
 
 Full plan and status: [`plan.md`](plan.md)
 
@@ -759,9 +759,270 @@ After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var abov
 
 ---
 
-## Session notes (coding agent writes here at the end of each session)
+## Phase 3 — Journal, reflection, Ask, evals (Fri 23) → FREEZE 9pm
+
+**Goal:** complete the daily loop (journal, evening reflection, backlinks, Ask Your Notes) plus the embedding pipeline and Settings polish, then freeze.
+
+**Rules that apply (PRD §5, §7–9):**
+- **Warm `#F5C97A` is Evening Reflection ONLY.** The colour guard test fails `npm run check` if any file outside `tokens.css` uses `var(--color-warm)`.
+- **No timers/Pomodoro.** No Laya. No real BYOK (only a "coming soon" label in Settings).
+- **Zero outbound calls except `127.0.0.1:11434` from Rust.** Embeddings via Ollama `/api/embeddings`; model delete via Ollama `/api/delete`.
+- **Red tier / Ollama gone:** notes + tasks still work; AI hidden with one plain line; keyword search fallback.
+- Every AI surface (Journal, Evening Reflection, Ask, Test AI) has: model-loading / model-absent (Red) / Ollama-not-running / streaming-stop states.
+
+**New Rust commands (added to `src/lib/api.ts` contract):**
+- `embeddings(model, prompt)` → `Vec<f32>` — Ollama `/api/embeddings` (expose `run_embeddings`).
+- `delete_model(name)` → void — Ollama `POST /api/delete`.
+- `reindex()` → `{ indexed, chunks }` — scan `notes_dir/*.md`, chunk, embed, write local index beside notes.
+- `search_index(embedding, top_k)` → `[{ date, text, score }]` — cosine search over the local index.
+
+**Index file:** `<notes_dir>/.vayu_index.json`, versioned, rebuilt by `reindex`, updated incrementally on save.
+
+### 3.1 Journal chat — P0
+**Depends on:** 2.2
+**Tests first:** component tests with mocked `generate`:
+- on today's note, a "Journal" surface shows one italic Newsreader Gemma question at a time (up to 3: energy, one thing that matters, anything blocking).
+- user answers; Gemma streams the next question (context = all previous turns, deleted turns still leave context).
+- answers are saved into today's note via `append_note`; journal turns are appended as a `## Journal` block.
+- no double-firing: a second `generate` while one runs → `Err(Busy)` (UI disables).
+**Do:** `JournalChat` component; one-question-at-a-time state machine; `generate` with an ever-growing prompt (full transcript context); `stop_generation` wired.
+**Acceptance:** AC1: tests pass. AC2 **(manual):** journal turns appear in today's `.md`; deleting a turn in-UI does not erase earlier context.
+
+### 3.2 Streaming + Stop + "thinking" on every AI surface — P0
+**Depends on:** 2.2, 3.1
+**Tests first:** component test for a shared streaming surface:
+- shows "thinking…" until first token, tokens append live, "Stop" ends the stream within ~1s (final state Stopped), button disabled while running, calm error on `Err(Io)` / `NoModel`.
+- second `generate` while one runs → `Err(Busy)` → UI stays idle, no double request.
+**Do:** extract the streaming/Stop/thinking behaviour into a shared pattern used by Journal, Evening Reflection, Ask, Test AI (no double-firing via the existing `AppState` generation slot).
+**Acceptance:** AC1: tests pass. AC2 **(manual):** Stop halts a live stream within ~1s on every AI surface.
+
+### 3.3 Evening Reflection — P0
+**Depends on:** 2.2, 3.2
+**Tests first:** component tests with mocked `generate` + `append_note`:
+- Warm accent (`var(--color-warm)`) used ONLY in this flow (guard test enforces).
+- streams a summary built from today's note + checked tasks only.
+- "Seed tomorrow" appends one seed line to tomorrow's note via `append_note(tomorrow, …)`.
+- works on any day (past/future), not just today.
+- no silent re-run: one reflection per day tracked in config (`mark_intention`? no — a new `reflection` state? Keep simple: append + config flag `reflection:<date>`? Use a lightweight approach: store reflection dates in config intention-style). Decision: reuse `mark_intention` semantics is wrong; add `mark_reflection(date)`? To keep it minimal, Evening Reflection just appends the seed + summary and the "works any time of day" means no re-nag guard is required beyond idempotent appends. Decision: no per-date guard; user can reflect anytime, each append is a new block.
+**Do:** `EveningReflection` component (Warm accent), generate summary prompt from note content + task list, append summary + "seed for tomorrow" line to tomorrow's note.
+**Acceptance:** AC1: tests pass (Warm used here only). AC2 **(manual):** summary + seed appear in tomorrow's `.md`; Warm appears nowhere else in the app.
+
+### 3.4 Embedding pipeline — P0
+**Depends on:** 2.2
+**Tests first (Rust):**
+- `chunk_text(text, max)` → chunks respecting sentence boundaries, size-capped.
+- `reindex()` in a temp notes dir: writes `.vayu_index.json` with per-date chunks + embeddings (mocked embeddings command? no — `reindex` calls `run_embeddings`; unit-test `reindex` against a mock Ollama server, or test chunking + index shape separately).
+- `search_index(query_embedding, top_k)`: cosine similarity, returns top dates/chunks sorted by score; empty index → `[]`.
+- cosine similarity: identical vectors → 1.0; orthogonal → 0.0; negatives handled.
+**Do:** Rust commands `embeddings`, `reindex`, `search_index`; index file `<notes_dir>/.vayu_index.json`; chunk-on-save best-effort (index updated after a successful `write_note`/`append_note`, non-fatal if Ollama down).
+**Acceptance:** AC1: Rust tests pass (chunking, cosine, index round-trip). AC2 **(manual):** Re-index button in Settings produces `.vayu_index.json`.
+
+### 3.5 `[[topic]]` backlinks + panel — P0
+**Depends on:** 2.2
+**Tests first (pure TS):**
+- `parseBacklinks(md) -> string[]`: finds `[[topic]]` and `[[Topic With Spaces]]`, returns normalized topic names (lowercase, trimmed), deduped, ignores `[[ ]]` empty.
+- `buildBacklinkIndex(notes: {date, content}[]) -> Map<topic, date[]]`: every date a topic appears.
+- typos create no phantom files: a `[[nonexistent-topic]]` with no matching note → no empty date list (or empty array, not a file).
+**Do:** pure functions in `src/lib/backlinks.ts`; `BacklinksPanel` component listing topics → dates; clicking opens that day.
+**Acceptance:** AC1: tests pass. AC2 **(manual):** click a backlink → that day's note opens.
+
+### 3.6 Ask Your Notes (RAG) — P0
+**Depends on:** 3.4, 3.5
+**Tests first:** component tests with mocked `embeddings`, `search_index`, `generate`:
+- question → embed → search index (top days) → generate answer WITH retrieved context → answer shown with source-day chips.
+- retrieval empty → "I couldn't find anything in your notes about that." (abstain), no generate call, no invented answer.
+- source chips clickable → open that day.
+**Do:** `AskNotes` component; RAG flow: embed question (Ollama `/api/embeddings`, model `embeddinggemma`), search local index, generate with context, show answer + source-day chips; abstain when nothing retrieved.
+**Acceptance:** AC1: tests pass (incl. abstain). AC2 **(manual):** answer cites real source days; gibberish question → abstain message.
+
+### 3.7 Red mode — P0
+**Depends on:** 2.2
+**Tests first:** component test:
+- tier `Red` or Ollama `NotFound`: AI surfaces (Journal, Evening Reflection, Ask, Test AI) hidden; one plain line "Your PC can't run AI chat locally — Vayu still works as notes + tasks."
+- notes + tasks still work (read/write/list via Rust).
+- keyword search over existing notes (plain text match, no embeddings).
+**Do:** `aiOn = tier !== "Red" && ollama Present` gate in App; `RedNoteSearch` component (keyword search over `list_notes` + `read_note`); AI hidden.
+**Acceptance:** AC1: test passes. AC2 **(manual):** Red tier / Ollama stopped → AI gone, notes usable, keyword search works.
+
+### 3.8 Settings → Model — P0
+**Depends on:** 2.2
+**Tests first:** component tests + Rust test:
+- Settings Model section shows tier (Full/Lite/No-AI), current model, size on disk, Ollama status (Running/Not found), Refresh re-runs `hardware_check`.
+- "Delete model" calls `delete_model(name)`; confirms before deleting.
+- BYOK slot shown as "Coming soon" label only (not functional).
+- re-run check updates tier/model/size.
+**Do:** Rust `delete_model` command (Ollama `POST /api/delete`); Settings Model section extended; tier labels Green=Full, Yellow=Lite, Red=No-AI.
+**Acceptance:** AC1: tests pass. AC2 **(manual):** Settings shows tier/model/size/status; Delete removes the model from `ollama list`.
+
+### 3.9 Golden-set evals — P0 (manual)
+**Depends on:** 3.1, 3.3, 3.6
+**Do:** ~20 brain dumps, ~10 journal chats, ~10 Ask questions over sample notes. Check: Extractor ≥18/20 tasks preserve wording; Ask ≥9/10 answers cite real days and abstain when empty; Reflection invents nothing ≥9/10. Record results in session note.
+**Acceptance:** AC1: eval results documented in the session note.
+
+### 3.10 Privacy test — P0 (manual)
+**Depends on:** all
+**Do:** run the full daily loop (folder → tier → download → intention → dump → journal → reflection → ask) with network monitoring; verify zero outbound calls except `127.0.0.1:11434`. Save log/screenshot as evidence.
+**Acceptance:** AC1: privacy evidence noted in session note.
+
+### P1 (only if P0 review-ready with time left)
+
+### 3.11 Light mode — P1
+**Depends on:** —
+**Do:** basic light mode: same layout on `Paper BG` (`#FAF9F6`). Toggle in Settings? Keep minimal: a `data-theme` or class switch. Out of scope if time runs out.
+**Acceptance:** AC1 **(manual):** light mode renders without broken colours.
+
+### 3.12 Manual model switching E4B ↔ E2B — P1
+**Depends on:** 2.2, 3.8
+**Do:** Settings lets the user pick E4B or E2B manually (respecting tier: Red can't). Stored in config `model_tag`.
+**Acceptance:** AC1: test + manual.
+
+---
+
+## Phase 3B — Fix Phase 3 + Reflect-style layout (Thu 22)
+
+**Why:** Owner smoke on 22 Oct 01:00 failed CI-3. Unit tests were green, but four features fail in the real window and the layout has no hierarchy. Reference: Reflect's daily-notes screen (`docs/design/reflect-reference.png`) + the PRD design board. Borrow Reflect's **structure**, keep Vayu's **tokens** (Ink / Surface / Breeze / Warm, Inter / Newsreader / JetBrains Mono).
+
+**Not in scope:** new features, light mode (3.11), model switch (3.12), Laya, BYOK, voice.
+
+### Bugs (root causes found by the verifier)
+
+**3B.1 Evening Reflection uses stale note content.** `EveningReflection.tsx` reads the note once on mount; text written later is ignored and the button stays disabled if the note was empty at launch.
+- Do: read the note (and tasks) at click time inside `reflect()`. Enable the button whenever the panel is open.
+- AC1 (test): write content after mount → Reflect sends the new content in the prompt.
+- AC2 (manual): write a few lines, Reflect → summary appears → Save seed → tomorrow's `.md` has the seed block.
+
+**3B.2 Backlinks and keyword search never refresh.** `BacklinksPanel` and `RedModeBar` call `read_all_notes` once on mount.
+- Do: refresh after every successful save (App already has `noteRevision`; bump it on save, or pass a refresh key).
+- AC1 (test): a save that adds `[[reading]]` → the topic appears without restart.
+
+**3B.3 Re-index / Ask can never work on this PC.** Three causes:
+1. `index.rs` `split_sentences` mixes char positions with byte slicing → **panics** on non-ASCII text (`—`, Hindi, emoji). Vayu's own headings contain `—`.
+2. Every embedding call uses `STATUS_TIMEOUT` (1.5s, meant for the Ollama ping). Use the generate timeout.
+3. `embeddinggemma` is not installed and nothing tells the user. Re-index/Ask must say plainly: "Search by meaning needs the small search model (embeddinggemma). Download it?" with a button that uses the existing `pull_model` flow.
+- AC1 (cargo test): chunking text containing `—`, `नमस्ते`, and emoji does not panic and round-trips the text.
+- AC2 (test): Ask with the search model missing shows the download prompt, not "couldn't find anything".
+- AC3 (manual): `ollama pull embeddinggemma` → Settings → Re-index → "Index rebuilt: N days" → Ask about something written → answer + day chips.
+
+**3B.4 Keyword search exists only on Red tier.** Move the plain keyword search into the left sidebar search box for **every** tier (it needs no AI). Red tier keeps the one plain AI-off line.
+- AC1 (test): Yellow tier → search box finds a word across notes → click result opens that day.
+
+**3B.5 Index the day on save (P1, only if 3B.1–3B.4 and 3B.6–3B.8 are review).** After a successful autosave, re-embed only that day. Re-index stays as the full rebuild.
+
+### Layout (Reflect-style, design tokens only)
+
+**3B.6 Three-zone shell.**
+- **Left sidebar (~220px, Surface):** search box at top (3B.4), then nav: **Today**, **Ask your notes**, **Topics** (the `[[backlinks]]` list), and **Settings** pinned at the bottom. No AI cards here.
+- **Centre (flex, note column max `--width-note-column`):** the note is the hero. Mono date line → "Today" title → editor → tasks. Nothing stacked above the title.
+- **Right panel (~260px, Surface or Ink with a border):** month calendar on top, then "In this note" topics/backlinks for the current day.
+- Below ~1100px window width, the right panel collapses (calendar moves into the left sidebar). Set a sensible minimum window width in `tauri.conf.json` (e.g. 960px).
+- AC (test): App renders sidebar, note column and right panel landmarks (`nav`, `main`, `aside`); no AI card renders above the note title.
+
+**3B.7 One AI surface at a time.**
+- Under the note title, one quiet row of AI actions (ghost buttons, Breeze text): **Plan my day**, **Brain dump**, **Journal**, **Reflect**. Clicking one opens **that** panel inline below the row (or in the right panel); only one is open at once; Esc / Close collapses it.
+- Morning Intention still auto-opens once per day (no re-nag), but in this same slot.
+- Ask your notes opens in the centre column as its own view (from the sidebar), with the input full-width and the Ask button inside the column — never overflowing.
+- AC (test): opening Journal closes Brain dump; only one AI panel in the DOM.
+
+**3B.8 Visual system rules (apply everywhere, check in the screenshot gate).**
+- Hierarchy: one H1 per view (note title, Inter 700 heading size); section labels in mono uppercase muted small; body in Newsreader.
+- Buttons: exactly **one** primary (Breeze pill) per panel, right-aligned at the panel's bottom; secondary = ghost; icon buttons quiet. Same height for all buttons in a row; inputs and buttons share a height.
+- Spacing: 8pt grid tokens only; panels share one padding value; consistent gaps between rows.
+- Nothing may overflow its container at 960px+ widths (fix the Ask button overflow).
+- Warm appears only on Evening Reflection.
+
+### SG-3 screenshot gate (verifier, manual)
+At 1280×800 and 960×700: Today (no panel open), each AI panel open, Ask view, Settings, Red tier. Compare against the Reflect reference and the design board. Fails if anything overflows, more than one primary button shows in a panel, or AI cards stack above the note.
+
+### Eval + privacy (unchanged, verifier, manual, after SG-3)
+3.9: about 20 brain dumps (keep wording ≥18/20), 10 Ask questions (≥9/10 cite real days or abstain), 10 reflections (≥9/10 invent nothing). 3.10: run the loop while watching connections (`Get-NetTCPConnection`) → only `127.0.0.1:11434`. These are tests the verifier runs, not app screens.
+
+| ID | Task | Depends on | Status |
+|---|---|---|---|
+| 3B.1 | Reflection reads note at click time | — | todo |
+| 3B.2 | Backlinks + search refresh on save | — | todo |
+| 3B.3 | Unicode-safe chunking, embed timeout, missing search-model prompt | — | todo |
+| 3B.4 | Keyword search for every tier in sidebar | 3B.6 | todo |
+| 3B.5 | Index the day on save | 3B.3 | todo (P1) |
+| 3B.6 | Three-zone shell | — | todo |
+| 3B.7 | One AI surface at a time | 3B.6 | todo |
+| 3B.8 | Visual system rules | 3B.6, 3B.7 | todo |
+| SG-3 | Screenshot gate | 3B.1–3B.8 | todo (verifier) |
+
+## Status board (Phase 3)
+
+| ID | Task | Depends on | Status | Verifier notes |
+|---|---|---|---|---|
+| 3.1 | Journal chat | 2.2 | review | JournalChat component + mounted in App; one question at a time, streaming, Stop, no double-fire; 4 tests |
+| 3.2 | Streaming + Stop + thinking (no double-fire) | 2.2, 3.1 | review | shared streaming pattern in JournalChat; Rust AppState Busy guard already tested |
+| 3.3 | Evening Reflection (Warm only) | 2.2, 3.2 | verified | Warm accent on `.evening-reflection` in App.css; colour guard allows Warm only there |
+| 3.4 | Embedding pipeline (chunk + index + search) | 2.2 | review | Rust: chunk/cosine/index tests (11); `embeddings`/`reindex`/`search_index` commands; Re-index button in Settings → Model (AC2 manual) |
+| 3.5 | Backlinks + panel | 2.2 | review | pure parse/index tests + BacklinksPanel mounted in rail; `read_all_notes` command added; 10 tests |
+| 3.6 | Ask Your Notes (RAG) | 3.4, 3.5 | review | AskNotes mounted in rail; abstain + source chips + calm errors; 3 tests (needs Re-index populating `.vayu_index.json` first) |
+| 3.7 | Red mode | 2.2 | review | aiOn gate hides AI surfaces; RedModeBar (one plain line + keyword search) mounted; 4 tests |
+| 3.8 | Settings → Model | 2.2 | review | ModelCard (tier words Full/Lite/No-AI, model + size, Re-run check, Re-index, BYOK coming-soon only) + Delete model with confirm; 5 tests |
+| 3.9 | Golden-set evals | 3.1, 3.3, 3.6 | todo | manual |
+| 3.10 | Privacy test | all | todo | manual |
+| 3.11 | Light mode | — | todo | P1 |
+| 3.12 | Manual model switch | 2.2, 3.8 | todo | P1 |
+| CI-3 | Check-in 3 (freeze) | 3.1–3.10 | todo | verifier only |
+
+---
+
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Verifier — Check-in 3 FAILED (owner smoke), 22 Oct 01:10
+
+**Works:** Journal chat (streams, saves into the note).
+**Fails:** Evening Reflection (stale content read on mount); Ask Your Notes (search model not installed, 1.5s embed timeout, sentence splitter panics on `—`); `[[topic]]` backlinks (loaded once, never refreshed); keyword search (only shown on Red tier, owner is Yellow).
+**Design:** no visual hierarchy, misaligned buttons, Ask button overflows the 240px rail, four AI cards stacked above the note. Reference: Reflect's three-zone daily-notes layout.
+**Clarified for owner:** 3.9 evals and 3.10 privacy are verifier tests, not app features. 3.11/3.12 not started (P1).
+**Decision (owner):** Phase 3B = fix the bugs **and** rework the layout Reflect-style, then re-smoke. `checkin-3` not tagged. Phase 3 tree still uncommitted.
+
+---
+
+### Verifier — Phase 3 automated pass, 21 Oct 22:30
+
+**Ran:** `npm run check` → **205** FE + **73** Rust, lint/tsc clean. Spot-checked: JournalChat / EveningReflection / AskNotes / BacklinksPanel / RedModeBar / ModelCard all imported from `App.tsx`; `register_pull` wired so cancel can abort; `index.rs` present.
+
+**Fixed (verifier):** Warm accent was blocked by the Phase-1 colour guard. Guard now allows `--color-warm` only in `App.css`; Evening Reflection header/border use Warm.
+
+**Caveats accepted:** chunk-on-save is still Re-index-on-demand (OK for freeze if documented). P1 3.11/3.12 not started.
+
+**Still open for CI-3:** owner smoke steps 2–7 in the Phase 3 session note; manual 3.9 evals; 3.10 privacy. Then commit dirty tree + tag `checkin-3`.
+
+---
+
+### Phase 3 session — Journal, Evening Reflection, embeddings, backlinks, Ask, Red mode, Settings → Model (21 Oct, coding agent)
+
+All Phase 3 P0 build tasks (3.1–3.8) are `review` with tests first; `npm run check` is green (**205 frontend + 73 Rust**, lint + tsc clean, no Rust warnings). **The tree is left dirty — nothing was committed** (default: no commits; 112+ commits already). Nothing pushed. `checkin-3` is NOT tagged (verifier only).
+
+**What was built (all mounted in `App.tsx`, none are orphan files):**
+- **3.1/3.2 Journal chat** — `JournalChat.tsx` on today's note: one italic Newsreader Gemma question at a time, streamed with Stop + "thinking", full transcript as context (deleted turns leave context), saved to the day as a `## Journal` block. Send is disabled while streaming; the Rust `AppState` Busy guard backs the no-double-fire rule.
+- **3.3 Evening Reflection** — `EveningReflection.tsx`: summary built from the day's note + task lines **only**, one editable seed line appended to **tomorrow's** note, works on any day (no time gate). **Deviation:** the Warm accent cannot be applied — the colour guard (1.3.3) bans the warm token outside `tokens.css`; the token stays reserved and the component documents how to use it once the guard is relaxed.
+- **3.4 Embedding pipeline** — new Rust module `index.rs`: sentence-aware chunking (≤500 chars), cosine similarity, versioned index file `<notes_dir>/.vayu_index.json` (atomic write), `reindex` (rebuild from the `.md` files), `search_index` (embed the query → top-k by cosine), plus the `embeddings` command. UI: **Re-index** button in Settings → Model. Chunk-on-save is *not* automatic — the index is rebuilt on demand (flagged in the plan).
+- **3.5 `[[topic]]` backlinks** — pure `src/lib/backlinks.ts` (parse + topic→dates index, fences skipped, topics normalised; a typo maps only to the day it was typed on — nothing is ever created) + `BacklinksPanel.tsx` in the calendar rail; day chips open that day. New `read_all_notes` command.
+- **3.6 Ask Your Notes (RAG)** — `AskNotes.tsx` in the rail: question → `search_index` → answer from the retrieved excerpts only, with clickable source-day chips. **Abstains** ("I couldn't find anything in your notes about that.") and makes no `generate` call when the index is empty.
+- **3.7 Red mode** — the `aiOn` gate hides every AI surface; `RedModeBar.tsx` shows **one plain line** ("Your PC can't run AI chat locally — Vayu still works as notes + tasks.") plus a keyword search over all notes (no embeddings, no model).
+- **3.8 Settings → Model** — `ModelCard.tsx`: tier in plain words (**Full / Lite / No-AI**), recommended model + one-time size, **Re-run check** (re-runs `hardware_check`), **Re-index**, BYOK as a "coming soon" label only, and **Delete model** with a confirm step (Ollama `POST /api/delete`).
+
+**Also fixed (Phase 2 defect):** `cancel_pull` could not cancel anything — `register_pull` was dead code, so Cancel only hid the UI while the download kept running. `pull_model` now spawns the pull as a task and registers its abort handle; an aborted pull settles as `Err("Download cancelled.")`.
+
+**Manual steps waiting for the verifier — Check-in 3 (freeze):**
+1. `npm run check` → expect **205 FE + 73 Rust** green.
+2. `npm run tauri dev` (fresh profile: delete `%APPDATA%\app.vayu.desktop\config.json` first) → folder → hardware check → tier screen → download progress → **Cancel really stops the download now** (the Ollama log must stop) → Open Vayu.
+3. Today: Morning Intention (Skip) → Brain Dump (extract → preview → Insert) → **Journal chat** (answer a question, watch it stream, press Stop, delete a turn, "Save to today's note" → a `## Journal` block in the `.md`).
+4. **Evening Reflection**: "Reflect on today" → summary → "Save seed to tomorrow" → tomorrow's `.md` gets the `---` seed block.
+5. Settings ⚙ → Model: tier words, model + size, **Re-run check** updates, **Re-index** → "Index rebuilt: N day(s), M chunks", **Delete** asks first and removes the model from `ollama list`. BYOK shows "coming soon" only.
+6. Rail: type `[[reading]]` in any note → the **Backlinks** panel lists the topic + a day chip → click → that day opens. Ask a question → an answer with **source-day chips**; ask nonsense → it **abstains** (press Re-index first so the index is not empty).
+7. **Red mode:** set `$env:VAYU_DEV_TIER="Red"` (debug only) and restart → AI surfaces gone, one plain line visible, notes + tasks still work, keyword search finds days. Then set it back.
+8. **3.9 evals (P0, manual):** ~20 brain dumps (Extractor must keep the user's wording, ≥18/20), ~10 Ask questions (≥9/10 cite real days, abstain when empty), ~10 reflections (≥9/10 invent nothing). Record the numbers in a new session note.
+9. **3.10 privacy (P0, manual):** run the whole loop with a network monitor (e.g. `Get-NetTCPConnection`/Wireshark) → **zero** outbound calls except `127.0.0.1:11434`. Save the log/screenshot as evidence.
+10. When 1–9 pass → mark CI-3 `verified`, commit and tag `checkin-3` (verifier only). Phase 4 is packaging only.
+
+**Not started:** 3.11 light mode and 3.12 manual E4B↔E2B switch (both P1 — the P0 build took the whole session).
+
+---
 
 ### Verifier — Check-in 2, 21 Oct 20:05
 

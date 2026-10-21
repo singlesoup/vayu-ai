@@ -67,15 +67,16 @@ describe("colour guard (task 1.3.3 — tokens.css is the only colour source)", (
     expect(offenders, "hard-coded colours found").toEqual([]);
   });
 
-  // Phase 1 ban (task 1B.3 AC1): Warm is Evening Reflection only (Phase 3).
-  it("no file outside tokens.css even uses var(--color-warm)", () => {
+  // Warm is Evening Reflection only (PRD §8 / task 3.3). Allowed in App.css
+  // (the `.evening-reflection` styles) — nowhere else.
+  it("var(--color-warm) only appears in App.css (Evening Reflection)", () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(SRC)) {
       if (ALLOWED_FILE.test(file)) continue;
-      if (readFileSync(file, "utf8").includes("--color-warm")) {
-        offenders.push(relative(SRC, file));
-      }
+      if (!readFileSync(file, "utf8").includes("--color-warm")) continue;
+      const rel = relative(SRC, file).replace(/\\/g, "/");
+      if (rel !== "App.css") offenders.push(rel);
     }
-    expect(offenders, "files using --color-warm").toEqual([]);
+    expect(offenders, "files using --color-warm outside App.css").toEqual([]);
   });
 });

@@ -6,6 +6,11 @@ import { FirstRunScreen } from "./components/FirstRunScreen";
 import { SetupFlow } from "./components/SetupFlow";
 import { MorningIntention } from "./components/MorningIntention";
 import { BrainDump } from "./components/BrainDump";
+import { JournalChat } from "./components/JournalChat";
+import { EveningReflection } from "./components/EveningReflection";
+import { BacklinksPanel } from "./components/BacklinksPanel";
+import { AskNotes } from "./components/AskNotes";
+import { RedModeBar } from "./components/RedModeBar";
 import { DailyNote } from "./components/DailyNote";
 import { Calendar } from "./components/Calendar";
 import { Settings } from "./components/Settings";
@@ -166,6 +171,18 @@ function AppBody() {
           noteDates={noteDates}
           onSelect={(date) => setDays((prev) => (prev ? { ...prev, current: date } : prev))}
         />
+        <BacklinksPanel
+          onOpenDay={(date) =>
+            setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
+          }
+        />
+        {aiOn && (
+          <AskNotes
+            onOpenDay={(date) =>
+              setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
+            }
+          />
+        )}
       </aside>
       <div className="note-column">
         {showIntention && (
@@ -179,6 +196,19 @@ function AppBody() {
         )}
         {isToday && aiOn && (
           <BrainDump date={days.today} onFinish={() => setNoteRevision((n) => n + 1)} />
+        )}
+        {isToday && aiOn && (
+          <JournalChat date={days.today} onSaved={() => setNoteRevision((n) => n + 1)} />
+        )}
+        {isToday && aiOn && (
+          <EveningReflection date={days.today} onSaved={() => setNoteRevision((n) => n + 1)} />
+        )}
+        {isToday && !aiOn && (
+          <RedModeBar
+            onOpenDay={(date) =>
+              setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
+            }
+          />
         )}
         <DailyNote
           key={`${days.current}-${noteRevision}`}

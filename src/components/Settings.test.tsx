@@ -158,3 +158,47 @@ describe("Settings → Model list (task 1.10.2)", () => {
     expect(screen.queryByText("Present")).toBeNull();
   });
 });
+
+describe("Settings → Delete model (task 3.8)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  async function openWithOneModel() {
+    const tauri = mockInvoke();
+    tauri.on("ollama_status", () => RUNNING);
+    tauri.on("list_models", () => ({
+      present: ["gemma3n:e4b"],
+      missing: ["gemma3n:e2b", "embeddinggemma"],
+      status: RUNNING,
+      devChatModel: null,
+    }));
+    tauri.on("delete_model", () => null);
+    render(<Settings open onClose={() => {}} />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+  }
+
+  it("cancel keeps the model; confirm calls delete_model and refreshes", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    await openWithOneModel();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    expect(getInvokeMock().mock.calls.some(([c]) => c === "delete_model")).toBe(false);
+
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(getInvokeMock().mock.calls.some(([c]) => c === "delete_model")).toBe(true);
+    // the list refreshes after the deletion
+    expect(getInvokeMock().mock.calls.filter(([c]) => c === "list_models").length).toBeGreaterThanOrEqual(2);
+  });
+});

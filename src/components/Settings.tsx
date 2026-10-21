@@ -7,9 +7,10 @@
 // models is Phase 2. All outcomes are calm — Ollama being down is a normal
 // state, not a crash.
 import { useCallback, useEffect, useState } from "react";
-import { listModels, ollamaStatus } from "../lib/api";
+import { deleteModel, listModels, ollamaStatus } from "../lib/api";
 import type { DetectedModels, OllamaStatus } from "../lib/api";
 import { TestAi } from "./TestAi";
+import { ModelCard } from "./ModelCard";
 
 const POLL_MS = 5_000;
 
@@ -112,6 +113,7 @@ function ModelStatus() {
 
   return (
     <>
+      <ModelCard onModelsChanged={refresh} />
       {data.status.kind === "Running" ? (
         <p role="status">Running — Ollama v{data.status.version}</p>
       ) : (
@@ -123,12 +125,14 @@ function ModelStatus() {
         </p>
       )}
 
-      {/* Task 1.10.2: the three PRD models, Present/Missing, no download UI. */}
+      {/* Task 1.10.2: the three PRD models, Present/Missing. Task 3.8:
+          present models can be removed from disk via /api/delete. */}
       <ul className="model-list">
         {data.models.present.map((name) => (
           <li key={name}>
             <code>{name}</code>
             <span>Present</span>
+            <DeleteModelButton name={name} onDeleted={refresh} />
           </li>
         ))}
         {data.models.missing.map((name) => (
@@ -151,6 +155,28 @@ function RefreshButton({ onRefresh }: { onRefresh: () => void }) {
   return (
     <button type="button" onClick={onRefresh}>
       Refresh
+    </button>
+  );
+}
+
+/** Task 3.8: remove an installed model from disk (asks first). */
+function DeleteModelButton({ name, onDeleted }: { name: string; onDeleted: () => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      className="btn-ghost"
+      disabled={busy}
+      onClick={() => {
+        if (!window.confirm(`Delete ${name} from disk? This can't be undone.`)) return;
+        setBusy(true);
+        void deleteModel(name)
+          .then(onDeleted)
+          .catch(() => setBusy(false))
+          .finally(() => setBusy(false));
+      }}
+    >
+      Delete
     </button>
   );
 }

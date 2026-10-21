@@ -49,6 +49,16 @@ export const COMMANDS = {
   markIntention: "mark_intention",
   /** Task 2.9/2.10: append an intention or task block to a note. */
   appendNote: "append_note",
+  /** Task 3.4: one embedding via Ollama /api/embeddings. */
+  embeddings: "embeddings",
+  /** Task 3.8: delete a model via Ollama /api/delete. */
+  deleteModel: "delete_model",
+  /** Task 3.4: rebuild the local embedding index from all notes. */
+  reindex: "reindex",
+  /** Task 3.4/3.6: cosine-search the local embedding index. */
+  searchIndex: "search_index",
+  /** Task 3.5: every existing note with content, for the backlinks panel. */
+  readAllNotes: "read_all_notes",
 } as const;
 
 /**
@@ -136,6 +146,22 @@ export type PullEvent = { event: "progress"; value: PullProgress };
 export type VerifyResult = {
   generationOk: boolean;
   embeddingsOk: boolean;
+};
+
+export type IndexStats = {
+  indexed: number; // number of dates indexed
+  chunks: number; // total chunks embedded
+};
+
+export type SearchHit = {
+  date: string;
+  text: string;
+  score: number; // cosine similarity, 0..1
+};
+
+export type NoteSummary = {
+  date: string;
+  content: string;
 };
 
 /**
@@ -311,4 +337,35 @@ export function markIntention(
 /** `append_note(date, appendix)` — atomic append of an intention/task block (task 2.9/2.10). */
 export function appendNote(date: NoteDate, appendix: string): Promise<void> {
   return invoke<void>(COMMANDS.appendNote, { date, appendix });
+}
+
+/** `embeddings(model, prompt)` → embedding vector via Ollama /api/embeddings (task 3.4). */
+export function embeddings(
+  model: string,
+  prompt: string,
+): Promise<number[]> {
+  return invoke<number[]>(COMMANDS.embeddings, { model, prompt });
+}
+
+/** `delete_model(name)` → delete a model via Ollama /api/delete (task 3.8). */
+export function deleteModel(name: string): Promise<void> {
+  return invoke<void>(COMMANDS.deleteModel, { name });
+}
+
+/** `reindex()` → rebuild the local embedding index from every note (task 3.4). */
+export function reindex(): Promise<IndexStats> {
+  return invoke<IndexStats>(COMMANDS.reindex);
+}
+
+/**
+ * `search_index(query, top_k)` → cosine-search the local embedding index
+ * (task 3.4/3.6). Returns the top `top_k` hits sorted by score.
+ */
+export function searchIndex(query: string, topK: number): Promise<SearchHit[]> {
+  return invoke<SearchHit[]>(COMMANDS.searchIndex, { query, topK });
+}
+
+/** `read_all_notes()` → every existing note with content (task 3.5). */
+export function readAllNotes(): Promise<NoteSummary[]> {
+  return invoke<NoteSummary[]>(COMMANDS.readAllNotes);
 }

@@ -95,8 +95,8 @@
   --color-breeze: #5EEAD4; /* primary accent, links, everything AI */
   --color-deep-teal: #14B8A6; /* pressed / active states, checked checkbox, today */
   --color-paper: #FAF9F6; /* light-mode background (light mode is P1, Friday) */
-  --color-warm: #F5C97A; /* Evening Reflection ONLY (Phase 3). The colour guard
-     test fails `npm run check` if any file outside tokens.css uses this token. */
+  --color-warm: #F5C97A; /* Evening Reflection ONLY (Phase 3). Colour guard
+     allows this token only in App.css (`.evening-reflection`). */
 
   /* ---- Supporting shades from the design board ---- */
   --color-border: #262C36; /* dividers */

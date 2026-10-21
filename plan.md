@@ -69,7 +69,8 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 | 1C. Rust backend | Wed 21 | verified | — |
 | 1D. Smoke bugfix | Wed 21 | verified | Layout + Dev model for Test AI |
 | 2. First run, tiers, morning features | Thu 22 | verified (tag `checkin-2`) | Check-in 2 |
-| 3. Journal, reflection, Ask, evals | Fri 23 | todo (unblocked) | Check-in 3 + freeze |
+| 3. Journal, reflection, Ask, evals | Fri 23 | CI-3 failed owner smoke → Phase 3B | Check-in 3 + freeze |
+| 3B. Fix Phase 3 + Reflect-style layout | Thu 22 | todo | SG-3 screenshots + re-smoke |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
 
 ---
@@ -178,19 +179,19 @@ Details: [`now.md`](now.md) Phase 1C.
 
 | ID | Task | P | Status |
 |---|---|---|---|
-| 3.1 | Journal chat: italic Newsreader prompt, one question at a time, saved to note; deleted turns leave context | P0 | todo |
-| 3.2 | Streaming + Stop + "thinking" state on every AI surface; no double-firing | P0 | todo |
-| 3.3 | Evening Reflection (Warm `#F5C97A`, only here): summary from note + tasks only, seed line in tomorrow's note, works any time of day | P0 | todo |
-| 3.4 | Embedding pipeline: chunk on save → EmbeddingGemma → local index beside notes; rebuildable from `.md` files | P0 | todo |
-| 3.5 | `[[topic]]` backlinks + backlink panel; typos create no phantom files | P0 | todo |
-| 3.6 | Ask Your Notes (RAG) with source-day chips; abstains when not found | P0 | todo |
-| 3.7 | Red mode: notes + tasks + keyword search with Ollama uninstalled; AI hidden with one plain line | P0 | todo |
-| 3.8 | Settings → Model: tier (Full / Lite / No-AI), model, size on disk, Ollama status, re-run check, delete model; BYOK slot shown as "coming soon" only | P0 | todo |
-| 3.9 | Golden-set evals (60 min): Extractor ≥18/20, Ask ≥9/10, Reflection invents nothing ≥9/10 | P0 | todo |
-| 3.10 | Privacy test: zero outbound calls during full loop; log/screenshot saved | P0 | todo |
-| 3.11 | Light mode (basic: same layout on Paper BG) | P1 | todo |
-| 3.12 | Manual model switching E4B ↔ E2B in Settings | P1 | todo |
-| CI-3 | **Check-in 3 (freeze):** full honest day in-app, eval bars met, privacy clean → tag `checkin-3` | Gate | todo |
+| 3.1 | Journal chat: italic Newsreader prompt, one question at a time, saved to note; deleted turns leave context | P0 | review |
+| 3.2 | Streaming + Stop + "thinking" state on every AI surface; no double-firing | P0 | review |
+| 3.3 | Evening Reflection (Warm `#F5C97A`, only here): summary from note + tasks only, seed line in tomorrow's note, works any time of day | P0 | verified (Warm via App.css; guard allows App.css only) |
+| 3.4 | Embedding pipeline: chunk on save → EmbeddingGemma → local index beside notes; rebuildable from `.md` files | P0 | review |
+| 3.5 | `[[topic]]` backlinks + backlink panel; typos create no phantom files | P0 | review |
+| 3.6 | Ask Your Notes (RAG) with source-day chips; abstains when not found | P0 | review |
+| 3.7 | Red mode: notes + tasks + keyword search with Ollama uninstalled; AI hidden with one plain line | P0 | review |
+| 3.8 | Settings → Model: tier (Full / Lite / No-AI), model, size on disk, Ollama status, re-run check, delete model; BYOK slot shown as "coming soon" only | P0 | review |
+| 3.9 | Golden-set evals (60 min): Extractor ≥18/20, Ask ≥9/10, Reflection invents nothing ≥9/10 | P0 | todo — manual, needs a live model (verifier) |
+| 3.10 | Privacy test: zero outbound calls during full loop; log/screenshot saved | P0 | todo — manual (verifier) |
+| 3.11 | Light mode (basic: same layout on Paper BG) | P1 | todo — not started (P1) |
+| 3.12 | Manual model switching E4B ↔ E2B in Settings | P1 | todo — not started (P1) |
+| CI-3 | **Check-in 3 (freeze):** full honest day in-app, eval bars met, privacy clean → tag `checkin-3` | Gate | todo — verifier only |
 
 ---
 
@@ -256,6 +257,18 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | Phase 3 | P0 build done: 3.1–3.8 review-ready, tree left dirty (no commit, per default). `npm run check` green: **205 FE + 73 Rust**, lint + tsc clean, no Rust warnings. New Rust: `index.rs` (chunking, cosine, index file `.vayu_index.json`), `embeddings`/`delete_model`/`reindex`/`search_index`/`read_all_notes` commands. New UI mounted in `App.tsx`: JournalChat, EveningReflection, RedModeBar, BacklinksPanel, AskNotes, ModelCard in Settings. Rust tests 62 → 73; FE 175 → 205 | agent |
+| 2026-10-21 | 2.5 fix | `cancel_pull` now really cancels: `pull_model` spawns the pull as a task and registers its abort handle (`register_pull` was dead code before, so Cancel only hid the UI while the download kept running). An aborted pull settles as `Err("Download cancelled.")`. Rust is warning-free again | agent |
+| 2026-10-21 | 3.8 | Settings → Model: `ModelCard` (tier in plain words Full/Lite/No-AI, recommended model + one-time size, Re-run check, Re-index, BYOK "coming soon" label only) + Delete model with a confirm step (Ollama `POST /api/delete`). New `src/lib/tiers.ts` (react-refresh rule: no non-component exports from a component file) | agent |
+| 2026-10-21 | 3.7 | Red mode: the `aiOn` gate hides every AI surface; `RedModeBar` shows one plain line ("Your PC can't run AI chat locally — Vayu still works as notes + tasks.") plus keyword search over all notes via `read_all_notes` — no embeddings, no model | agent |
+| 2026-10-21 | 3.6 | Ask Your Notes (RAG): question → `search_index` (embed + cosine over the local index) → answer from the retrieved excerpts only, with clickable source-day chips; abstains with "I couldn't find anything in your notes about that." and makes no `generate` call when the index is empty | agent |
+| 2026-10-21 | 3.5 | `[[topic]]` backlinks: pure `src/lib/backlinks.ts` (parse + index, fences skipped, topics normalised, typos map only to the day they were typed on — nothing is ever created) + `BacklinksPanel` in the calendar rail, day chips open that day. New `read_all_notes` command | agent |
+| 2026-10-21 | 3.4 | Embedding pipeline (Rust): `index.rs` — sentence-aware chunking (≤500 chars), cosine similarity, versioned index file `<notes_dir>/.vayu_index.json` (atomic write), `reindex` (rebuild from the `.md` files) and `search_index` (embed the query, top-k by score). UI: Re-index button in Settings → Model. Chunk-on-save is not automatic yet — the index is rebuilt on demand | agent |
+| 2026-10-21 | 3.3 | Evening Reflection: summary built from the day's note + task lines only, one editable seed line appended to tomorrow's note (`append_note`), works on any day. Deviation: the Warm accent cannot be applied yet — the colour guard (1.3.3) bans the warm token outside `tokens.css`; the token stays reserved and the component notes how to use it once the guard is relaxed | agent |
+| 2026-10-21 | 3.1/3.2 | Journal chat: one italic Newsreader Gemma question at a time, streamed with Stop + "thinking", full transcript as context (deleted turns leave context), saved to the day as a `## Journal` block. Send is disabled while streaming — no double-fire; the Rust `AppState` Busy guard backs it | agent |
+| 2026-10-21 | 3.9/3.10 | Left as manual P0 gates for the verifier: golden-set evals (Extractor ≥18/20, Ask ≥9/10, Reflection invents nothing ≥9/10) and the zero-outbound privacy check. They need a live Ollama model, which this session had no access to; the steps are in the session note | agent |
+| 2026-10-22 | CI-3 | **Failed** owner smoke. Journal works; Reflection (stale read), Ask (no embeddinggemma, 1.5s embed timeout, non-ASCII chunking panic), backlinks (never refresh), keyword search (Red-only) fail. Layout lacks hierarchy; Ask overflows rail. Owner chose Phase 3B: bug fixes + Reflect-style three-zone layout + SG-3 screenshot gate. Details in `now.md` Phase 3B | verifier |
+| 2026-10-21 | 3 verify | `npm run check`: 205 FE + 73 Rust. 3.1–3.8 mounted in App. Warm accent applied (colour guard: App.css only). CI-3 still needs owner smoke + 3.9/3.10. Tree dirty (no commit yet) | verifier |
 | 2026-10-21 | CI-2 | Check-in 2 verified. Wired SetupFlow + Morning Intention + Brain Dump into App; owner smoke showed intention/tasks in note. Tag `checkin-2`. `AGENTS.md` added. Phase 3 unblocked | verifier |
 | 2026-10-21 | CI-1 | Check-in 1 verified. Code commit `802554e` (Phase 1C Rust + 1D smoke fixes + window close perms). Owner live screenshots: Daily Note + Settings (Ollama Running, Dev model). Tag `checkin-1`. Phase 2 unblocked | verifier |
 | 2026-10-21 | 1D.1 | Daily Note: prose editor split. New pure `proseOf`/`withProse` in `tasks.ts` (fence-aware; `withProse` re-merges edited prose with existing task lines verbatim — prose edits can never delete tasks; round-trip `proseOf(withProse(md, p)) === p` covered). `DailyNote.tsx` editor now shows journal prose only — raw `- [ ]` lines no longer duplicate the TaskList; TaskList still rewrites full markdown (disk unchanged as source of truth). CSS: `.daily-note header` `position: relative; z-index: 1`, `.note-editor` `display: block` + token `margin-top`. 2 pre-existing tests updated to the prose-only contract (saved-markdown assertions unchanged); +11 tests, `npm run check` 151 FE + 44 Rust green | agent |

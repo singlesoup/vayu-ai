@@ -3,6 +3,7 @@
 mod config;
 mod error;
 mod hardware;
+mod index;
 mod notes;
 mod ollama;
 
@@ -15,6 +16,7 @@ use tauri::{Manager, State};
 
 use error::VayuError;
 use hardware::HardwareReport;
+use index::{IndexStats, SearchHit};
 use notes::NoteResult;
 use ollama::{
     DetectedModels, GenerateOutcome, OllamaStatus, PullEvent, StreamEvent, VerifyResult, run_pull,
@@ -65,7 +67,7 @@ impl AppState {
 
     /// Starts a pull; `Err(Busy)` while another pull is in flight.
     fn begin_pull(&self) -> Result<(), VayuError> {
-        let mut slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
+        let slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
         if slot.is_some() {
             return Err(VayuError::busy());
         }
@@ -264,7 +266,7 @@ fn stop_generation(state: State<'_, AppState>) -> Result<(), VayuError> {
 
 /// Pull one model via Ollama `POST /api/pull`. Progress streams through the
 /// channel as `PullEvent::progress`; resolves when the pull succeeds, fails,
-/// or is cancelled (task aborted by `cancel_pull`).
+/// or is cancelled (task 2.5: `cancel_pull` aborts the running task).
 #[tauri::command]
 async fn pull_model(
     state: State<'_, AppState>,
@@ -272,7 +274,7 @@ async fn pull_model(
     on_event: tauri::ipc::Channel<PullEvent>,
 ) -> Result<(), VayuError> {
     state.begin_pull()?;
-    let result = async {
+    let mut task = tauri::async_runtime::spawn(async move {
         run_pull(
             &ollama::base_url(),
             &model,
@@ -283,10 +285,21 @@ async fn pull_model(
             },
         )
         .await
-    }
-    .await;
+    });
+    // `cancel_pull` aborts this handle, which drops the running HTTP request.
+    state.register_pull(task.inner().abort_handle());
+    let outcome = match &mut task {
+        tauri::async_runtime::JoinHandle::Tokio(handle) => handle.await,
+    };
     state.finish_pull();
-    result
+    match outcome {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(err)) => Err(err),
+        Err(join_err) if join_err.is_cancelled() => {
+            Err(VayuError::other("Download cancelled."))
+        }
+        Err(join_err) => Err(VayuError::io(format!("The download stopped: {join_err}"))),
+    }
 }
 
 /// Cancels the in-flight model pull (task 2.5). No-op when nothing runs.
@@ -309,6 +322,68 @@ async fn verify_install(tag: String) -> Result<VerifyResult, VayuError> {
     .await
 }
 
+/// Get one embedding via Ollama `POST /api/embeddings` (task 3.4).
+#[tauri::command]
+async fn embeddings(
+    model: String,
+    prompt: String,
+) -> Result<Vec<f32>, VayuError> {
+    ollama::run_embeddings(
+        &ollama::base_url(),
+        &model,
+        &prompt,
+        ollama::generate_timeout(),
+    )
+    .await
+}
+
+/// Delete a model via Ollama `POST /api/delete` (task 3.8).
+#[tauri::command]
+async fn delete_model(name: String) -> Result<(), VayuError> {
+    ollama::delete_model(&ollama::base_url(), &name).await
+}
+
+/// Rebuild the local embedding index from every note (task 3.4).
+#[tauri::command]
+async fn reindex(app: tauri::AppHandle) -> Result<IndexStats, VayuError> {
+    let notes_dir = notes_dir(&app)?;
+    let index_path = notes_dir.join(index::INDEX_FILE_NAME);
+    index::reindex(&notes_dir, &index_path).await
+}
+
+/// Cosine-search the local embedding index (task 3.4/3.6).
+#[tauri::command]
+async fn search_index(
+    app: tauri::AppHandle,
+    query: String,
+    top_k: usize,
+) -> Result<Vec<SearchHit>, VayuError> {
+    let notes_dir = notes_dir(&app)?;
+    let index_path = notes_dir.join(index::INDEX_FILE_NAME);
+    index::search_index(&index_path, &query, top_k).await
+}
+
+/// Every existing note with content, for the backlinks panel (task 3.5).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NoteSummaryWire {
+    date: String,
+    content: String,
+}
+
+#[tauri::command]
+fn read_all_notes(app: tauri::AppHandle) -> Result<Vec<NoteSummaryWire>, VayuError> {
+    let dir = notes_dir(&app)?;
+    let mut out = Vec::new();
+    for date in notes::list_notes(&dir)? {
+        let note = notes::read_note(&dir, &date)?;
+        if note.exists {
+            out.push(NoteSummaryWire { date, content: note.content });
+        }
+    }
+    Ok(out)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -322,6 +397,11 @@ pub fn run() {
             pull_model,
             cancel_pull,
             verify_install,
+            embeddings,
+            delete_model,
+            reindex,
+            search_index,
+            read_all_notes,
             mark_intention,
             append_note,
             read_note,
