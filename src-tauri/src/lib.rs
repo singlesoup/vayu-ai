@@ -2,6 +2,7 @@
 // error kinds are the contract in src/lib/api.ts — do not invent a second API.
 mod config;
 mod error;
+mod hardware;
 mod notes;
 mod ollama;
 
