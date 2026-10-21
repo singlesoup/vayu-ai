@@ -16,7 +16,9 @@ use tauri::{Manager, State};
 use error::VayuError;
 use hardware::HardwareReport;
 use notes::NoteResult;
-use ollama::{DetectedModels, GenerateOutcome, OllamaStatus, StreamEvent};
+use ollama::{
+    DetectedModels, GenerateOutcome, OllamaStatus, PullEvent, StreamEvent, run_pull,
+};
 
 /// `get_config` result (camelCase on the wire).
 #[derive(Debug, Clone, Serialize)]
@@ -27,11 +29,11 @@ struct ConfigResult {
     default_notes_dir: String,
 }
 
-/// One generation at a time (1.11.2): the flag lets `stop_generation` end the
-/// live run; the slot makes a second `generate` return Err(Busy).
+/// One generation at a time (1.11.2); one model pull at a time (2.4/2.5).
 #[derive(Default)]
 struct AppState {
     generation: Mutex<Option<Arc<AtomicBool>>>,
+    pull: Mutex<Option<tokio::task::AbortHandle>>,
 }
 
 impl AppState {
@@ -54,6 +56,33 @@ impl AppState {
         let slot = self.generation.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(flag) = slot.as_ref() {
             flag.store(true, Ordering::SeqCst);
+        }
+    }
+
+    /// Starts a pull; `Err(Busy)` while another pull is in flight.
+    fn begin_pull(&self) -> Result<(), VayuError> {
+        let mut slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
+        if slot.is_some() {
+            return Err(VayuError::busy());
+        }
+        Ok(())
+    }
+
+    /// Records the running pull task so `cancel_pull` can abort it.
+    fn register_pull(&self, handle: tokio::task::AbortHandle) {
+        let mut slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
+        *slot = Some(handle);
+    }
+
+    fn finish_pull(&self) {
+        let mut slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
+        *slot = None;
+    }
+
+    fn abort_pull(&self) {
+        let slot = self.pull.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(handle) = slot.as_ref() {
+            handle.abort();
         }
     }
 }
@@ -202,6 +231,40 @@ fn stop_generation(state: State<'_, AppState>) -> Result<(), VayuError> {
     Ok(())
 }
 
+/// Pull one model via Ollama `POST /api/pull`. Progress streams through the
+/// channel as `PullEvent::progress`; resolves when the pull succeeds, fails,
+/// or is cancelled (task aborted by `cancel_pull`).
+#[tauri::command]
+async fn pull_model(
+    state: State<'_, AppState>,
+    model: String,
+    on_event: tauri::ipc::Channel<PullEvent>,
+) -> Result<(), VayuError> {
+    state.begin_pull()?;
+    let result = async {
+        run_pull(
+            &ollama::base_url(),
+            &model,
+            ollama::generate_timeout(),
+            ollama::STOP_POLL,
+            |event| {
+                let _ = on_event.send(event);
+            },
+        )
+        .await
+    }
+    .await;
+    state.finish_pull();
+    result
+}
+
+/// Cancels the in-flight model pull (task 2.5). No-op when nothing runs.
+#[tauri::command]
+fn cancel_pull(state: State<'_, AppState>) -> Result<(), VayuError> {
+    state.abort_pull();
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -212,6 +275,8 @@ pub fn run() {
             set_notes_dir,
             update_config,
             hardware_check,
+            pull_model,
+            cancel_pull,
             read_note,
             ensure_note,
             write_note,

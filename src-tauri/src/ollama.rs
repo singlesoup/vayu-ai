@@ -1,4 +1,5 @@
 // Ollama status, model detection and streaming (1C.3 + 1C.4).
+use std::cmp;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -413,6 +414,183 @@ where
     }
 }
 
+/// Progress of a model pull via POST /api/pull (task 2.4/2.5). Pull lines
+/// are not `generate`-shaped, so they are kept as raw strings and parsed
+/// separately.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "event", content = "value", rename_all = "lowercase")]
+pub enum PullEvent {
+    Progress(PullProgress),
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PullProgress {
+    pub status: String,
+    pub total: Option<u64>,
+    pub completed: u64,
+    pub percent: Option<u32>,
+}
+
+enum PullLine {
+    Progress(PullProgress),
+    Error(String),
+}
+
+/// One pull progress line: `{ "status": "pulling", "total": N, "completed": M }`
+/// or `{ "status": "success" }`; an `{ "error": "..." }` line is a failure.
+fn parse_pull_line(line: &str) -> Option<PullLine> {
+    let line = line.trim();
+    if line.is_empty() {
+        return None;
+    }
+    let value: Value = serde_json::from_str(line).ok()?;
+    if let Some(error) = value.get("error").and_then(Value::as_str) {
+        return Some(PullLine::Error(error.to_string()));
+    }
+    let status = value.get("status")?.as_str()?.to_string();
+    let total = value.get("total").and_then(Value::as_u64);
+    let mut completed = value.get("completed").and_then(Value::as_u64).unwrap_or(0);
+    if status == "success" {
+        if let Some(t) = total {
+            completed = t;
+        }
+    }
+    let percent = total.map(|t| {
+        if t == 0 {
+            0u32
+        } else {
+            cmp::min(100, ((completed * 100) / t) as u32)
+        }
+    });
+    Some(PullLine::Progress(PullProgress {
+        status,
+        total,
+        completed,
+        percent,
+    }))
+}
+
+/// Raw-line buffer for pull responses (multiple lines per chunk, split lines
+/// re-composed, blank lines ignored).
+struct PullLines {
+    buf: String,
+}
+
+impl PullLines {
+    fn new() -> Self {
+        Self { buf: String::new() }
+    }
+
+    fn push(&mut self, chunk: &str) -> Vec<String> {
+        self.buf.push_str(chunk);
+        let mut lines = Vec::new();
+        while let Some(pos) = self.buf.find('\n') {
+            lines.push(self.buf.drain(..=pos).collect());
+        }
+        lines
+    }
+}
+
+/// Stream one model pull from Ollama. Emits progress events until `success`;
+/// cancelling the task (see `cancel_pull`) ends the run early.
+pub async fn run_pull<F>(
+    base_url: &str,
+    model: &str,
+    first_token_timeout: Duration,
+    poll: Duration,
+    mut on_event: F,
+) -> Result<(), VayuError>
+where
+    F: FnMut(PullEvent),
+{
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .connect_timeout(first_token_timeout)
+        .build()
+        .map_err(|err| VayuError::io(err.to_string()))?;
+    let body = serde_json::json!({ "model": model });
+
+    let started = Instant::now();
+    let request = client.post(endpoint(base_url, "/api/pull")).json(&body).send();
+    tokio::pin!(request);
+
+    // Wait for response headers, staying responsive to cancellation.
+    let response = loop {
+        match tokio::time::timeout(poll, &mut request).await {
+            Ok(Ok(response)) => break response,
+            Ok(Err(err)) => {
+                return Err(VayuError::io(format!("Couldn't reach Ollama: {err}")));
+            }
+            Err(_) if started.elapsed() >= first_token_timeout => {
+                return Err(VayuError::io("timed out"));
+            }
+            Err(_) => {}
+        }
+    };
+
+    if !response.status().is_success() {
+        return Err(VayuError::io(format!(
+            "Ollama returned HTTP {}",
+            response.status()
+        )));
+    }
+
+    let mut stream = response.bytes_stream();
+    let mut lines = PullLines::new();
+    let mut last_total: Option<u64> = None;
+
+    loop {
+        match tokio::time::timeout(poll, stream.next()).await {
+            Ok(None) | Ok(Some(Err(_))) => {
+                let message = "connection lost".to_string();
+                on_event(PullEvent::Progress(PullProgress {
+                    status: message.clone(),
+                    total: None,
+                    completed: 0,
+                    percent: None,
+                }));
+                return Err(VayuError::io(message));
+            }
+            Ok(Some(Ok(chunk))) => {
+                let text = String::from_utf8_lossy(&chunk);
+                for line in lines.push(&text) {
+                    match parse_pull_line(&line) {
+                        Some(PullLine::Progress(mut p)) => {
+                            if p.total.is_some() {
+                                last_total = p.total;
+                            }
+                            if p.status == "success" && p.total.is_none() {
+                                if let Some(t) = last_total {
+                                    p.total = Some(t);
+                                    p.completed = t;
+                                    p.percent = Some(100);
+                                }
+                            }
+                            let done = p.status == "success";
+                            on_event(PullEvent::Progress(p));
+                            if done {
+                                return Ok(());
+                            }
+                        }
+                        Some(PullLine::Error(message)) => {
+                            on_event(PullEvent::Progress(PullProgress {
+                                status: "error".into(),
+                                total: None,
+                                completed: 0,
+                                percent: None,
+                            }));
+                            return Err(VayuError::io(message));
+                        }
+                        None => {}
+                    }
+                }
+            }
+            Err(_) => {} // no bytes this tick; keep waiting for the next chunk
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -715,15 +893,23 @@ mod tests {
     // ── streaming (1.11.1 / 1.11.2) ─────────────────────────────────────────
 
     /// Minimal raw HTTP server so chunks arrive over time (wiremock can only
-    /// delay whole responses). `hold_open_ms` keeps the socket open after the
+    /// delay whole responses). `headers_delay_ms` delays the response headers
+    /// (to test timeouts), `hold_open_ms` keeps the socket open after the
     /// last line to simulate a stalled server.
-    async fn spawn_stream_server(lines: Vec<(u64, String)>, hold_open_ms: u64) -> String {
+    async fn spawn_stream_server(
+        lines: Vec<(u64, String)>,
+        hold_open_ms: u64,
+        headers_delay_ms: u64,
+    ) -> String {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.unwrap();
             let mut request = [0u8; 8192];
             let _ = socket.read(&mut request).await;
+            if headers_delay_ms > 0 {
+                tokio::time::sleep(Duration::from_millis(headers_delay_ms)).await;
+            }
             socket
                 .write_all(
                     b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nConnection: close\r\n\r\n",
@@ -755,6 +941,7 @@ mod tests {
                 (250, "{\"response\":\" world\",\"done\":false}\n".into()),
                 (0, "{\"done\":true,\"response\":\"\"}\n".into()),
             ],
+            0,
             0,
         )
         .await;
@@ -796,7 +983,7 @@ mod tests {
         for i in 0..200 {
             lines.push((20, format!("{{\"response\":\"t{i}\",\"done\":false}}\n")));
         }
-        let base = spawn_stream_server(lines, 0).await;
+        let base = spawn_stream_server(lines, 0, 0).await;
 
         let stop = Arc::new(AtomicBool::new(false));
         let seen = Arc::new(Mutex::new(Vec::<String>::new()));
@@ -843,7 +1030,7 @@ mod tests {
 
     #[tokio::test]
     async fn no_first_token_times_out() {
-        let base = spawn_stream_server(Vec::new(), 5_000).await;
+        let base = spawn_stream_server(Vec::new(), 5_000, 0).await;
         let started = Instant::now();
         let err = run_generate(
             &base,
@@ -865,6 +1052,7 @@ mod tests {
     async fn dropped_connection_mid_stream_is_connection_lost() {
         let base = spawn_stream_server(
             vec![(0, "{\"response\":\"Hi\",\"done\":false}\n".into())],
+            0,
             0,
         )
         .await;
@@ -897,7 +1085,7 @@ mod tests {
     #[tokio::test]
     async fn ollama_error_line_rejects_with_io_and_emits_error_event() {
         let base =
-            spawn_stream_server(vec![(0, "{\"error\":\"model 'x' not found\"}\n".into())], 0).await;
+            spawn_stream_server(vec![(0, "{\"error\":\"model 'x' not found\"}\n".into())], 0, 0).await;
 
         let mut messages = Vec::new();
         let err = run_generate(
@@ -923,14 +1111,6 @@ mod tests {
 
     // ── model pull (2.4, 2.5) ─────────────────────────────────────────
 
-    #[derive(Debug, Clone, PartialEq, Eq)]
-    struct PullProgress {
-        status: String,
-        total: Option<u64>,
-        completed: u64,
-        percent: Option<u32>,
-    }
-
     #[tokio::test]
     async fn pull_streams_progress_until_success() {
         let base = spawn_stream_server(
@@ -940,6 +1120,7 @@ mod tests {
                 (0, r#"{"status":"pulling","total":1000,"completed":1000}"#.to_string() + "\n"),
                 (0, r#"{"status":"success"}"#.to_string() + "\n"),
             ],
+            0,
             0,
         )
         .await;
@@ -991,6 +1172,7 @@ mod tests {
         let base = spawn_stream_server(
             vec![(20, r#"{"status":"pulling","total":1000,"completed":100}"#.to_string() + "\n")],
             30_000,
+            0,
         )
         .await;
 
@@ -999,7 +1181,7 @@ mod tests {
         });
 
         // Let the first progress line arrive, then cancel.
-        for _ in 0..500 {
+        for _ in 0..60 {
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
         handle.abort();
@@ -1012,7 +1194,7 @@ mod tests {
 
     #[tokio::test]
     async fn pull_times_out_when_ollama_never_replies() {
-        let base = spawn_stream_server(Vec::new(), 30_000).await;
+        let base = spawn_stream_server(Vec::new(), 30_000, 30_000).await;
         let started = Instant::now();
         let err = run_pull(
             &base,
@@ -1031,7 +1213,7 @@ mod tests {
     #[tokio::test]
     async fn pull_reports_ollama_error_lines() {
         let base =
-            spawn_stream_server(vec![(0, "{\"error\":\"model not found\"}\n".into())], 0).await;
+            spawn_stream_server(vec![(0, "{\"error\":\"model not found\"}\n".into())], 0, 0).await;
         let mut saw_error_status = false;
         let err = run_pull(
             &base,
