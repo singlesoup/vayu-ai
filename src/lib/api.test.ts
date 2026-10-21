@@ -4,15 +4,22 @@ import { describe, expect, it } from "vitest";
 import { getInvokeMock, mockInvoke } from "../test/mocks";
 import {
   COMMANDS,
+  appendNote,
+  cancelPull,
   ensureNote,
   generate,
   getConfig,
+  hardwareCheck,
   listModels,
   listNotes,
+  markIntention,
   ollamaStatus,
+  pullModel,
   readNote,
   setNotesDir,
   stopGeneration,
+  updateConfig,
+  verifyInstall,
   writeNote,
 } from "./api";
 
@@ -20,8 +27,12 @@ describe("api contract (src/lib/api.ts)", () => {
   it("names exactly the Rust commands now.md depends on", () => {
     expect(Object.values(COMMANDS).sort()).toEqual(
       [
+        "append_note",
+        "cancel_pull",
         "get_config",
-        "set_notes_dir",
+        "hardware_check",
+        "mark_intention",
+        "pull_model",
         "read_note",
         "ensure_note",
         "write_note",
@@ -30,15 +41,74 @@ describe("api contract (src/lib/api.ts)", () => {
         "list_models",
         "generate",
         "stop_generation",
+        "update_config",
+        "verify_install",
       ].sort(),
     );
   });
 
-  it("getConfig calls get_config with no args", async () => {
+  it("hardwareCheck calls hardware_check with an optional notes dir", async () => {
     const tauri = mockInvoke();
-    tauri.given("get_config", { notesDir: "C:/notes", version: 1 });
-    await expect(getConfig()).resolves.toEqual({ notesDir: "C:/notes", version: 1 });
-    expect(getInvokeMock().mock.calls[0]).toEqual(["get_config"]);
+    tauri.given("hardware_check", {
+      ramGb: 8, freeDiskGb: 200, cpu: "x", os: "windows_x64",
+      tier: "Yellow", model: "gemma3n:e2b", sizeGb: 5.6, ollamaPresent: true,
+    });
+    await expect(hardwareCheck()).resolves.toMatchObject({ tier: "Yellow" });
+    expect(getInvokeMock().mock.calls[0]).toEqual(["hardware_check", undefined]);
+    await hardwareCheck("C:/notes");
+    expect(getInvokeMock().mock.calls[1]).toEqual(["hardware_check", { notesDir: "C:/notes" }]);
+  });
+
+  it("pullModel streams progress events through the channel", async () => {
+    const tauri = mockInvoke();
+    tauri.given("pull_model", null);
+    const events: unknown[] = [];
+    await pullModel("gemma3n:e2b", (e) => events.push(e));
+    expect(getInvokeMock().mock.calls[0]).toEqual([
+      "pull_model",
+      { model: "gemma3n:e2b", onEvent: expect.anything() },
+    ]);
+    expect(events.length).toBe(0); // events come from Rust
+  });
+
+  it("cancelPull takes no args", async () => {
+    const tauri = mockInvoke();
+    tauri.given("cancel_pull", null);
+    await cancelPull();
+    expect(getInvokeMock().mock.calls[0]).toEqual(["cancel_pull"]);
+  });
+
+  it("verifyInstall calls verify_install with the tag", async () => {
+    const tauri = mockInvoke();
+    tauri.given("verify_install", { generationOk: true, embeddingsOk: true });
+    await expect(verifyInstall("gemma3n:e2b")).resolves.toEqual({
+      generationOk: true,
+      embeddingsOk: true,
+    });
+    expect(getInvokeMock().mock.calls[0]).toEqual([
+      "verify_install",
+      { tag: "gemma3n:e2b" },
+    ]);
+  });
+
+  it("updateConfig sends only the fields that changed", async () => {
+    const tauri = mockInvoke();
+    tauri.given("update_config", null);
+    await updateConfig({ tier: "Green" });
+    expect(getInvokeMock().mock.calls[0]).toEqual([
+      "update_config",
+      { tier: "Green", modelTag: undefined, aiEnabled: undefined },
+    ]);
+  });
+
+  it("appendNote sends date + appendix", async () => {
+    const tauri = mockInvoke();
+    tauri.given("append_note", null);
+    await appendNote("2026-10-21", "\n- [ ] new task");
+    expect(getInvokeMock().mock.calls[0]).toEqual([
+      "append_note",
+      { date: "2026-10-21", appendix: "\n- [ ] new task" },
+    ]);
   });
 
   it("setNotesDir sends the path arg", async () => {
