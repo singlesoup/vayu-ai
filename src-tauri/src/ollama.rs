@@ -94,6 +94,7 @@ pub const STOP_POLL: Duration = Duration::from_millis(100);
 pub const REQUIRED_MODELS: [&str; 3] = ["gemma3n:e4b", "gemma3n:e2b", "embeddinggemma"];
 pub const E4B: &str = "gemma3n:e4b";
 pub const E2B: &str = "gemma3n:e2b";
+pub const EMBEDDING_TAG: &str = "embeddinggemma";
 
 pub fn base_url_from(value: Option<String>) -> String {
     let Some(url) = value else {
@@ -589,6 +590,96 @@ where
             Err(_) => {} // no bytes this tick; keep waiting for the next chunk
         }
     }
+}
+
+/// Result of `verify_install`: both a generation and an embedding must
+/// succeed before Vayu says "You're ready" (task 2.7).
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct VerifyResult {
+    pub generation_ok: bool,
+    pub embeddings_ok: bool,
+}
+
+/// One embedding via POST /api/embeddings (task 2.7).
+pub async fn run_embeddings(
+    base_url: &str,
+    model: &str,
+    prompt: &str,
+    timeout: Duration,
+) -> Result<Vec<f32>, VayuError> {
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .timeout(timeout)
+        .build()
+        .map_err(|err| VayuError::io(err.to_string()))?;
+    let body = serde_json::json!({ "model": model, "prompt": prompt });
+    let response = client
+        .post(endpoint(base_url, "/api/embeddings"))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|err| VayuError::io(format!("Couldn't reach Ollama: {err}")))?;
+    if !response.status().is_success() {
+        return Err(VayuError::io(format!(
+            "Ollama returned HTTP {}",
+            response.status()
+        )));
+    }
+    let value: Value = response
+        .json()
+        .await
+        .map_err(|err| VayuError::io(format!("Unexpected reply from Ollama: {err}")))?;
+    if let Some(error) = value.get("error").and_then(Value::as_str) {
+        return Err(VayuError::io(error.to_string()));
+    }
+    let arr = value
+        .get("embedding")
+        .and_then(Value::as_array)
+        .ok_or_else(|| VayuError::io("Ollama embedding reply had no embedding".to_string()))?;
+    Ok(arr
+        .iter()
+        .filter_map(|v| v.as_f64().map(|f| f as f32))
+        .collect())
+}
+
+/// Post-download verification (task 2.7): one generation with the new model
+/// plus one embedding with `embeddinggemma` must both pass before Vayu
+/// tells the user they're ready. Embedding failure is reported softly
+/// (`embeddings_ok: false`) so generation is never blocked by search.
+pub async fn verify_install(
+    base_url: &str,
+    tag: &str,
+    first_token_timeout: Duration,
+    poll: Duration,
+) -> Result<VerifyResult, VayuError> {
+    let generation_ok = match run_generate(
+        base_url,
+        tag,
+        "Vayu readiness check. Reply with a single short sentence.",
+        first_token_timeout,
+        poll,
+        Arc::new(AtomicBool::new(false)),
+        |_| {},
+    )
+    .await
+    {
+        Ok(_) => true,
+        Err(err) => return Err(err),
+    };
+    let embeddings_ok = run_embeddings(
+        base_url,
+        EMBEDDING_TAG,
+        "Vayu readiness check.",
+        Duration::from_secs(10),
+    )
+    .await
+    .map(|embedding| !embedding.is_empty())
+    .unwrap_or(false);
+    Ok(VerifyResult {
+        generation_ok,
+        embeddings_ok,
+    })
 }
 
 #[cfg(test)]

@@ -17,7 +17,7 @@ use error::VayuError;
 use hardware::HardwareReport;
 use notes::NoteResult;
 use ollama::{
-    DetectedModels, GenerateOutcome, OllamaStatus, PullEvent, StreamEvent, run_pull,
+    DetectedModels, GenerateOutcome, OllamaStatus, PullEvent, StreamEvent, VerifyResult, run_pull,
 };
 
 /// `get_config` result (camelCase on the wire).
@@ -265,6 +265,19 @@ fn cancel_pull(state: State<'_, AppState>) -> Result<(), VayuError> {
     Ok(())
 }
 
+/// Post-download verification (task 2.7): one generation plus one embedding
+/// must pass before Vayu says "You're ready".
+#[tauri::command]
+async fn verify_install(tag: String) -> Result<VerifyResult, VayuError> {
+    ollama::verify_install(
+        &ollama::base_url(),
+        &tag,
+        ollama::generate_timeout(),
+        ollama::STOP_POLL,
+    )
+    .await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -277,6 +290,7 @@ pub fn run() {
             hardware_check,
             pull_model,
             cancel_pull,
+            verify_install,
             read_note,
             ensure_note,
             write_note,
