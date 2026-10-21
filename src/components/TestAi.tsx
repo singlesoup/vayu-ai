@@ -52,11 +52,11 @@ export function TestAi() {
   return (
     <div className="test-ai">
       <div className="test-ai-controls">
-        <button type="button" onClick={run} disabled={running}>
+        <button type="button" className="btn-primary" onClick={run} disabled={running}>
           Test AI
         </button>
         {running && (
-          <button type="button" onClick={stop}>
+          <button type="button" className="btn-ghost" onClick={stop}>
             Stop
           </button>
         )}

@@ -56,11 +56,11 @@ export function FirstRunScreen({ defaultPath, onSaved }: Props) {
           onChange={(e) => setPath(e.currentTarget.value)}
           aria-label="Notes folder"
         />
-        <button type="button" onClick={() => void chooseFolder()}>
+        <button type="button" className="btn-ghost" onClick={() => void chooseFolder()}>
           Choose folder…
         </button>
       </div>
-      <button type="button" onClick={() => void continueWithFolder()} disabled={busy}>
+      <button type="button" className="btn-primary" onClick={() => void continueWithFolder()} disabled={busy}>
         Continue
       </button>
       {error && (
