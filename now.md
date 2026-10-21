@@ -763,6 +763,36 @@ After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var abov
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
 
+### Phase 2 session — first-run tiers, download, Morning Intention, Brain Dump → Tasks, 22 Oct (coding agent)
+
+All Phase 2 P0 tasks (2.1–2.11) are `review` with tests first; `npm run check` is green (172 frontend + 62 Rust, lint/tsc clean). Tree is clean; all work committed in `test(<id>)`/`feat(<id>)` pairs. Nothing pushed; `checkin-2` is NOT tagged (verifier only).
+
+**What was built:**
+- **2.1/2.2 Hardware check + tier logic:** `sysinfo`-based `hardware_check` command (RAM, disk, CPU, OS, tier, model, size, Ollama presence on 127.0.0.1:11434). Pure `tier_for()`: Green ≥16 GB RAM && ≥10 GB disk → E4B (~7.5 GB); Yellow 8–15 GB && ≥8 GB → E2B (~5.6 GB); Red → no chat. Debug-only `VAYU_DEV_TIER` override, never in release. Boundary unit tests at exactly 8/16 GB RAM and 8/10 GB disk.
+- **2.3 Tier result screen:** Plain words per tier, PRD first-run copy ("Download now" / "I already have Ollama" / "Continue without AI"), specs under Details, one primary action. 5 tests.
+- **2.4/2.5 Resumable model pull:** `run_pull` streams Ollama `/api/pull` NDJSON as `PullEvent::progress`; `pull_model`/`cancel_pull` commands; one pull at a time (`Busy` otherwise); cancel aborts via `AbortHandle`. Tests against a raw TCP mock server (progress, cancel, timeout, error lines).
+- **2.7 Post-download verification:** `verify_install` runs one generation + one embedding (`embeddinggemma`); generation failure hard-fails, embeddings failure soft-fails (`embeddings_ok: false`).
+- **2.8/2.9 Morning Intention:** 3 questions + one-tap Skip; streams intention line + Top 3 tasks; saved once per day via `append_note` + `mark_intention`; no re-nag same day. `parseIntention` in `src/lib/intention.ts`. 4 tests.
+- **2.10/2.11 Brain Dump → Tasks:** Streamed extraction → editable preview → insert only after user confirms (nothing written unconfirmed). Extractor guardrails: preserves user wording, NO_TASKS for feelings-only dumps. 4 tests.
+
+**Contract:** `src/lib/api.ts` extended with `hardwareCheck`, `pullModel`, `cancelPull`, `verifyInstall`, `updateConfig`, `markIntention`, `appendNote` — all camelCase, `Channel` for progress events, 12 contract tests.
+
+**Not built (deferred):** 2.6 skip-download-when-present frontend flow wiring (tier/download screen integration); the full first-run flow orchestration (tier → download → intention → dump) in `App.tsx`. These are integration work for Check-in 2.
+
+**What the verifier should do for Check-in 2:**
+1. Fresh profile (delete `%APPDATA%\app.vayu.desktop\config.json`), launch `npm run tauri dev`.
+2. First-run: hardware check → tier screen (Yellow on this PC → E2B ≈ 5.6 GB).
+3. Download screen: progress + cancel work (no actual model pull needed — Ollama not installed on dev PC).
+4. Morning Intention: 3 questions → Skip, then reopen same day → no re-nag.
+5. Brain Dump: type a dump → Extract tasks → preview/edit → Insert → tasks appear in the note.
+6. `npm run check` must stay green (172 FE + 62 Rust).
+
+**Relaunch line:** `npm run tauri dev` (with `$env:VAYU_DEV_TIER="Yellow"` if forcing Yellow, or `Green`/`Red` to test tiers).
+
+**Next:** verifier runs Check-in 2 (fresh profile → tier → download → intention → dump) and tags `checkin-2`. Phase 3 starts after.
+
+---
+
 ### Verifier — Check-in 1, 21 Oct 16:27
 
 **Committed:** `802554e` — Phase 1C Rust + 1D layout/smoke fixes + window close permissions.
