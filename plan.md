@@ -64,11 +64,11 @@ Borrow the feel, not features. Anything that adds scope goes in the change log a
 | Phase | Day | Status | Gate |
 |---|---|---|---|
 | 0. Repo setup | Wed 21 | verified | — |
-| 1. Foundation + walking skeleton | Wed 21 | in progress (frontend mostly done; Rust + failed fixes left) | Check-in 1 |
-| 1B. Visual pass (design board) | Wed 21 | in progress (first-run passed; Daily Note not yet seen) | Screenshot gate |
-| 1C. Rust backend | Wed 21 | verified (automated); manual smoke open | Unblocks folder + Check-in 1 |
-| 1D. Smoke bugfix | Wed 21 | verified (automated); 1D.4 owner re-smoke open | Layout + Dev model for Test AI |
-| 2. First run, tiers, morning features | Thu 22 | todo | Check-in 2 |
+| 1. Foundation + walking skeleton | Wed 21 | verified (tag `checkin-1`) | Check-in 1 |
+| 1B. Visual pass (design board) | Wed 21 | verified (SG-1) | Screenshot gate |
+| 1C. Rust backend | Wed 21 | verified | — |
+| 1D. Smoke bugfix | Wed 21 | verified | Layout + Dev model for Test AI |
+| 2. First run, tiers, morning features | Thu 22 | todo (unblocked) | Check-in 2 |
 | 3. Journal, reflection, Ask, evals | Fri 23 | todo | Check-in 3 + freeze |
 | 4. Packaging + ship | Sat 24 | todo | Final ship gate |
 
@@ -102,7 +102,7 @@ Parent tasks are below. The small test-first tasks (1.2.1, 1.2.2, …) with acce
 | 1.9 | Ollama detection on `localhost:11434`, status in Settings → Model | P0 | review | UI 1.9.2 review; Rust 1.9.1 blocked |
 | 1.10 | Detect installed models (`gemma3n:e4b`, `gemma3n:e2b`, `embeddinggemma`) | P0 | review | UI 1.10.2 review; Rust 1.10.1 blocked |
 | 1.11 | "Test AI" button: streamed reply, Stop within ~1s, calm error if Ollama dies | P0 | review | UI 1.11.3 review (drop console.log); Rust 1.11.1/1.11.2 blocked |
-| CI-1 | **Check-in 1:** note + 3 tasks survive restart, Test AI streams, no crash on Ollama on/off → tag `checkin-1` | Gate | todo | |
+| CI-1 | **Check-in 1:** note + 3 tasks survive restart, Test AI streams, no crash on Ollama on/off → tag `checkin-1` | Gate | verified | `802554e` + tag `checkin-1`; live Settings/Daily Note screenshots 21 Oct |
 
 ---
 
@@ -255,6 +255,7 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-21 | CI-1 | Check-in 1 verified. Code commit `802554e` (Phase 1C Rust + 1D smoke fixes + window close perms). Owner live screenshots: Daily Note + Settings (Ollama Running, Dev model). Tag `checkin-1`. Phase 2 unblocked | verifier |
 | 2026-10-21 | 1D.1 | Daily Note: prose editor split. New pure `proseOf`/`withProse` in `tasks.ts` (fence-aware; `withProse` re-merges edited prose with existing task lines verbatim — prose edits can never delete tasks; round-trip `proseOf(withProse(md, p)) === p` covered). `DailyNote.tsx` editor now shows journal prose only — raw `- [ ]` lines no longer duplicate the TaskList; TaskList still rewrites full markdown (disk unchanged as source of truth). CSS: `.daily-note header` `position: relative; z-index: 1`, `.note-editor` `display: block` + token `margin-top`. 2 pre-existing tests updated to the prose-only contract (saved-markdown assertions unchanged); +11 tests, `npm run check` 151 FE + 44 Rust green | agent |
 | 2026-10-21 | 1D.2 | `--width-calendar-rail` 168px → 240px (token only, `tokens.css`). Flagged deviation: owner suggested ~200–220px, but real cells need 7 × (2-digit mono text + 2×8px button padding) + rail padding ≈ 238px — the board's 168px sidebar is a scaled mock; at 220 Sat/Sun still clips. New appStyles test pins the token ≥ 220px | agent |
 | 2026-10-21 | 1D.3 | `TestAi` NoModel copy now mentions the debug override: “No model installed yet. Install one from the list above, or set `VAYU_DEV_CHAT_MODEL` to use a dev model.” (test pins both parts). `Dev model: <tag>` line already live from 1.10.2 — no change. Generate order e4b → e2b → override unchanged (1C.4). Relaunch documented: `$env:VAYU_DEV_CHAT_MODEL="gemma4-e4b-fast:latest"; npm run tauri dev` | agent |

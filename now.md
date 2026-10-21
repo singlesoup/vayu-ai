@@ -1,9 +1,9 @@
-# NOW — After Phase 1D (owner re-smoke, then Phase 2)
+# NOW — Check-in 1 done → Phase 2
 
 **Day:** Wed 21 Oct 2026
-**Current work:** 1D.1–1D.3 **verified** (automated). **You** run 1D.4 re-smoke, then we commit + Check-in 1, then Phase 2.
-**Gate:** 1D.4 owner smoke → SG-1 Daily Note → Check-in 1 (`checkin-1` tag) → Phase 2 (Thu).
-**Goal:** Confirm the live window matches the design board; then ship the walking skeleton.
+**Current work:** Check-in 1 **verified** (tag `checkin-1` on `802554e`). Phase 2 agent may start: write the Phase 2 TDD checklist into this file first (2.1–2.11 + CI-2), then code.
+**Gate:** Phase 2 → Check-in 2 (`checkin-2`).
+**Goal:** First-run tiers, model download, Morning Intention, Brain Dump → Tasks.
 
 Full plan and status: [`plan.md`](plan.md)
 
@@ -577,13 +577,13 @@ After Phase 1C: verifier opens Daily Note + Settings, compares to the design boa
 | 1.11.1 | Stream parser | 1.2.2 | verified | NDJSON split lines / done / error |
 | 1.11.2 | Generate / Stop / busy | 1.11.1, 1.10.1 | verified | stream timing, Stop &lt;1s, Busy, timeout, drop |
 | 1.11.3 | Test AI UI | 1.11.2 | review | confirm live stream in smoke |
-| CI-1 | Check-in 1 | all above | todo | Needs Phase 1C + SG-1 Daily Note + manual checklist |
+| CI-1 | Check-in 1 | all above | verified | Live Settings (Ollama Running + Dev model) + Daily Note/tasks/calendar screenshots; commit `802554e`; tag `checkin-1` |
 | api | Typed command contract (`src/lib/api.ts`) | — | verified | Contract + tests OK; is the morning Rust spec |
 | 1B.1 | Import App.css | — | verified | Running page uses the stylesheet: input is Surface, not a white browser box |
 | 1B.2 | Fonts render | 1.3.2 | review | `@font-face` is outside `:root`. Inter + JetBrains Mono confirmed on first-run. Newsreader still unseen (it only appears on the note body) |
 | 1B.3 | Restyle to design board | 1B.1, 1B.2 | review | First-run matches. Daily Note, calendar, tasks, and Settings were not on screen — no Rust, so the app cannot leave first-run |
 | 1B.4 | Calendar keys + Test AI log | — | review | Code fixes are in git. Not visible in the browser yet |
-| SG-1 | Screenshot gate | 1B.1–1B.4 | todo | First-run passed 21 Oct. Gate stays open until Daily Note + Settings are screenshotted |
+| SG-1 | Screenshot gate | 1B.1–1B.4 | verified | Owner screenshots 21 Oct: Daily Note (Today + tasks + calendar) + Settings (Ollama + Dev model + Test AI) |
 | 1C.0 | Rust toolchain + cargo check | — | verified | Rust 1.99.1; `npm run check` runs 44 cargo tests (no SKIPPED); `vayu.exe` launched |
 | 1C.1 | Config + dialog plugin | 1C.0 | verified | automated ACs; dialog click is manual smoke |
 | 1C.2 | Notes read/write/list | 1C.1 | verified | automated ACs; Notepad round-trip is manual smoke |
@@ -592,7 +592,7 @@ After Phase 1C: verifier opens Daily Note + Settings, compares to the design boa
 | 1D.1 | Daily Note layout + no double tasks | — | verified | `proseOf`/`withProse` + CSS stack; 151 FE tests. Live screenshot = 1D.4 |
 | 1D.2 | Calendar no clip | — | verified | Rail 240px; token ≥220px test. Live check = 1D.4 |
 | 1D.3 | Dev model line + Test AI copy | — | verified | NoModel copy mentions override; Dev model line already tested. Live stream = 1D.4 |
-| 1D.4 | Owner re-smoke | 1D.1–1D.3 | todo | Launch line in session notes; then SG-1 + Check-in 1 |
+| 1D.4 | Owner re-smoke | 1D.1–1D.3 | verified | Live window: clean Today, task rows, calendar, Dev model line; close permission fixed |
 
 ---
 
@@ -640,13 +640,21 @@ After 1D.1–1D.3 are `review`: kill the old app, relaunch with the env var abov
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
 
+### Verifier — Check-in 1, 21 Oct 16:27
+
+**Committed:** `802554e` — Phase 1C Rust + 1D layout/smoke fixes + window close permissions.
+**Tagged:** `checkin-1`.
+**Evidence:** owner live screenshots — Daily Note (Today, tasks, calendar) + Settings (`Running — Ollama v0.32.14`, Missing PRD tags, `Dev model: gemma4-e4b-fast:latest`, Test AI). Automated 1D.1–1D.3 already green (151 FE + 44 Rust).
+
+**Verified:** 1D.4, SG-1, CI-1. **Phase 2 unblocked.**
+
+---
+
 ### Verifier — Phase 1D automated pass, 21 Oct 16:15
 
 **Ran:** `npm run check` → **151** frontend + **44** Rust, lint/tsc clean, no SKIPPED. Spot-checked `proseOf`/`withProse` (tasks preserved on prose edit), rail token 240px, Test AI NoModel copy mentions `VAYU_DEV_CHAT_MODEL`, header `z-index` + editor `margin-top`.
 
-**Verified:** 1D.1, 1D.2, 1D.3 (automated ACs).
-
-**Still open:** 1D.4 owner re-smoke in a real window; SG-1 Daily Note; CI-1. Working tree still uncommitted (1C + 1D).
+**Verified:** 1D.1, 1D.2, 1D.3 (automated ACs). Later superseded by Check-in 1 note above.
 
 ---
 
