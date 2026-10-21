@@ -501,6 +501,7 @@ _Newest first: what got done, what's blocked, manual steps waiting for the verif
 1. **1.3.2** — move all `@font-face` blocks outside `:root` in `src/styles/tokens.css`.
 2. **1.7.2** — unique React keys on calendar week rows (`key={i}`).
 3. **1.11.3 polish** — remove `console.log` in `TestAi.tsx` catch.
+4. **App.css is never imported** (`main.tsx` imports only `tokens.css`). All layout styles (calendar rail, buttons, inputs, Settings, note column) are dead code; `Editor.test.tsx` reads the file as text, so tests pass anyway. Same failure pattern as the fonts: tests checked file contents, not what renders.
 
 **Not done (cannot claim Check-in 1):** no real window, no real `.md` files, no real Ollama. All of that waits on Rust install + the blocked Rust tasks.
 
