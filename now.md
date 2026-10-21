@@ -493,7 +493,7 @@ _Newest first: what got done, what's blocked, manual steps waiting for the verif
 
 ### Overnight run — 2026-10-21 (Phase 1 frontend complete)
 
-**Final state:** `npm run check` green — **124 tests across 23 test files** (Vitest + jsdom), ESLint clean, tsc clean, Rust step SKIPPED (scripts/run-rust.mjs: `cargo` not installed). Branch `main`, all work committed locally (no push, no tag); working tree clean. Final commit: `docs: session notes for overnight Phase 1 frontend run` (the tracker update to this very note landed directly after it — git history is linear and clean either way).
+**Final state:** `npm run check` green — **124 tests across 23 test files** (Vitest + jsdom), ESLint clean, tsc clean, Rust step SKIPPED (scripts/run-rust.mjs: `cargo` not installed). Branch `main`, all work committed locally (no push, no tag); working tree clean. The last commits of the run are these very tracker/notes doc updates — see `git log --oneline -10` for the exact tail.
 
 **Tasks reviewed this session (all TDD: failing tests → `test(<id>)` commit → implementation → `feat(<id>)` → check green → status boards + plan.md change log):**
 - 1.6.2 debounced autosave (`createAutosaver`, 800ms, retry keeps text), 1.6.3 save on close/day switch (`onWindowClose` + unmount flush)
