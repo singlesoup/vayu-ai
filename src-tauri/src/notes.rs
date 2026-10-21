@@ -123,8 +123,13 @@ pub fn write_note(notes_dir: &Path, date: &str, content: &str) -> Result<(), Vay
     Ok(())
 }
 
-/// Sorted dates of real `YYYY-MM-DD.md` files in the notes folder; everything
-/// else (temp files, other extensions, folders) is ignored (1.7.1).
+/// Append to a note, creating it when it does not exist; atomic like
+/// `write_note` (task 2.9/2.10: intention and task-block insertion never
+/// rewrite the whole note from the UI).
+pub fn append_note(notes_dir: &Path, date: &str, appendix: &str) -> Result<(), VayuError> {
+    let current = read_note(notes_dir, date)?;
+    write_note(notes_dir, date, &(current.content + appendix))
+}
 pub fn list_notes(notes_dir: &Path) -> Result<Vec<String>, VayuError> {
     let entries = match std::fs::read_dir(notes_dir) {
         Ok(entries) => entries,
@@ -292,5 +297,33 @@ mod tests {
         let dir = notes();
         let missing = dir.path().join("not-there");
         assert_eq!(list_notes(&missing).unwrap(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn append_note_creates_the_note_when_missing() {
+        let dir = notes();
+        append_note(dir.path(), "2026-10-21", "brand new").unwrap();
+        let note = read_note(dir.path(), "2026-10-21").unwrap();
+        assert!(note.exists);
+        assert_eq!(note.content, "brand new");
+    }
+
+    #[test]
+    fn append_note_keeps_the_existing_content() {
+        let dir = notes();
+        write_note(dir.path(), "2026-10-21", "line one\n").unwrap();
+        append_note(dir.path(), "2026-10-21", "line two").unwrap();
+        assert_eq!(
+            read_note(dir.path(), "2026-10-21").unwrap().content,
+            "line one\nline two"
+        );
+    }
+
+    #[test]
+    fn append_note_invalid_date_writes_nothing() {
+        let dir = notes();
+        let err = append_note(dir.path(), "../secret", "x").unwrap_err();
+        assert_eq!(err.kind, "InvalidDate");
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 0);
     }
 }

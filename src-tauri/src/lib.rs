@@ -173,6 +173,12 @@ fn write_note(app: tauri::AppHandle, date: String, content: String) -> Result<()
     notes::write_note(&notes_dir(&app)?, &date, &content)
 }
 
+/// Append to a note (intention block, task block); atomic, creates if missing.
+#[tauri::command]
+fn append_note(app: tauri::AppHandle, date: String, appendix: String) -> Result<(), VayuError> {
+    notes::append_note(&notes_dir(&app)?, &date, &appendix)
+}
+
 #[tauri::command]
 fn list_notes(app: tauri::AppHandle) -> Result<Vec<String>, VayuError> {
     notes::list_notes(&notes_dir(&app)?)
@@ -291,6 +297,7 @@ pub fn run() {
             pull_model,
             cancel_pull,
             verify_install,
+            append_note,
             read_note,
             ensure_note,
             write_note,
