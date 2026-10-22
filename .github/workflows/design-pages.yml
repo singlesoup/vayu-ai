@@ -1,5 +1,6 @@
 # Publish the Reflect-style UI preview (dummy data, no Tauri) to GitHub Pages.
 # Source branch: design_upgrades only — does not deploy main.
+# Deploys to the `gh-pages` branch (works on public Free repos without Pro).
 name: Design UI → GitHub Pages
 
 on:
@@ -8,16 +9,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages-design-upgrades
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,16 +30,14 @@ jobs:
           VITE_UI_PREVIEW: "true"
           VITE_PAGES_BASE: /vayu-ai/
         run: npm run build:pages
-      - uses: actions/upload-pages-artifact@v3
+      - name: Add .nojekyll
+        run: touch dist/.nojekyll
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
