@@ -18,8 +18,8 @@ describe("BacklinksPanel (task 3.5)", () => {
     render(<BacklinksPanel onOpenDay={onOpenDay} />);
 
     await act(async () => {});
-    expect(screen.getByText("[[reading]]")).toBeInTheDocument();
-    expect(screen.getByText("[[garden]]")).toBeInTheDocument();
+    expect(screen.getByText("reading")).toBeInTheDocument();
+    expect(screen.getByText("garden")).toBeInTheDocument();
     // `Reading` appears on two days → two chips
     const gardenChip = screen.getByRole("button", { name: "Tue, Oct 20" });
     fireEvent.click(gardenChip);

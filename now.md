@@ -1,8 +1,9 @@
 # NOW — Check-in 3 FAILED → Phase 3B (bug fixes + Reflect-style layout)
 
 **Day:** Thu 22 Oct 2026
-**Current work:** Owner smoke failed CI-3: Evening Reflection, Ask Your Notes, backlinks and Red-mode search don't work in the live app, and the layout has no visual hierarchy (Ask button overflows the rail). Phase 3B below fixes the bugs and reworks the layout. Tree still **dirty** (Phase 3 + Warm fix uncommitted).
-**Gate:** Phase 3B review → owner re-smoke + SG-3 screenshots → 3.9 evals → 3.10 privacy → commit + tag `checkin-3` → Phase 4.
+**Current work:** Phase 3B **layout** on `design_upgrades` is `review` (browser-verified). Pushing this branch + GitHub Pages UI preview (dummy data). Bugs 3B.1–3B.3 stay on `main`. **Not merging to main.**
+**Gate:** Merge layout after bugs land → owner re-smoke + SG-3 → 3.9/3.10 → commit + tag `checkin-3` → Phase 4.
+**Pages:** https://singlesoup.github.io/vayu-ai/ (see `docs/design/PAGES.md`)
 **Goal:** Every Phase 3 feature works in the real window, and the app reads like a calm notes app (Reflect-style), not a stack of cards.
 
 Full plan and status: [`plan.md`](plan.md)
@@ -938,14 +939,14 @@ At 1280×800 and 960×700: Today (no panel open), each AI panel open, Ask view, 
 
 | ID | Task | Depends on | Status |
 |---|---|---|---|
-| 3B.1 | Reflection reads note at click time | — | todo |
-| 3B.2 | Backlinks + search refresh on save | — | todo |
-| 3B.3 | Unicode-safe chunking, embed timeout, missing search-model prompt | — | todo |
-| 3B.4 | Keyword search for every tier in sidebar | 3B.6 | todo |
+| 3B.1 | Reflection reads note at click time | — | todo (main) |
+| 3B.2 | Backlinks + search refresh on save | — | todo (main) |
+| 3B.3 | Unicode-safe chunking, embed timeout, missing search-model prompt | — | todo (main) |
+| 3B.4 | Keyword search for every tier in sidebar | 3B.6 | review |
 | 3B.5 | Index the day on save | 3B.3 | todo (P1) |
-| 3B.6 | Three-zone shell | — | todo |
-| 3B.7 | One AI surface at a time | 3B.6 | todo |
-| 3B.8 | Visual system rules | 3B.6, 3B.7 | todo |
+| 3B.6 | Three-zone shell | — | review |
+| 3B.7 | One AI surface at a time | 3B.6 | review |
+| 3B.8 | Visual system rules | 3B.6, 3B.7 | review |
 | SG-3 | Screenshot gate | 3B.1–3B.8 | todo (verifier) |
 
 ## Status board (Phase 3)
@@ -970,6 +971,40 @@ At 1280×800 and 960×700: Today (no panel open), each AI panel open, Ask view, 
 
 
 _Newest first: what got done, what's blocked, manual steps waiting for the verifier, what to start next._
+
+### Design branch — Reflect polish pass (22 Oct afternoon, `design_upgrades`)
+
+**Status:** 3B.4 / 3B.6 / 3B.7 / 3B.8 still **review** after a second polish pass. Bugs 3B.1–3B.3 remain on `main`. No commit.
+
+**Polish verified in-app browser** (`?dev=ui`) vs Reflect + prior gaps:
+- Hero H1 is Reflect-style date in Breeze (`Thu, October 22nd, 2026`); AI row under it, even height, no wrap pill.
+- Quieter nav: soft active row, Topics without `[[]]`, Settings gear icon.
+- Wiki topics highlighted in the editor (brackets muted); circular task checkboxes; underline-style Add task.
+- Evening Reflection: full copy, primary button right-aligned in `.panel-actions`.
+- Compact calendar weekdays (`Mo`…`Su`); at 960 calendar in left nav, rail hidden.
+- CDP shots refreshed: `docs/design/sg3-1280.png`, `sg3-1280-reflect.png`, `sg3-960.png`.
+
+**`npm run check`:** green (209 FE + Rust).
+
+**Verifier click path:** `?dev=ui` or `npm run tauri dev` → hero date + three zones at ≥1101px → Reflect (button bottom-right of panel) → Topics without brackets → gear Settings → shrink &lt;1100px for nav calendar.
+
+---
+
+### Design branch — Reflect three-zone shell (22 Oct, coding agent on `design_upgrades`)
+
+**Status:** 3B.4 / 3B.6 / 3B.7 / 3B.8 → **review**. Bugs 3B.1–3B.3 remain on `main`. No commit.
+
+**Verified in-app browser** (`http://localhost:1420/?dev=ui`) against `docs/design/reflect-reference.png`:
+- Three zones at 1280×800: left nav (search, Daily notes, Ask, Topics, Settings) · centre note hero · right calendar + “In this note”.
+- At 960×700: right rail collapses; calendar moves into the left nav (`matchMedia`).
+- Note title sits **above** the AI action row; one panel open at a time; Ask opens full-width in the centre.
+- Warm accent only on Evening Reflection. CDP screenshots: `docs/design/sg3-1280.png`, `sg3-1280-reflect.png`, `sg3-960.png`.
+
+**`npm run check`:** green (209 FE + Rust). New: `AppLayout3B.test.tsx`, `InThisNote.tsx`, `?dev=ui` preview path. Window min 960×640 in `tauri.conf.json`.
+
+**Verifier click path:** `npm run tauri dev` (or Vite `?dev=ui`) → confirm three columns at wide width → open each AI action → Ask from sidebar → shrink below 1100px and confirm calendar in left nav → Settings from nav footer.
+
+---
 
 ### Verifier — Check-in 3 FAILED (owner smoke), 22 Oct 01:10
 

@@ -84,26 +84,37 @@ export function EveningReflection({ date, onSaved }: Props) {
       )}
       {step === "idle" && (
         <>
-          <p>Summarize today from your note and tasks, and seed one line for tomorrow.</p>
-          <button type="button" className="btn-primary" onClick={reflect} disabled={!content.trim() && !tasksText}>
-            Reflect on today
-          </button>
+          <p className="panel-copy">
+            Summarize today from your note and tasks, and seed one line for tomorrow.
+          </p>
+          <div className="panel-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={reflect}
+              disabled={!content.trim() && !tasksText}
+            >
+              Reflect on today
+            </button>
+          </div>
         </>
       )}
       {step === "reflecting" && <p>Reflecting on your day…</p>}
       {step === "done" && (
         <>
           <p>Summary:</p>
-          <p>{summary || "(nothing to summarize)"}</p>
+          <p className="panel-copy">{summary || "(nothing to summarize)"}</p>
           <p>Seed for tomorrow:</p>
           <textarea
             value={seed}
             onChange={(e) => setSeed(e.currentTarget.value)}
             rows={2}
           />
-          <button type="button" className="btn-primary" disabled={!seed.trim()} onClick={saveSeed}>
-            Save seed to tomorrow
-          </button>
+          <div className="panel-actions">
+            <button type="button" className="btn-primary" disabled={!seed.trim()} onClick={saveSeed}>
+              Save seed to tomorrow
+            </button>
+          </div>
         </>
       )}
     </section>

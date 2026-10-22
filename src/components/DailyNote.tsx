@@ -5,7 +5,7 @@
 // the file. Saves are debounced by the autosaver (1.6.2), flushed on close or
 // day switch (1.6.3).
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 // NOTE on initial state: `null` = "loading"; switching days remounts this
 // component via `key={date}` in App (no setState-in-effect reset here).
 import { ensureNote, readNote, writeNote } from "../lib/api";
@@ -14,7 +14,7 @@ import type { UnlistenFn } from "../lib/windowClose";
 import { onWindowClose } from "../lib/windowClose";
 import type { NoteDate } from "../lib/noteFile";
 import { noteDateToDate } from "../lib/noteFile";
-import { formatNoteHeader, titleForDate } from "../lib/dateFormat";
+import { formatReflectTitle } from "../lib/dateFormat";
 import { proseOf, withProse } from "../lib/tasks";
 import { Editor } from "./Editor";
 import { TaskList } from "./TaskList";
@@ -28,9 +28,11 @@ type Props = {
   date: NoteDate;
   isToday: boolean;
   create: boolean;
+  /** Slot under the title (AI action row + one open panel). Never above the H1. */
+  afterTitle?: ReactNode;
 };
 
-export function DailyNote({ date, isToday, create }: Props) {
+export function DailyNote({ date, isToday, create, afterTitle }: Props) {
   const [note, setNote] = useState<NoteState | null>(null);
   // "error" shows the calm retrying note; back to null when a save succeeds.
   const [saveState, setSaveState] = useState<"error" | null>(null);
@@ -78,7 +80,7 @@ export function DailyNote({ date, isToday, create }: Props) {
     };
   }, [saver]);
 
-  const title = isToday ? "Today" : titleForDate(noteDateToDate(date));
+  const title = formatReflectTitle(noteDateToDate(date));
 
   /** Task edits (TaskList) hand back FULL markdown — route it through the save. */
   function onNoteChange(content: string) {
@@ -99,11 +101,11 @@ export function DailyNote({ date, isToday, create }: Props) {
   }
 
   return (
-    <section className="daily-note">
+    <section className={`daily-note${isToday ? " daily-note-today" : ""}`}>
       <header>
-        <code className="note-date">{formatNoteHeader(noteDateToDate(date))}</code>
         <h1 className="note-title">{title}</h1>
       </header>
+      {afterTitle}
       {saveState === "error" && (
         <p className="save-note" role="status">
           Couldn't save — retrying

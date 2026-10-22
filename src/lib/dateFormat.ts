@@ -55,3 +55,31 @@ export function titleForDate(date: Date): string {
   const mon = MONTHS_FULL[date.getMonth()];
   return `${wd}, ${date.getDate()} ${mon} ${date.getFullYear()}`;
 }
+
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function dayOrdinal(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (n % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+/**
+ * Reflect-style hero date for the note H1, e.g. "Thu, October 22nd, 2026".
+ * Keeps Vayu tokens (colour applied in CSS); this is the string only.
+ */
+export function formatReflectTitle(date: Date): string {
+  const wd = WEEKDAYS_SHORT[date.getDay()];
+  const mon = MONTHS_FULL[date.getMonth()];
+  const day = date.getDate();
+  return `${wd}, ${mon} ${day}${dayOrdinal(day)}, ${date.getFullYear()}`;
+}

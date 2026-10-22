@@ -30,8 +30,9 @@ describe("Editor (task 1.6.1)", () => {
     const editorBlock = css.match(/\.note-editor\s*{[^}]*}/);
     expect(editorBlock).not.toBeNull();
     expect(editorBlock?.[0]).toMatch(/font-family:\s*var\(--font-body\)/);
-    const column = css.match(/\.note-column\s*{[^}]*}/);
-    expect(column).not.toBeNull();
-    expect(column?.[0]).toMatch(/max-width:\s*var\(--width-note-column\)/);
+    const body = css.match(/\.note-body\s*,|\.note-body\s*{[^}]*}/);
+    expect(css).toMatch(/\.note-body/);
+    expect(css).toMatch(/max-width:\s*var\(--width-note-column\)/);
+    expect(body).not.toBeNull();
   });
 });

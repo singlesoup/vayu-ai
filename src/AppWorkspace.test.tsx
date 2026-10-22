@@ -31,6 +31,8 @@ describe("Workspace launch (task 1.5.4)", () => {
     });
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "started at 9" });
+    tauri.given("list_notes", []);
+    tauri.given("read_all_notes", []);
     tauri.on("ollama_status", () => new Promise<never>(() => undefined)); // never resolves
     return tauri;
   }
@@ -65,7 +67,9 @@ describe("Workspace launch (task 1.5.4)", () => {
     nowRef.value = new Date(2026, 9, 22, 0, 5, 0); // past midnight
     window.dispatchEvent(new Event("focus"));
 
-    expect(await screen.findByText("THU 22 OCT 2026")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Thu, October 22nd, 2026" }),
+    ).toBeInTheDocument();
     expect(document.title).toBe("Vayu — Today");
     // the last ensure/read pair targets the new day
     const calls = getInvokeMock().mock.calls;

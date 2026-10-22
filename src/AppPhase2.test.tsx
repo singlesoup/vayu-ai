@@ -70,11 +70,14 @@ describe("Phase 2 wired into the window", () => {
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
     tauri.given("list_notes", []);
+    tauri.given("read_all_notes", []);
     render(<App />);
     await user.click(await screen.findByRole("button", { name: "Open Vayu" }));
     expect(await screen.findByRole("heading", { name: "Morning Intention" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Brain Dump → Tasks" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Wed, October 21st, 2026" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("toolbar", { name: "AI for today" })).toBeInTheDocument();
   });
 
   it("a skipped intention for today does not show the card again", async () => {
@@ -90,9 +93,12 @@ describe("Phase 2 wired into the window", () => {
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
     tauri.given("list_notes", []);
+    tauri.given("read_all_notes", []);
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Today" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Wed, October 21st, 2026" }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Morning Intention" })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Brain Dump → Tasks" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Brain dump" })).toBeInTheDocument();
   });
 });

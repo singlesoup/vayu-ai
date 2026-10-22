@@ -22,7 +22,7 @@ describe("Calendar sidebar (task 1.7.2)", () => {
 
     const headers = screen.getAllByRole("columnheader");
     expect(headers.map((h) => h.textContent)).toEqual([
-      "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun",
+      "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su",
     ]);
 
     // October 2026 starts on a Thursday → the first week has 3 blanks, then day 1

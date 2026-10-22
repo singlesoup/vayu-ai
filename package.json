@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:pages": "tsc && vite build",
     "preview": "vite preview",
+    "preview:pages": "vite preview",
     "tauri": "tauri",
     "test": "vitest run",
     "test:rust": "node scripts/run-rust.mjs",

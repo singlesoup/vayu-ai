@@ -22,6 +22,21 @@
 
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type { NoteDate } from "./noteFile";
+import { isBrowserPreview, previewInvoke } from "../dev/browserPreview";
+
+/** Dev `?dev=ui` preview: route every command through the in-memory mock. */
+function invokeCmd<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (isBrowserPreview()) {
+    return previewInvoke(cmd, args) as Promise<T>;
+  }
+  // Omit the second arg when unused — Tauri mocks and tests expect a single-arg call.
+  return args === undefined ? invoke<T>(cmd) : invoke<T>(cmd, args);
+}
+
+/** Channel stand-in for the browser preview (no Tauri IPC). */
+class PreviewChannel<T> {
+  onmessage: ((message: T) => void) | null = null;
+}
 
 /** Every Rust command name in one place — components never pass raw strings. */
 export const COMMANDS = {
@@ -189,7 +204,7 @@ export type ApiError = {
  * `get_config` → `ConfigResult`. Creates nothing; missing or corrupt file → null.
  */
 export function getConfig(): Promise<ConfigResult> {
-  return invoke<ConfigResult>(COMMANDS.getConfig);
+  return invokeCmd<ConfigResult>(COMMANDS.getConfig);
 }
 
 /**
@@ -201,7 +216,7 @@ export function getConfig(): Promise<ConfigResult> {
  * Resolves void; rejects with ApiError.
  */
 export function setNotesDir(path: string): Promise<void> {
-  return invoke<void>(COMMANDS.setNotesDir, { path });
+  return invokeCmd<void>(COMMANDS.setNotesDir, { path });
 }
 
 /**
@@ -210,7 +225,7 @@ export function setNotesDir(path: string): Promise<void> {
  * a day). Rejects Err(InvalidDate) without touching the filesystem.
  */
 export function readNote(date: NoteDate): Promise<NoteResult> {
-  return invoke<NoteResult>(COMMANDS.readNote, { date });
+  return invokeCmd<NoteResult>(COMMANDS.readNote, { date });
 }
 
 /**
@@ -218,7 +233,7 @@ export function readNote(date: NoteDate): Promise<NoteResult> {
  * and leaves an existing file's content untouched, byte-for-byte.
  */
 export function ensureNote(date: NoteDate): Promise<void> {
-  return invoke<void>(COMMANDS.ensureNote, { date });
+  return invokeCmd<void>(COMMANDS.ensureNote, { date });
 }
 
 /**
@@ -227,7 +242,7 @@ export function ensureNote(date: NoteDate): Promise<void> {
  * Err(InvalidDate) for bad dates, writing nothing.
  */
 export function writeNote(date: NoteDate, content: string): Promise<void> {
-  return invoke<void>(COMMANDS.writeNote, { date, content });
+  return invokeCmd<void>(COMMANDS.writeNote, { date, content });
 }
 
 /**
@@ -236,17 +251,17 @@ export function writeNote(date: NoteDate, content: string): Promise<void> {
  * `noteName.md.tmp`, `notes.txt` etc. are ignored.
  */
 export function listNotes(): Promise<NoteDate[]> {
-  return invoke<NoteDate[]>(COMMANDS.listNotes);
+  return invokeCmd<NoteDate[]>(COMMANDS.listNotes);
 }
 
 /** `ollama_status()` — see OllamaStatus. Cheap, non-blocking, allows re polling. */
 export function ollamaStatus(): Promise<OllamaStatus> {
-  return invoke<OllamaStatus>(COMMANDS.ollamaStatus);
+  return invokeCmd<OllamaStatus>(COMMANDS.ollamaStatus);
 }
 
 /** `list_models()` — see DetectedModels. Uses the captured `/api/tags` JSON. */
 export function listModels(): Promise<DetectedModels> {
-  return invoke<DetectedModels>(COMMANDS.listModels);
+  return invokeCmd<DetectedModels>(COMMANDS.listModels);
 }
 
 /**
@@ -266,21 +281,23 @@ export function listModels(): Promise<DetectedModels> {
  * Resolves with GenerateOutcome once the run is finished/stopped/errored.
  */
 export function generate(prompt: string, onEvent: (e: StreamEvent) => void): Promise<GenerateOutcome> {
-  const channel = new Channel<StreamEvent>();
+  const channel = isBrowserPreview()
+    ? new PreviewChannel<StreamEvent>()
+    : new Channel<StreamEvent>();
   channel.onmessage = onEvent;
-  return invoke<GenerateOutcome>(COMMANDS.generate, { prompt, onEvent: channel });
+  return invokeCmd<GenerateOutcome>(COMMANDS.generate, { prompt, onEvent: channel });
 }
 
 /** `stop_generation()` — ends the current generation within ~1s, final state Stopped. */
 export function stopGeneration(): Promise<void> {
-  return invoke<void>(COMMANDS.stopGeneration);
+  return invokeCmd<void>(COMMANDS.stopGeneration);
 }
 
 /** `hardware_check(notesDir?)` → HardwareReport (task 2.1). */
 export function hardwareCheck(notesDir?: string): Promise<HardwareReport> {
   const args: Record<string, unknown> = {};
   if (notesDir !== undefined) args.notesDir = notesDir;
-  return invoke<HardwareReport>(COMMANDS.hardwareCheck, args);
+  return invokeCmd<HardwareReport>(COMMANDS.hardwareCheck, args);
 }
 
 /**
@@ -292,14 +309,16 @@ export function pullModel(
   model: string,
   onEvent: (e: PullEvent) => void,
 ): Promise<void> {
-  const channel = new Channel<PullEvent>();
+  const channel = isBrowserPreview()
+    ? new PreviewChannel<PullEvent>()
+    : new Channel<PullEvent>();
   channel.onmessage = onEvent;
-  return invoke<void>(COMMANDS.pullModel, { model, onEvent: channel });
+  return invokeCmd<void>(COMMANDS.pullModel, { model, onEvent: channel });
 }
 
 /** `cancel_pull()` — aborts the in-flight pull (task 2.5). */
 export function cancelPull(): Promise<void> {
-  return invoke<void>(COMMANDS.cancelPull);
+  return invokeCmd<void>(COMMANDS.cancelPull);
 }
 
 /**
@@ -307,7 +326,7 @@ export function cancelPull(): Promise<void> {
  * embedding must pass before "You're ready".
  */
 export function verifyInstall(tag: string): Promise<VerifyResult> {
-  return invoke<VerifyResult>(COMMANDS.verifyInstall, { tag });
+  return invokeCmd<VerifyResult>(COMMANDS.verifyInstall, { tag });
 }
 
 /**
@@ -323,7 +342,7 @@ export function updateConfig(patch: {
   if (patch.tier !== undefined) args.tier = patch.tier;
   if (patch.modelTag !== undefined) args.modelTag = patch.modelTag;
   if (patch.aiEnabled !== undefined) args.aiEnabled = patch.aiEnabled;
-  return invoke<void>(COMMANDS.updateConfig, args);
+  return invokeCmd<void>(COMMANDS.updateConfig, args);
 }
 
 /** `mark_intention(date, status)` — done/skipped per date (task 2.8). */
@@ -331,12 +350,12 @@ export function markIntention(
   date: NoteDate,
   status: "done" | "skipped",
 ): Promise<void> {
-  return invoke<void>(COMMANDS.markIntention, { date, status });
+  return invokeCmd<void>(COMMANDS.markIntention, { date, status });
 }
 
 /** `append_note(date, appendix)` — atomic append of an intention/task block (task 2.9/2.10). */
 export function appendNote(date: NoteDate, appendix: string): Promise<void> {
-  return invoke<void>(COMMANDS.appendNote, { date, appendix });
+  return invokeCmd<void>(COMMANDS.appendNote, { date, appendix });
 }
 
 /** `embeddings(model, prompt)` → embedding vector via Ollama /api/embeddings (task 3.4). */
@@ -344,17 +363,17 @@ export function embeddings(
   model: string,
   prompt: string,
 ): Promise<number[]> {
-  return invoke<number[]>(COMMANDS.embeddings, { model, prompt });
+  return invokeCmd<number[]>(COMMANDS.embeddings, { model, prompt });
 }
 
 /** `delete_model(name)` → delete a model via Ollama /api/delete (task 3.8). */
 export function deleteModel(name: string): Promise<void> {
-  return invoke<void>(COMMANDS.deleteModel, { name });
+  return invokeCmd<void>(COMMANDS.deleteModel, { name });
 }
 
 /** `reindex()` → rebuild the local embedding index from every note (task 3.4). */
 export function reindex(): Promise<IndexStats> {
-  return invoke<IndexStats>(COMMANDS.reindex);
+  return invokeCmd<IndexStats>(COMMANDS.reindex);
 }
 
 /**
@@ -362,10 +381,10 @@ export function reindex(): Promise<IndexStats> {
  * (task 3.4/3.6). Returns the top `top_k` hits sorted by score.
  */
 export function searchIndex(query: string, topK: number): Promise<SearchHit[]> {
-  return invoke<SearchHit[]>(COMMANDS.searchIndex, { query, topK });
+  return invokeCmd<SearchHit[]>(COMMANDS.searchIndex, { query, topK });
 }
 
 /** `read_all_notes()` → every existing note with content (task 3.5). */
 export function readAllNotes(): Promise<NoteSummary[]> {
-  return invoke<NoteSummary[]>(COMMANDS.readAllNotes);
+  return invokeCmd<NoteSummary[]>(COMMANDS.readAllNotes);
 }

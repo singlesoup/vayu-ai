@@ -10,6 +10,8 @@ import { noteDateToDate } from "../lib/noteFile";
 type Props = {
   /** Open the day a backlink chip points at. */
   onOpenDay: (date: string) => void;
+  /** Bump after a save so topics typed later appear without restart. */
+  refreshKey?: number;
 };
 
 function shortenDay(date: string): string {
@@ -20,7 +22,7 @@ function formatShort(d: Date): string {
   return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 }
 
-export function BacklinksPanel({ onOpenDay }: Props) {
+export function BacklinksPanel({ onOpenDay, refreshKey = 0 }: Props) {
   const [index, setIndex] = useState<Map<string, string[]> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ export function BacklinksPanel({ onOpenDay }: Props) {
     void readAllNotes()
       .then((notes) => setIndex(buildBacklinkIndex(notes)))
       .catch(() => setError("Couldn't load backlinks."));
-  }, []);
+  }, [refreshKey]);
 
   if (error) {
     return (
@@ -54,18 +56,20 @@ export function BacklinksPanel({ onOpenDay }: Props) {
         <ul className="backlink-topics">
           {topics.map((topic) => (
             <li key={topic}>
-              <span className="backlink-topic">[[{topic}]]</span>
-              {(index.get(topic) ?? []).map((date) => (
-                <button
-                  key={date}
-                  type="button"
-                  className="btn-ghost backlink-day"
-                  onClick={() => onOpenDay(date)}
-                  title={formatNoteHeader(noteDateToDate(date))}
-                >
-                  {shortenDay(date)}
-                </button>
-              ))}
+              <span className="backlink-topic">{topic}</span>
+              <span className="backlink-days">
+                {(index.get(topic) ?? []).map((date) => (
+                  <button
+                    key={date}
+                    type="button"
+                    className="backlink-day"
+                    onClick={() => onOpenDay(date)}
+                    title={formatNoteHeader(noteDateToDate(date))}
+                  >
+                    {shortenDay(date)}
+                  </button>
+                ))}
+              </span>
             </li>
           ))}
         </ul>

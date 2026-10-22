@@ -47,31 +47,25 @@ describe("first-run screen matches the design board (task 1B.3)", () => {
 });
 
 describe("daily note screen matches the design board (task 1B.3)", () => {
-  it("Surface sidebar rail beside the Ink main column; stacked below 700px", () => {
+  it("three-zone shell; right rail collapses below 1100px", () => {
     const css = appCss();
-    const rail = cssBlock(css, "\\.calendar-rail");
-    expect(rail, ".calendar-rail is styled").not.toBeNull();
+    expect(css).toMatch(/\.workspace\s*{[^}]*grid-template-columns:\s*220px/);
+    const rail = cssBlock(css, "\\.app-rail");
+    expect(rail, ".app-rail is styled").not.toBeNull();
     expect(rail).toMatch(/background:\s*var\(--color-surface\)/);
-    expect(rail).toMatch(/width:\s*var\(--width-calendar-rail\)/);
-    const mediaIdx = css.search(/@media[^{]*max-width:\s*700px/);
-    expect(mediaIdx, "a ≤700px stacking media query exists").toBeGreaterThan(-1);
-    const stackRule = css
-      .slice(mediaIdx)
-      .match(/\.workspace\s*{[^}]*flex-direction:\s*column/);
-    expect(stackRule, "the workspace stacks vertically at ≤700px").not.toBeNull();
+    const mediaIdx = css.search(/@media[^{]*max-width:\s*1100px/);
+    expect(mediaIdx, "a ≤1100px collapse media query exists").toBeGreaterThan(-1);
+    const collapse = css.slice(mediaIdx).match(/\.app-rail\s*{[^}]*display:\s*none/);
+    expect(collapse, "the right rail hides at ≤1100px").not.toBeNull();
   });
 
-  it("the date line is mono 12px uppercase muted; the title is Inter", () => {
+  it("the note title is Inter display size in Breeze (Reflect hero date)", () => {
     const css = appCss();
-    const date = cssBlock(css, "\\.note-date");
-    expect(date, ".note-date is styled").not.toBeNull();
-    expect(date).toMatch(/font-family:\s*var\(--font-mono\)/);
-    expect(date).toMatch(/font-size:\s*var\(--text-mono\)/);
-    expect(date).toMatch(/text-transform:\s*uppercase/);
-    expect(date).toMatch(/color:\s*var\(--color-muted\)/);
     const title = cssBlock(css, "\\.note-title");
     expect(title, ".note-title is styled").not.toBeNull();
     expect(title).toMatch(/font-family:\s*var\(--font-ui\)/);
+    expect(title).toMatch(/font-size:\s*var\(--text-display\)/);
+    expect(title).toMatch(/color:\s*var\(--color-breeze\)/);
   });
 
   it("the note body is Newsreader at the note size", () => {
@@ -104,13 +98,13 @@ describe("daily note screen matches the design board (task 1B.3)", () => {
 });
 
 describe("task rows match the design board (task 1B.3)", () => {
-  it("the checkbox is a custom 16px square, 5px radius, checkbox-border token", () => {
+  it("the checkbox is a custom 16px circle (Reflect), checkbox-border token", () => {
     const block = cssBlock(appCss(), '\\.task-list input\\[type="checkbox"\\]');
     expect(block, "custom checkbox rule exists").not.toBeNull();
     expect(block).toMatch(/appearance:\s*none/);
     expect(block).toMatch(/width:\s*16px/);
     expect(block).toMatch(/height:\s*16px/);
-    expect(block).toMatch(/border-radius:\s*5px/);
+    expect(block).toMatch(/border-radius:\s*999px/);
     expect(block).toMatch(/var\(--color-checkbox-border\)/);
   });
 
@@ -160,11 +154,13 @@ describe("daily note header and editor never overlap (task 1D.1)", () => {
     // stacking guarantee: the header always paints over anything below it
     expect(header).toMatch(/position:\s*relative/);
     expect(header).toMatch(/z-index:\s*1/);
-    // the editor is a normal block, pushed clear of the title with a token gap
+    // the editor stack sits below the title; textarea is a clear block
+    const stack = cssBlock(css, "\\.note-editor-stack");
+    expect(stack, ".note-editor-stack is styled").not.toBeNull();
+    expect(stack).toMatch(/margin-top:\s*var\(--space-\d+\)/);
     const editor = cssBlock(css, "\\.note-editor");
     expect(editor, ".note-editor is styled").not.toBeNull();
     expect(editor).toMatch(/display:\s*block/);
-    expect(editor).toMatch(/margin-top:\s*var\(--space-\d+\)/);
   });
 });
 

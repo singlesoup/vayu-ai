@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getConfig, listNotes, type ConfigResult, type Tier } from "./lib/api";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { getConfig, listNotes, readAllNotes, type ConfigResult, type Tier } from "./lib/api";
 import { shouldShowTokenPage } from "./tokenPageGate";
 import { TokenPage } from "./components/TokenPage";
 import { FirstRunScreen } from "./components/FirstRunScreen";
@@ -9,6 +9,7 @@ import { BrainDump } from "./components/BrainDump";
 import { JournalChat } from "./components/JournalChat";
 import { EveningReflection } from "./components/EveningReflection";
 import { BacklinksPanel } from "./components/BacklinksPanel";
+import { InThisNote } from "./components/InThisNote";
 import { AskNotes } from "./components/AskNotes";
 import { RedModeBar } from "./components/RedModeBar";
 import { DailyNote } from "./components/DailyNote";
@@ -18,16 +19,16 @@ import { now } from "./lib/appClock";
 import { titleForDate } from "./lib/dateFormat";
 import { localDateKey, isNoteDate, type NoteDate } from "./lib/noteFile";
 
-type ConfigState = {
-  state: "loading";
-} | {
-  state: "ready";
-  notesDir: string | null;
-  defaultNotesDir: string;
-  tier: Tier | null;
-  aiEnabled: boolean | null;
-  intention: { date: string; status: string }[];
-};
+type ConfigState =
+  | { state: "loading" }
+  | {
+      state: "ready";
+      notesDir: string | null;
+      defaultNotesDir: string;
+      tier: Tier | null;
+      aiEnabled: boolean | null;
+      intention: { date: string; status: string }[];
+    };
 
 function readyConfig(c: ConfigResult): ConfigState {
   return {
@@ -41,14 +42,27 @@ function readyConfig(c: ConfigResult): ConfigState {
 }
 
 type DayState = {
-  /** The day the clock says it is right now. */
   today: NoteDate;
-  /** The day being edited. */
   current: NoteDate;
 };
 
+/** Which centre view / AI panel is open (Reflect-style: one at a time). */
+type CentreView = "today" | "ask";
+type AiPanel = "none" | "intention" | "dump" | "journal" | "reflect";
+
+const NARROW_MQ = "(max-width: 1100px)";
+
+function subscribeNarrow(cb: () => void) {
+  const mq = window.matchMedia(NARROW_MQ);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+}
+
+function readNarrow() {
+  return window.matchMedia(NARROW_MQ).matches;
+}
+
 function App() {
-  // Dev-only token reference (task 1.3.4): ?dev=tokens, never in release builds.
   if (
     shouldShowTokenPage(import.meta.env.DEV, new URLSearchParams(window.location.search).get("dev"))
   ) {
@@ -66,20 +80,20 @@ function initialDays(): DayState | null {
 function AppBody() {
   const [config, setConfig] = useState<ConfigState>({ state: "loading" });
   const [days, setDays] = useState<DayState | null>(initialDays);
-  // Notes that already exist on disk (from list_notes), for the calendar marks.
   const [noteDates, setNoteDates] = useState<NoteDate[]>([]);
-  // Settings panel (task 1.9.2): Phase 1 holds the Model (Ollama) section.
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Bumped when Morning Intention or Brain Dump writes into today's file,
-  // so the note reloads and the new tasks show up.
   const [noteRevision, setNoteRevision] = useState(0);
   const [intentionClosed, setIntentionClosed] = useState(false);
+  const [centreView, setCentreView] = useState<CentreView>("today");
+  const [aiPanel, setAiPanel] = useState<AiPanel>("none");
+  const [keyword, setKeyword] = useState("");
+  const [keywordHits, setKeywordHits] = useState<{ date: string; content: string }[]>([]);
+  const narrow = useSyncExternalStore(subscribeNarrow, readNarrow, () => false);
 
   function loadConfig() {
     void getConfig()
       .then((c) => setConfig(readyConfig(c)))
       .catch(() =>
-        // A failed config read should not strand the user; ask for a folder.
         setConfig({
           state: "ready",
           notesDir: null,
@@ -93,18 +107,14 @@ function AppBody() {
 
   useEffect(loadConfig, []);
 
-  // Calendar marks (task 1.7.2): which days have notes. Refreshed whenever the
-  // viewed day changes (opening a future day for today's date adds a file).
   const currentDay = days?.current ?? null;
   useEffect(() => {
     if (currentDay === null) return;
     void listNotes()
       .then((dates) => setNoteDates(dates.filter((d) => isNoteDate(d))))
       .catch(() => setNoteDates([]));
-  }, [currentDay]);
+  }, [currentDay, noteRevision]);
 
-  // Midnight handling: when the window regains focus (or becomes visible), move
-  // the editor to the new day — which makes Rust create that day's file.
   useEffect(() => {
     function checkDayRollover() {
       const key = safeDateKey(now());
@@ -124,12 +134,38 @@ function AppBody() {
     };
   }, [days?.today]);
 
-  // Window title: "Vayu — Today" on today's note, otherwise the weekday/date.
   useEffect(() => {
     if (days === null) return;
     document.title =
       days.current === days.today ? "Vayu — Today" : `Vayu — ${titleForDay(days.current)}`;
   }, [days]);
+
+  // Keyword search across notes (every tier — no AI).
+  useEffect(() => {
+    const q = keyword.trim().toLowerCase();
+    if (!q) return;
+    let cancelled = false;
+    void readAllNotes()
+      .then((notes) => {
+        if (!cancelled) {
+          setKeywordHits(notes.filter((n) => n.content.toLowerCase().includes(q)).slice(0, 12));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setKeywordHits([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [keyword, noteRevision]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setAiPanel("none");
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (config.state === "loading" || days === null) {
     return (
@@ -143,7 +179,6 @@ function AppBody() {
     return <FirstRunScreen defaultPath={config.defaultNotesDir} onSaved={() => loadConfig()} />;
   }
 
-  // Tier has never been chosen: hardware screen, then download or straight in.
   if (config.tier === null) {
     return <SetupFlow notesDir={config.notesDir} onComplete={() => loadConfig()} />;
   }
@@ -151,74 +186,238 @@ function AppBody() {
   const isToday = days.current === days.today;
   const aiOn = config.aiEnabled !== false && config.tier !== "Red";
   const intentionToday = config.intention.find((entry) => entry.date === days.today)?.status;
-  const showIntention =
-    isToday && aiOn && !intentionClosed && intentionToday !== "done" && intentionToday !== "skipped";
+  const showIntentionAuto =
+    isToday &&
+    aiOn &&
+    !intentionClosed &&
+    intentionToday !== "done" &&
+    intentionToday !== "skipped" &&
+    aiPanel === "none";
+
+  function openDay(date: string) {
+    if (!isNoteDate(date)) return;
+    setDays((prev) => (prev ? { ...prev, current: date } : prev));
+    setCentreView("today");
+  }
+
+  function bumpNote() {
+    setNoteRevision((n) => n + 1);
+  }
 
   return (
-    <main className="app workspace">
-      <button
-        type="button"
-        className="settings-open"
-        aria-label="Settings"
-        onClick={() => setSettingsOpen(true)}
-      >
-        ⚙
-      </button>
+    <main className="app workspace" data-layout="three-zone">
       <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <aside className="calendar-rail">
-        <Calendar
-          today={days.today}
-          noteDates={noteDates}
-          onSelect={(date) => setDays((prev) => (prev ? { ...prev, current: date } : prev))}
-        />
-        <BacklinksPanel
-          onOpenDay={(date) =>
-            setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
-          }
-        />
-        {aiOn && (
-          <AskNotes
-            onOpenDay={(date) =>
-              setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
-            }
-          />
-        )}
-      </aside>
-      <div className="note-column">
-        {showIntention && (
-          <MorningIntention
-            date={days.today}
-            onFinish={() => {
-              setIntentionClosed(true);
-              setNoteRevision((n) => n + 1);
+
+      {/* Left — Reflect-style nav */}
+      <nav className="app-nav" aria-label="Main">
+        <div className="nav-search">
+          <label className="visually-hidden" htmlFor="nav-search-input">
+            Search notes
+          </label>
+          <input
+            id="nav-search-input"
+            type="search"
+            placeholder="Search anything…"
+            value={keyword}
+            onChange={(e) => {
+              const next = e.currentTarget.value;
+              setKeyword(next);
+              if (!next.trim()) setKeywordHits([]);
             }}
           />
+        </div>
+        {keywordHits.length > 0 && (
+          <ul className="nav-search-hits">
+            {keywordHits.map((hit) => (
+              <li key={hit.date}>
+                <button type="button" className="nav-link" onClick={() => openDay(hit.date)}>
+                  {shortDay(hit.date)}
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-        {isToday && aiOn && (
-          <BrainDump date={days.today} onFinish={() => setNoteRevision((n) => n + 1)} />
+
+        <button
+          type="button"
+          className={`nav-link${centreView === "today" ? " nav-link-active" : ""}`}
+          onClick={() => setCentreView("today")}
+        >
+          Daily notes
+        </button>
+        {aiOn && (
+          <button
+            type="button"
+            className={`nav-link${centreView === "ask" ? " nav-link-active" : ""}`}
+            onClick={() => {
+              setCentreView("ask");
+              setAiPanel("none");
+            }}
+          >
+            Ask your notes
+          </button>
         )}
-        {isToday && aiOn && (
-          <JournalChat date={days.today} onSaved={() => setNoteRevision((n) => n + 1)} />
+
+        <div className="nav-section-label">Topics</div>
+        <BacklinksPanel onOpenDay={openDay} refreshKey={noteRevision} />
+
+        {narrow && (
+          <div className="nav-calendar-slot">
+            <Calendar
+              today={days.today}
+              noteDates={noteDates}
+              onSelect={(date) => {
+                setDays((prev) => (prev ? { ...prev, current: date } : prev));
+                setCentreView("today");
+              }}
+            />
+          </div>
         )}
-        {isToday && aiOn && (
-          <EveningReflection date={days.today} onSaved={() => setNoteRevision((n) => n + 1)} />
+
+        <div className="nav-footer">
+          <button
+            type="button"
+            className="nav-settings"
+            aria-label="Settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+              <path
+                d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M19.4 13a7.7 7.7 0 0 0 .06-2l2.02-1.57-2-3.46-2.4.96a7.6 7.6 0 0 0-1.73-1L15 3h-4l-.35 2.93a7.6 7.6 0 0 0-1.73 1l-2.4-.96-2 3.46L6.54 11a7.7 7.7 0 0 0 0 2l-2.02 1.57 2 3.46 2.4-.96a7.6 7.6 0 0 0 1.73 1L11 21h4l.35-2.93a7.6 7.6 0 0 0 1.73-1l2.4.96 2-3.46L19.4 13Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </nav>
+
+      {/* Centre — note as hero (title first; AI under it) */}
+      <section className="note-column" aria-label="Note">
+        {centreView === "ask" && aiOn ? (
+          <AskNotes onOpenDay={openDay} />
+        ) : (
+          <>
+            {!aiOn && isToday && (
+              <RedModeBar onOpenDay={openDay} refreshKey={noteRevision} />
+            )}
+
+            <DailyNote
+              key={days.current}
+              date={days.current}
+              isToday={isToday}
+              create={isToday}
+              afterTitle={
+                aiOn && isToday ? (
+                  <>
+                    <div className="ai-action-row" role="toolbar" aria-label="AI for today">
+                      <button
+                        type="button"
+                        className={`ai-action${
+                          aiPanel === "intention" || showIntentionAuto ? " ai-action-active" : ""
+                        }`}
+                        onClick={() =>
+                          setAiPanel(aiPanel === "intention" ? "none" : "intention")
+                        }
+                      >
+                        Plan my day
+                      </button>
+                      <button
+                        type="button"
+                        className={`ai-action${aiPanel === "dump" ? " ai-action-active" : ""}`}
+                        onClick={() => setAiPanel(aiPanel === "dump" ? "none" : "dump")}
+                      >
+                        Brain dump
+                      </button>
+                      <button
+                        type="button"
+                        className={`ai-action${aiPanel === "journal" ? " ai-action-active" : ""}`}
+                        onClick={() => setAiPanel(aiPanel === "journal" ? "none" : "journal")}
+                      >
+                        Journal
+                      </button>
+                      <button
+                        type="button"
+                        className={`ai-action${aiPanel === "reflect" ? " ai-action-active" : ""}`}
+                        onClick={() => setAiPanel(aiPanel === "reflect" ? "none" : "reflect")}
+                      >
+                        Reflect
+                      </button>
+                    </div>
+                    {(showIntentionAuto || aiPanel === "intention") && (
+                      <MorningIntention
+                        date={days.today}
+                        onFinish={() => {
+                          setIntentionClosed(true);
+                          setAiPanel("none");
+                          bumpNote();
+                        }}
+                      />
+                    )}
+                    {aiPanel === "dump" && (
+                      <BrainDump
+                        date={days.today}
+                        onFinish={() => {
+                          setAiPanel("none");
+                          bumpNote();
+                        }}
+                      />
+                    )}
+                    {aiPanel === "journal" && (
+                      <JournalChat
+                        date={days.today}
+                        onSaved={() => {
+                          bumpNote();
+                        }}
+                      />
+                    )}
+                    {aiPanel === "reflect" && (
+                      <EveningReflection
+                        date={days.today}
+                        onSaved={() => {
+                          bumpNote();
+                        }}
+                      />
+                    )}
+                  </>
+                ) : null
+              }
+            />
+          </>
         )}
-        {isToday && !aiOn && (
-          <RedModeBar
-            onOpenDay={(date) =>
-              setDays((prev) => (prev ? { ...prev, current: date as NoteDate } : prev))
-            }
+      </section>
+
+      {/* Right — calendar + in-note topics (Reflect-style); collapses under 1100px */}
+      {!narrow && (
+        <aside className="app-rail" aria-label="Day tools">
+          <Calendar
+            today={days.today}
+            noteDates={noteDates}
+            onSelect={(date) => {
+              setDays((prev) => (prev ? { ...prev, current: date } : prev));
+              setCentreView("today");
+            }}
           />
-        )}
-        <DailyNote
-          key={`${days.current}-${noteRevision}`}
-          date={days.current}
-          isToday={isToday}
-          create={isToday}
-        />
-      </div>
+          <InThisNote date={days.current} refreshKey={noteRevision} />
+        </aside>
+      )}
     </main>
   );
+}
+
+function shortDay(date: string): string {
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  return new Date(y, m - 1, d, 12).toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function safeDateKey(d: Date): NoteDate | null {
