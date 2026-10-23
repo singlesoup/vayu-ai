@@ -1,0 +1,14 @@
+---
+description: Verify UI changes in the in-app browser before calling them done
+alwaysApply: true
+---
+
+# Verify UI in the in-app browser
+
+When a change affects layout, CSS, components, or anything a person can see in Vayu:
+
+1. The dev server must be running (`npm run dev`, http://localhost:1420).
+2. Open `http://localhost:1420/?dev=ui` in the in-app browser.
+3. Exercise the changed screen (click the nav item, focus the field, check the empty and selected states).
+4. Measure or screenshot the specific element before saying the change is done.
+5. If the preview is down or the element does not match, say so and do not claim the change is finished.

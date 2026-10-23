@@ -59,11 +59,11 @@ describe("daily note screen matches the design board (task 1B.3)", () => {
     expect(collapse, "the right rail hides at ≤1100px").not.toBeNull();
   });
 
-  it("the note title is Inter display size in Breeze (Reflect hero date)", () => {
+  it("the note title is Fraunces display size in Breeze (Reflect hero date)", () => {
     const css = appCss();
     const title = cssBlock(css, "\\.note-title");
     expect(title, ".note-title is styled").not.toBeNull();
-    expect(title).toMatch(/font-family:\s*var\(--font-ui\)/);
+    expect(title).toMatch(/font-family:\s*var\(--font-body\)/);
     expect(title).toMatch(/font-size:\s*var\(--text-display\)/);
     expect(title).toMatch(/color:\s*var\(--color-breeze\)/);
   });
@@ -92,7 +92,7 @@ describe("daily note screen matches the design board (task 1B.3)", () => {
     expect(day).toMatch(/color:\s*var\(--color-muted\)/);
     const noted = cssBlock(css, '\\.cal-grid td button\\[data-note="true"\\]');
     expect(noted).not.toBeNull();
-    expect(noted).toMatch(/font-weight:\s*(bold|700)/);
+    expect(noted).toMatch(/font-weight:\s*(bold|700|var\(--font-weight-bold\))/);
     expect(noted).toMatch(/color:\s*var\(--color-text\)/);
   });
 });

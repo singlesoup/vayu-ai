@@ -161,7 +161,9 @@ export async function previewInvoke(
         ? "You focused on Vayu's layout and kept a short reading list. Tomorrow: finish the Reflect-style shell."
         : prompt.toLowerCase().includes("extract")
           ? "- [ ] Ship the Reflect-style layout\n- [ ] Verify Ask in the browser"
-          : "What felt most grounding about today's work?";
+          : prompt.toLowerCase().includes("emotional")
+            ? "A calm thread runs through design work and making space for reading — progress without rushing."
+            : "Your journal is safe locally. I'll be ready to reflect when the local assistant is available.";
       return streamTokens(reply, channelCallback(args));
     }
     case "stop_generation":

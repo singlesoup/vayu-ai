@@ -6,6 +6,7 @@
 // day switch (1.6.3).
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { MoreHorizontal, PanelRight, Save } from "lucide-react";
 // NOTE on initial state: `null` = "loading"; switching days remounts this
 // component via `key={date}` in App (no setState-in-effect reset here).
 import { ensureNote, readNote, writeNote } from "../lib/api";
@@ -32,9 +33,17 @@ type Props = {
   afterTitle?: ReactNode;
   /** Journal redesign: breadcrumb editor instead of the hero date. */
   chrome?: "classic" | "journal";
+  onToggleCompanion?: () => void;
 };
 
-export function DailyNote({ date, isToday, create, afterTitle, chrome = "classic" }: Props) {
+export function DailyNote({
+  date,
+  isToday,
+  create,
+  afterTitle,
+  chrome = "classic",
+  onToggleCompanion,
+}: Props) {
   const [note, setNote] = useState<NoteState | null>(null);
   // "error" shows the calm retrying note; back to null when a save succeeds.
   const [saveState, setSaveState] = useState<"error" | null>(null);
@@ -108,19 +117,46 @@ export function DailyNote({ date, isToday, create, afterTitle, chrome = "classic
     weekday: "long",
     month: "long",
     day: "numeric",
+    year: "numeric",
   });
 
   return (
     <section className={`daily-note${isToday ? " daily-note-today" : ""}${journal ? " journal-editor" : ""}`}>
       {journal && (
         <div className="editor-toolbar">
-          <span className="breadcrumb">Journal <b>/</b> {heading || "Untitled entry"}</span>
-          <span className="saved-mark">{saveState === "error" ? "Couldn't save — retrying" : "Saved"}</span>
+          <span className="breadcrumb">
+            Journal <b>/</b> {heading || "Untitled entry"}
+          </span>
+          <div className="editor-actions">
+            <button
+              type="button"
+              className="saved-mark"
+              data-testid="save-note-button"
+              onClick={() => void saver.flush()}
+            >
+              <Save size={14} />
+              {saveState === "error" ? "Couldn't save — retrying" : "Saved"}
+            </button>
+            {onToggleCompanion && (
+              <button
+                type="button"
+                className="toolbar-icon"
+                aria-label="Toggle companion"
+                data-testid="editor-ai-toggle-button"
+                onClick={onToggleCompanion}
+              >
+                <PanelRight size={15} />
+              </button>
+            )}
+            <button type="button" className="toolbar-icon" aria-label="More" data-testid="editor-more-button">
+              <MoreHorizontal size={16} />
+            </button>
+          </div>
         </div>
       )}
       <header className={journal ? "entry-meta" : undefined}>
         <h1 className="note-title">{journal ? written : title}</h1>
-        {journal && <span>Last edited just now</span>}
+        {journal && <span className="edited-label">Last edited just now</span>}
       </header>
       {afterTitle}
       {saveState === "error" && (

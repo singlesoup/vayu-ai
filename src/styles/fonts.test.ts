@@ -42,7 +42,7 @@ describe("fonts (task 1.3.2 — bundled locally)", () => {
     expect(
       (css.match(/@font-face\s*\{/g) ?? []).length,
       "all font faces survive the move",
-    ).toBe(11);
+    ).toBe(19);
   });
 
   it("every @font-face src points to a file that exists in the repo", () => {

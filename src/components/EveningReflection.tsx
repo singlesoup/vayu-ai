@@ -2,6 +2,7 @@
 // seeds one line into tomorrow's note. Works any time of day.
 // Warm accent (PRD evening colour) is applied via App.css on this section.
 import { useEffect, useState } from "react";
+import { Moon } from "lucide-react";
 import { appendNote, generate, readNote } from "../lib/api";
 import { isApiErrorLike } from "../lib/apiErrors";
 import { parseTasks } from "../lib/tasks";
@@ -78,9 +79,14 @@ export function EveningReflection({ date, onSaved }: Props) {
   };
 
   return (
-    <section className="evening-reflection flow-card" aria-label="Evening Reflection">
-      <p className="flow-kicker">Evening reflection</p>
-      <h2>Let the day settle.</h2>
+    <section className="evening-reflection flow-card reflection-card" aria-label="Evening Reflection" data-testid="evening-reflection-card">
+      <div className="flow-card-heading">
+        <div>
+          <p className="flow-kicker lavender"><Moon size={14} /> Evening reflection</p>
+          <h2>Let the day settle.</h2>
+        </div>
+        <span className="flow-number">03</span>
+      </div>
       {step === "error" && (
         <p className="form-error" role="status">
           {error}
@@ -89,20 +95,20 @@ export function EveningReflection({ date, onSaved }: Props) {
       )}
       {step === "idle" && (
         <>
-          <p className="panel-copy">A gentle two-question wind-down, whenever you’re ready.</p>
-          <label className="flow-question">
+          <p className="flow-copy">A gentle two-question wind-down, whenever you’re ready.</p>
+          <label className="flow-question compact">
             What gave you energy today?
             <textarea
-              className="flow-input"
+              className="flow-input flow-textarea"
               value={gaveEnergy}
               placeholder="A person, a moment, a small win..."
               onChange={(e) => setGaveEnergy(e.currentTarget.value)}
             />
           </label>
-          <label className="flow-question">
+          <label className="flow-question compact">
             What is one thing to let go of for tomorrow?
             <textarea
-              className="flow-input"
+              className="flow-input flow-textarea"
               value={lettingGo}
               placeholder="You do not need to carry it overnight..."
               onChange={(e) => setLettingGo(e.currentTarget.value)}
@@ -111,11 +117,11 @@ export function EveningReflection({ date, onSaved }: Props) {
           <div className="panel-actions">
             <button
               type="button"
-              className="btn-primary"
+              className="flow-save-button reflection-save"
               onClick={reflect}
               disabled={!content.trim() && !tasksText && !gaveEnergy.trim() && !lettingGo.trim()}
             >
-              Reflect on today
+              <Moon size={14} /> Close the day gently
             </button>
           </div>
         </>
@@ -123,16 +129,19 @@ export function EveningReflection({ date, onSaved }: Props) {
       {step === "reflecting" && <p>Reflecting on your day…</p>}
       {step === "done" && (
         <>
-          <p>Summary:</p>
-          <p className="panel-copy">{summary || "(nothing to summarize)"}</p>
-          <p>Seed for tomorrow:</p>
-          <textarea
-            value={seed}
-            onChange={(e) => setSeed(e.currentTarget.value)}
-            rows={2}
-          />
+          <p className="flow-question">Summary</p>
+          <p className="flow-copy">{summary || "(nothing to summarize)"}</p>
+          <label className="flow-question compact">
+            Seed for tomorrow
+            <textarea
+              className="flow-input flow-textarea"
+              value={seed}
+              onChange={(e) => setSeed(e.currentTarget.value)}
+              rows={2}
+            />
+          </label>
           <div className="panel-actions">
-            <button type="button" className="btn-primary" disabled={!seed.trim()} onClick={saveSeed}>
+            <button type="button" className="flow-save-button reflection-save" disabled={!seed.trim()} onClick={saveSeed}>
               Save seed to tomorrow
             </button>
           </div>

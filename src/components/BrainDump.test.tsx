@@ -36,11 +36,11 @@ describe("BrainDump (task 2.10)", () => {
     const onFinish = vi.fn();
     render(<BrainDump date={date} onFinish={onFinish} />);
 
-    expect(screen.getByPlaceholderText(/brain dump/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/revise physics/i)).toBeInTheDocument();
 
-    const textarea = screen.getByPlaceholderText(/brain dump/i) as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText(/revise physics/i) as HTMLTextAreaElement;
     fireEvent.input(textarea, { target: { value: "I need to revise physics and take the mock test" } });
-    fireEvent.click(screen.getByRole("button", { name: "Extract tasks" }));
+    fireEvent.click(screen.getByRole("button", { name: "Extract actionable tasks" }));
 
     await act(async () => {});
     const rows = screen.getAllByRole("textbox", { name: /task/i });
@@ -69,9 +69,9 @@ describe("BrainDump (task 2.10)", () => {
     streamNoTasks(tauri);
     render(<BrainDump date={date} onFinish={vi.fn()} />);
 
-    const textarea = screen.getByPlaceholderText(/brain dump/i) as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText(/revise physics/i) as HTMLTextAreaElement;
     fireEvent.input(textarea, { target: { value: "I feel kind of anxious today, nothing specific" } });
-    fireEvent.click(screen.getByRole("button", { name: "Extract tasks" }));
+    fireEvent.click(screen.getByRole("button", { name: "Extract actionable tasks" }));
 
     await act(async () => {});
     expect(screen.getByText(/no tasks found/i)).toBeInTheDocument();

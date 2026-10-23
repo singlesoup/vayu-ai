@@ -217,6 +217,21 @@ Details: [`now.md`](now.md) Phase 1C.
 
 Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · Voice dictation · Manual model switching polish · Full light-mode component pass.
 
+### Later — shared UI (after the design pass and the rebase)
+
+**Do not start this during the current visual pass.**
+
+**Scope: the whole app** — shell (topbar, sidebar, status bar), journal column, companion, daily reset, settings, first-run/setup, and any future surfaces. Not sidebar-only.
+
+Screens are already components (`Editor`, `CompanionPanel`, `DailyNote`, daily-reset panels). The pieces that look the same are not: buttons, text fields, kickers, chips, pills, cards, and status dots are often separate markup plus separate rules in `App.css` (sidebar search vs companion composer, format bar vs nav icons, and so on). Font families go through `tokens.css`. Sizes are raw pixels on each rule, and many similar grays each have their own token. A change to one control does not show up on the others.
+
+**When:** after both of these are true.
+
+1. The Emergent design changes on this branch are finished.
+2. This branch is rebased onto `main` without dropping the design work or the work through Phase 3.
+
+**Then:** decide how shared controls and a shorter token/type list should work, because the app will keep growing and copying each widget will get expensive. Until that decision, keep painting with tokens and reuse an existing class when two controls are the same thing. Do not rebuild the shell into a component library mid-pass.
+
 ---
 
 ## Decisions log
@@ -235,6 +250,8 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Editor = plain controlled `<textarea>` (not CodeMirror/TipTap) | Smallest path that keeps disk bytes = typed Markdown |
 | 2026-10-21 | `get_config` returns `{ notesDir, version, defaultNotesDir }` in one call | First-run screen can pre-fill without a second command |
 | 2026-10-23 | Journal redesign palette in `tokens.css`: Ink `#0b0d10`, Surface `#111419`, Text `#eef1f4`, Muted `#8b949f`, Breeze `#a9d9bc`, Deep Teal `#78be99`, plus Elevated `#171b21` and Soft `#bac3cd`. Inter / Newsreader stay (offline). Layout follows `vayu-frontend-source` (sidebar, daily reset, companion) without its axios backend or font CDN | Owner asked to match the live journal UI; PRD §8 stays revisable through tokens only |
+| 2026-10-23 | Adopt Emergent `Design-vayu_em.md` ramps in `tokens.css` (primary/secondary/accent/neutral 50–950, DM Sans / Fraunces / DM Mono, rem type scale). App aliases (`--color-breeze` → accent-300, `--color-deep-teal` → accent-400, etc.) so existing CSS picks up the system | Owner asked to apply Emergent colours and fonts throughout |
+| 2026-10-23 | Shared controls and a shorter token/type list wait until the design pass is done and this branch is rebased onto `main` with the design work and Phase 3 still intact. Scope is the **entire app** (shell, journal, companion, flows, settings), not sidebar-only. Until then, reuse an existing class when two controls are the same thing; do not extract a component library mid-pass | Screens are components; repeated chrome is copied CSS across the app. That gets expensive as the product grows |
 
 ---
 
@@ -258,6 +275,9 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-24 | design UI | Renamed `docs/design/emergent-ui-todo.md` to `docs/design/design-ui-todo.md` and rewrote it from the preview pass (Daily Reset, Tasks, Tags, Settings, shell). The 23 Oct audit in the old file was stale | agent |
+| 2026-10-23 | later / shared UI | Recorded: revisit shared components and a shorter font/colour token list only after the design pass is finished and the branch is rebased onto `main` without losing the design work or Phase 3. See Decisions log and Parked | agent |
+| 2026-10-23 | design tokens | Applied Emergent `Design-vayu_em.md` colour ramps + rem type scale in `tokens.css`; semantic aliases (`breeze`→accent-300, `deep-teal`→accent-400) and App.css headings/weights/sizes switched onto those tokens | agent |
 | 2026-10-22 | design Pages | `design_upgrades` push + GitHub Actions Pages deploy of static UI preview (`VITE_UI_PREVIEW`, dummy notes). Not merged to main. URL: https://singlesoup.github.io/vayu-ai/ | agent |
 | 2026-10-22 | 3B polish | Reflect polish on `design_upgrades`: hero date H1, quieter nav + gear, wiki highlight, circular tasks, compact calendar, Reflection primary right-aligned. Browser-verified 1280/960; `npm run check` green | agent |
 | 2026-10-22 | 3B.4/6/7/8 | `design_upgrades`: Reflect three-zone shell (nav \| note \| calendar), keyword search every tier, one AI surface under the title, Ask in centre. Browser-verified vs Reflect reference + SG-3 shots in `docs/design/`. `npm run check` green. Bugs 3B.1–3B.3 still on `main`. Tree dirty, no commit | agent |

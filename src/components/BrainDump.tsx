@@ -1,6 +1,7 @@
 // Task 2.10: Brain Dump → Tasks — streamed extraction → preview/edit → insert;
 // nothing is written to the note before the user confirms.
 import { useRef, useState } from "react";
+import { ClipboardCheck, Sparkles } from "lucide-react";
 import { appendNote, generate } from "../lib/api";
 import { isApiErrorLike } from "../lib/apiErrors";
 import { type NoteDate } from "../lib/noteFile";
@@ -102,8 +103,8 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "error") {
     return (
-      <section className="brain-dump flow-card" aria-label="Brain Dump">
-        <h2>Brain Dump → Tasks</h2>
+      <section className="brain-dump flow-card dump-card" aria-label="Brain Dump">
+        <DumpHeading />
         <p className="form-error" role="status">{error}</p>
         <button type="button" onClick={() => { setStep("idle"); setError(null); }}>
           Try again
@@ -114,25 +115,29 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "idle") {
     return (
-      <section className="brain-dump flow-card" aria-label="Brain Dump">
-        <h2>Brain Dump → Tasks</h2>
-        <p>Type everything on your mind — no structure needed.</p>
+      <section className="brain-dump flow-card dump-card" aria-label="Brain Dump">
+        <DumpHeading />
+        <p className="flow-copy">Type everything on your mind — commas, lines, no structure needed.</p>
         <textarea
-          placeholder="Brain dump (e.g. revise physics, mock test at 4 pm, buy milk)"
+          className="dump-input"
+          placeholder="Revise physics, mock test at 4pm, buy milk..."
           value={dump}
           onChange={(e) => setDump(e.currentTarget.value)}
         />
-        <button type="button" className="btn-primary" disabled={!dump.trim()} onClick={extract}>
-          Extract tasks
+        <button type="button" className="flow-action-button" disabled={!dump.trim()} onClick={extract}>
+          <Sparkles size={14} /> Extract actionable tasks
         </button>
+        <div className="task-list">
+          <p className="empty-tasks">Your next clear steps will land here.</p>
+        </div>
       </section>
     );
   }
 
   if (step === "extracting") {
     return (
-      <section className="brain-dump flow-card" aria-label="Brain Dump">
-        <h2>Brain Dump → Tasks</h2>
+      <section className="brain-dump flow-card dump-card" aria-label="Brain Dump">
+        <DumpHeading />
         <p>Extracting tasks…</p>
       </section>
     );
@@ -140,8 +145,8 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "empty") {
     return (
-      <section className="brain-dump flow-card" aria-label="Brain Dump">
-        <h2>Brain Dump → Tasks</h2>
+      <section className="brain-dump flow-card dump-card" aria-label="Brain Dump">
+        <DumpHeading />
         <p>No tasks found — nothing actionable in that dump. Nothing was written.</p>
       </section>
     );
@@ -149,22 +154,34 @@ export function BrainDump({ date, onFinish }: Props) {
 
   // step === "preview"
   return (
-    <section className="brain-dump flow-card" aria-label="Brain Dump">
-      <h2>Brain Dump → Tasks</h2>
-      <p>Review the extracted tasks before they are added to today's note.</p>
-      <ul>
+    <section className="brain-dump flow-card dump-card" aria-label="Brain Dump">
+      <DumpHeading />
+      <p className="flow-copy">Review the extracted tasks before they are added to today's note.</p>
+      <ul className="dump-review">
         {tasks.map((t, i) => (
           <li key={i} className="task-row">
-            <input type="text" value={t} onChange={(e) => updateTask(i, e.currentTarget.value)} role="textbox" aria-label={"Task " + (i + 1)} />
-            <button type="button" className="btn-ghost" onClick={() => removeTask(i)}>
+            <input className="flow-input" type="text" value={t} onChange={(e) => updateTask(i, e.currentTarget.value)} role="textbox" aria-label={"Task " + (i + 1)} />
+            <button type="button" className="flow-save-button flow-skip-button" onClick={() => removeTask(i)}>
               Remove
             </button>
           </li>
         ))}
       </ul>
-      <button type="button" className="btn-primary" disabled={tasks.length === 0} onClick={insert}>
+      <button type="button" className="flow-action-button" disabled={tasks.length === 0} onClick={insert}>
         Insert
       </button>
     </section>
+  );
+}
+
+function DumpHeading() {
+  return (
+    <div className="flow-card-heading">
+      <div>
+        <p className="flow-kicker gold"><ClipboardCheck size={14} /> Brain dump → tasks</p>
+        <h2>Get it out of your head.</h2>
+      </div>
+      <span className="flow-number">02</span>
+    </div>
   );
 }

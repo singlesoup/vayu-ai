@@ -16,9 +16,9 @@ describe("TokenPage (task 1.3.4 — dev-only token test page)", () => {
 
   it("shows one sample per font token", () => {
     render(<TokenPage />);
-    expect(screen.getByText("Inter")).toBeInTheDocument();
-    expect(screen.getByText("Newsreader")).toBeInTheDocument();
-    expect(screen.getByText("JetBrains Mono")).toBeInTheDocument();
+    expect(screen.getByText('"DM Sans"')).toBeInTheDocument();
+    expect(screen.getByText("Fraunces")).toBeInTheDocument();
+    expect(screen.getByText('"DM Mono"')).toBeInTheDocument();
   });
 
   it("shows examples of the radius and spacing tokens", () => {
@@ -29,7 +29,7 @@ describe("TokenPage (task 1.3.4 — dev-only token test page)", () => {
 
   it("shows the type sizes", () => {
     render(<TokenPage />);
-    for (const size of ["34px", "22px", "15px", "13px", "12px"]) {
+    for (const size of ["2.125rem", "0.563rem", "0.625rem", "1.25rem", "1rem"]) {
       expect(screen.getByText(size)).toBeInTheDocument();
     }
   });

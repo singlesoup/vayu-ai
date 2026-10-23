@@ -3,6 +3,7 @@
 // the textarea itself stays the single source of truth (transparent text).
 
 import { useLayoutEffect, useRef } from "react";
+import { Bold, Italic, Link2, List, Quote } from "lucide-react";
 
 type Props = {
   value: string;
@@ -79,11 +80,23 @@ export function Editor({ value, onChange, ariaLabel = "Note", formatBar = false 
       </div>
       {formatBar && (
         <div className="format-bar">
-          <button type="button" aria-label="Bold" onClick={() => wrap("**")}>B</button>
-          <button type="button" aria-label="Italic" onClick={() => wrap("*")}>I</button>
-          <button type="button" aria-label="Quote" onClick={() => wrap("> " , "")}>”</button>
-          <button type="button" aria-label="List" onClick={() => wrap("- " , "")}>≡</button>
-          <button type="button" aria-label="Link" onClick={() => wrap("[", "](https://)")}>↗</button>
+          <div className="format-tools">
+            <button type="button" aria-label="Bold" data-testid="format-bold-button" onClick={() => wrap("**")}>
+              <Bold size={15} />
+            </button>
+            <button type="button" aria-label="Italic" data-testid="format-italic-button" onClick={() => wrap("*")}>
+              <Italic size={15} />
+            </button>
+            <button type="button" aria-label="Quote" data-testid="format-quote-button" onClick={() => wrap("> ", "")}>
+              <Quote size={15} />
+            </button>
+            <button type="button" aria-label="List" data-testid="format-list-button" onClick={() => wrap("- ", "")}>
+              <List size={15} />
+            </button>
+            <button type="button" aria-label="Link" data-testid="format-link-button" onClick={() => wrap("[", "](https://)")}>
+              <Link2 size={15} />
+            </button>
+          </div>
           <span>Markdown supported</span>
         </div>
       )}

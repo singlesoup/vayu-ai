@@ -23,9 +23,11 @@ export const allTokens: Token[] = parsed;
 
 export const tokenSwatches: Token[] = parsed.filter((t) => t.name.startsWith("--color-"));
 export const fontTokens: Token[] = parsed.filter(
-  (t) => t.name.startsWith("--font-") && t.value !== "",
+  (t) => t.name === "--font-ui" || t.name === "--font-body" || t.name === "--font-mono",
 );
-export const sizeTokens: Token[] = parsed.filter((t) => t.name.startsWith("--text-"));
+export const sizeTokens: Token[] = parsed.filter(
+  (t) => t.name.startsWith("--text-") || t.name.startsWith("--font-size-"),
+);
 
 export const FONT_PROPERTY_BY_NAME: Record<string, string> = {
   "--font-ui": "var(--font-ui)",

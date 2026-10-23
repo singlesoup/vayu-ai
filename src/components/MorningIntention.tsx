@@ -1,7 +1,8 @@
 // Task 2.8/2.9: Morning Intention — up to 3 questions (PRD §5.2), one-tap
 // Skip, no re-nag the same day. Output (1 intention line + Top 3 tasks) is
 // appended to today's note exactly once per day.
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Check, Coffee, Sun, Sunrise, Wind } from "lucide-react";
 import { appendNote, generate, markIntention } from "../lib/api";
 import { isApiErrorLike } from "../lib/apiErrors";
 import { parseIntention } from "../lib/intention";
@@ -51,6 +52,10 @@ export function MorningIntention({ date, onFinish }: Props) {
   };
 
   const { intention, tasks } = parseIntention(streamed);
+  const moodIcon = useMemo(
+    () => (energy < 3 ? <Coffee size={18} /> : energy > 3 ? <Sun size={18} /> : <Wind size={18} />),
+    [energy],
+  );
 
   function dateLabel(d: NoteDate): string {
     return formatNoteHeader(
@@ -82,9 +87,14 @@ export function MorningIntention({ date, onFinish }: Props) {
   if (step === "done") return null;
 
   return (
-    <section className="morning-intention flow-card" aria-label="Morning Intention">
-      <p className="flow-kicker">Morning intention</p>
-      <h2>Arrive before you begin.</h2>
+    <section className="morning-intention flow-card intention-card" aria-label="Morning Intention" data-testid="morning-intention-card">
+      <div className="flow-card-heading">
+        <div>
+          <p className="flow-kicker mint"><Sunrise size={14} /> Morning intention</p>
+          <h2>Arrive before you begin.</h2>
+        </div>
+        <span className="flow-number">01</span>
+      </div>
       {step === "error" && (
         <p className="form-error" role="status">
           {error}
@@ -100,8 +110,9 @@ export function MorningIntention({ date, onFinish }: Props) {
         <>
           <p className="flow-question">How is your energy showing up today?</p>
           <div className="energy-readout">
+            <span className="energy-icon">{moodIcon}</span>
             <strong>{ENERGY[energy - 1]}</strong>
-            <span>{energy}/5</span>
+            <span className="energy-score">{energy}/5</span>
           </div>
           <input
             className="energy-slider"
@@ -112,8 +123,8 @@ export function MorningIntention({ date, onFinish }: Props) {
             aria-label="Energy level"
             onChange={(e) => setEnergy(Number(e.currentTarget.value))}
           />
-          <p className="energy-ends"><span>Quiet</span><span>Full</span></p>
-          <label className="flow-question">
+          <p className="slider-labels"><span>Quiet</span><span>Full</span></p>
+          <label className="flow-question compact">
             What is the one thing that matters today?
             <input
               className="flow-input"
@@ -122,7 +133,7 @@ export function MorningIntention({ date, onFinish }: Props) {
               onChange={(e) => setFocus(e.currentTarget.value)}
             />
           </label>
-          <label className="flow-question">
+          <label className="flow-question compact">
             Anything blocking you?
             <input
               className="flow-input"
@@ -132,16 +143,16 @@ export function MorningIntention({ date, onFinish }: Props) {
             />
           </label>
           <div className="panel-actions">
-            <button type="button" className="btn-ghost" onClick={skip}>
+            <button type="button" className="flow-save-button flow-skip-button" onClick={skip}>
               Skip today
             </button>
             <button
               type="button"
-              className="btn-primary"
+              className="flow-save-button"
               disabled={!focus.trim()}
               onClick={next}
             >
-              Hold this intention
+              <Check size={15} /> Hold this intention
             </button>
           </div>
         </>
@@ -149,16 +160,18 @@ export function MorningIntention({ date, onFinish }: Props) {
       {step === "generating" && <p>Planning your day…</p>}
       {step === "preview" && (
         <>
-          <p>Your intention for {dateLabel(date)}:</p>
-          <p>{intention || "(none)"}</p>
-          <ul>
-            {tasks.map((t, i) => (
-              <li key={i}>- [ ] {t}</li>
-            ))}
-          </ul>
+          <p className="flow-question">Your intention for {dateLabel(date)}</p>
+          <p className="flow-copy">{intention || "(none)"}</p>
+          {tasks.length > 0 && (
+            <ul className="intention-tasks">
+              {tasks.map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          )}
           <button
             type="button"
-            className="btn-primary"
+            className="flow-save-button"
             disabled={intention === "" || tasks.length === 0}
             onClick={save}
           >

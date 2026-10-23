@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockInvoke } from "./test/mocks";
@@ -34,7 +34,7 @@ describe("Phase 3B Reflect-style shell", () => {
   it("renders the journal shell: nav, note, and companion", async () => {
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wednesday, October 21" });
+    await screen.findByRole("heading", { name: "Wednesday, October 21, 2026" });
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Note" })).toBeInTheDocument();
     expect(screen.getByRole("complementary", { name: "Reflect with Vayu" })).toBeInTheDocument();
@@ -45,21 +45,18 @@ describe("Phase 3B Reflect-style shell", () => {
     const user = userEvent.setup();
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wednesday, October 21" });
+    await screen.findByRole("heading", { name: "Wednesday, October 21, 2026" });
     await user.click(screen.getByRole("button", { name: "Daily reset" }));
     expect(screen.getByRole("heading", { name: "Make room for today." })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Arrive before you begin." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Brain Dump → Tasks" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Get it out of your head." })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Let the day settle." })).toBeInTheDocument();
   });
 
-  it("Ask your notes opens in the centre column", async () => {
-    const user = userEvent.setup();
+  it("does not list Ask your notes in the sidebar", async () => {
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wednesday, October 21" });
-    await user.click(screen.getByRole("button", { name: "Ask your notes" }));
-    const note = screen.getByRole("region", { name: "Note" });
-    expect(within(note).getByRole("heading", { name: /Ask/i })).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Wednesday, October 21, 2026" });
+    expect(screen.queryByRole("button", { name: "Ask your notes" })).not.toBeInTheDocument();
   });
 });
