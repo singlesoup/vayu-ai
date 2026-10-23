@@ -1,7 +1,7 @@
 # NOW — Check-in 3 FAILED → Phase 3B (bug fixes + Reflect-style layout)
 
 **Day:** Thu 22 Oct 2026
-**Current work:** Phase 3B **layout** on `design_upgrades` is `review` (browser-verified). Pushing this branch + GitHub Pages UI preview (dummy data). Bugs 3B.1–3B.3 stay on `main`. **Not merging to main.**
+**Current work:** Journal UI revamp in progress (sage palette, sidebar, Daily reset, companion), ported from `vayu-frontend-source` onto the existing note API. Not merged.
 **Gate:** Merge layout after bugs land → owner re-smoke + SG-3 → 3.9/3.10 → commit + tag `checkin-3` → Phase 4.
 **Pages:** https://singlesoup.github.io/vayu-ai/ (see `docs/design/PAGES.md`)
 **Goal:** Every Phase 3 feature works in the real window, and the app reads like a calm notes app (Reflect-style), not a stack of cards.

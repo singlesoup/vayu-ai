@@ -234,6 +234,7 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Phase 1B visual pass added before Check-in 1. Home screens must match the design board; a screenshot comparison is the gate. File-content tests are not enough | The running app shipped unstyled because `App.css` was never imported |
 | 2026-10-21 | Editor = plain controlled `<textarea>` (not CodeMirror/TipTap) | Smallest path that keeps disk bytes = typed Markdown |
 | 2026-10-21 | `get_config` returns `{ notesDir, version, defaultNotesDir }` in one call | First-run screen can pre-fill without a second command |
+| 2026-10-23 | Journal redesign palette in `tokens.css`: Ink `#0b0d10`, Surface `#111419`, Text `#eef1f4`, Muted `#8b949f`, Breeze `#a9d9bc`, Deep Teal `#78be99`, plus Elevated `#171b21` and Soft `#bac3cd`. Inter / Newsreader stay (offline). Layout follows `vayu-frontend-source` (sidebar, daily reset, companion) without its axios backend or font CDN | Owner asked to match the live journal UI; PRD §8 stays revisable through tokens only |
 
 ---
 

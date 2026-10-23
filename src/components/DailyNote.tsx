@@ -30,9 +30,11 @@ type Props = {
   create: boolean;
   /** Slot under the title (AI action row + one open panel). Never above the H1. */
   afterTitle?: ReactNode;
+  /** Journal redesign: breadcrumb editor instead of the hero date. */
+  chrome?: "classic" | "journal";
 };
 
-export function DailyNote({ date, isToday, create, afterTitle }: Props) {
+export function DailyNote({ date, isToday, create, afterTitle, chrome = "classic" }: Props) {
   const [note, setNote] = useState<NoteState | null>(null);
   // "error" shows the calm retrying note; back to null when a save succeeds.
   const [saveState, setSaveState] = useState<"error" | null>(null);
@@ -100,10 +102,25 @@ export function DailyNote({ date, isToday, create, afterTitle }: Props) {
     saver.schedule(merged);
   }
 
+  const heading = note?.content.match(/^#\s+(.+)$/m)?.[1]?.trim();
+  const journal = chrome === "journal";
+  const written = noteDateToDate(date).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
-    <section className={`daily-note${isToday ? " daily-note-today" : ""}`}>
-      <header>
-        <h1 className="note-title">{title}</h1>
+    <section className={`daily-note${isToday ? " daily-note-today" : ""}${journal ? " journal-editor" : ""}`}>
+      {journal && (
+        <div className="editor-toolbar">
+          <span className="breadcrumb">Journal <b>/</b> {heading || "Untitled entry"}</span>
+          <span className="saved-mark">{saveState === "error" ? "Couldn't save — retrying" : "Saved"}</span>
+        </div>
+      )}
+      <header className={journal ? "entry-meta" : undefined}>
+        <h1 className="note-title">{journal ? written : title}</h1>
+        {journal && <span>Last edited just now</span>}
       </header>
       {afterTitle}
       {saveState === "error" && (
@@ -117,11 +134,17 @@ export function DailyNote({ date, isToday, create, afterTitle }: Props) {
         <>
           {/* Task 1.7.3: empty days stay editable — the placeholder shows
               until first typing; the day's FIRST SAVE creates the file. */}
-          {!note.exists && <p className="empty-note">Nothing written on this day yet</p>}
-          <Editor value={proseOf(note.content)} onChange={onProseChange} />
-          {/* Task panel (1.8.3): edits flow through the same change handler,
-              so they ride the same debounced save. */}
-          <TaskList markdown={note.content} onChange={onNoteChange} />
+          {!note.exists && !journal && <p className="empty-note">Nothing written on this day yet</p>}
+          <div className={journal ? "writing-zone" : undefined}>
+            <Editor
+              value={journal ? note.content : proseOf(note.content)}
+              onChange={journal ? onNoteChange : onProseChange}
+              formatBar={journal}
+            />
+          </div>
+          {!journal && (
+            <TaskList markdown={note.content} onChange={onNoteChange} />
+          )}
         </>
       )}
     </section>

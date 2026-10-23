@@ -31,43 +31,33 @@ describe("Phase 3B Reflect-style shell", () => {
   beforeEach(() => setNowProvider(() => new Date(2026, 9, 21, 9, 0, 0)));
   afterEach(() => resetNowProvider());
 
-  it("renders three-zone landmarks: nav, note, calendar rail", async () => {
+  it("renders the journal shell: nav, note, and companion", async () => {
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wed, October 21st, 2026" });
+    await screen.findByRole("heading", { name: "Wednesday, October 21" });
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Note" })).toBeInTheDocument();
-    expect(screen.getByRole("complementary", { name: "Day tools" })).toBeInTheDocument();
-    expect(await screen.findByRole("region", { name: "In this note" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Reflect with Vayu" })).toBeInTheDocument();
+    expect(screen.getByText("All notes are local")).toBeInTheDocument();
   });
 
-  it("keeps the note title above the AI action row", async () => {
-    armYellowAi();
-    const { container } = render(<App />);
-    const title = await screen.findByRole("heading", { name: "Wed, October 21st, 2026" });
-    const toolbar = screen.getByRole("toolbar", { name: "AI for today" });
-    const position = title.compareDocumentPosition(toolbar);
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(container.querySelector(".morning-intention")).toBeNull();
-  });
-
-  it("opens only one AI panel at a time", async () => {
+  it("opens Daily reset with morning, brain dump, and evening together", async () => {
     const user = userEvent.setup();
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wed, October 21st, 2026" });
-    await user.click(screen.getByRole("button", { name: "Journal" }));
-    expect(screen.getByRole("heading", { name: "Journal chat" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Brain dump" }));
+    await screen.findByRole("heading", { name: "Wednesday, October 21" });
+    await user.click(screen.getByRole("button", { name: "Daily reset" }));
+    expect(screen.getByRole("heading", { name: "Make room for today." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Arrive before you begin." })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Brain Dump → Tasks" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Journal chat" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Let the day settle." })).toBeInTheDocument();
   });
 
   it("Ask your notes opens in the centre column", async () => {
     const user = userEvent.setup();
     armYellowAi();
     render(<App />);
-    await screen.findByRole("heading", { name: "Wed, October 21st, 2026" });
+    await screen.findByRole("heading", { name: "Wednesday, October 21" });
     await user.click(screen.getByRole("button", { name: "Ask your notes" }));
     const note = screen.getByRole("region", { name: "Note" });
     expect(within(note).getByRole("heading", { name: /Ask/i })).toBeInTheDocument();

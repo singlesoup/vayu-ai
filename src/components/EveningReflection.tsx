@@ -28,6 +28,8 @@ export function EveningReflection({ date, onSaved }: Props) {
   const [summary, setSummary] = useState("");
   const [seed, setSeed] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [gaveEnergy, setGaveEnergy] = useState("");
+  const [lettingGo, setLettingGo] = useState("");
 
   useEffect(() => {
     void readNote(date)
@@ -41,10 +43,12 @@ export function EveningReflection({ date, onSaved }: Props) {
     setError(null);
     setStep("reflecting");
     const prompt =
-      "Summarize this day in 2-3 sentences based ONLY on the note and tasks " +
-      "below. Do not invent events. If there is nothing to summarize, say so.\n\n" +
+      "Summarize this day in 2-3 sentences based ONLY on the note, tasks, and " +
+      "the two wind-down answers below. Do not invent events.\n\n" +
       `Note:\n${content}\n\n` +
-      `Tasks:\n${tasksText || "(none)"}`;
+      `Tasks:\n${tasksText || "(none)"}\n\n` +
+      `What gave energy: ${gaveEnergy || "(not answered)"}\n` +
+      `Letting go: ${lettingGo || "(not answered)"}`;
     try {
       let text = "";
       await generate(prompt, (event) => {
@@ -74,8 +78,9 @@ export function EveningReflection({ date, onSaved }: Props) {
   };
 
   return (
-    <section className="evening-reflection" aria-label="Evening Reflection">
-      <h2>Evening Reflection</h2>
+    <section className="evening-reflection flow-card" aria-label="Evening Reflection">
+      <p className="flow-kicker">Evening reflection</p>
+      <h2>Let the day settle.</h2>
       {step === "error" && (
         <p className="form-error" role="status">
           {error}
@@ -84,15 +89,31 @@ export function EveningReflection({ date, onSaved }: Props) {
       )}
       {step === "idle" && (
         <>
-          <p className="panel-copy">
-            Summarize today from your note and tasks, and seed one line for tomorrow.
-          </p>
+          <p className="panel-copy">A gentle two-question wind-down, whenever you’re ready.</p>
+          <label className="flow-question">
+            What gave you energy today?
+            <textarea
+              className="flow-input"
+              value={gaveEnergy}
+              placeholder="A person, a moment, a small win..."
+              onChange={(e) => setGaveEnergy(e.currentTarget.value)}
+            />
+          </label>
+          <label className="flow-question">
+            What is one thing to let go of for tomorrow?
+            <textarea
+              className="flow-input"
+              value={lettingGo}
+              placeholder="You do not need to carry it overnight..."
+              onChange={(e) => setLettingGo(e.currentTarget.value)}
+            />
+          </label>
           <div className="panel-actions">
             <button
               type="button"
               className="btn-primary"
               onClick={reflect}
-              disabled={!content.trim() && !tasksText}
+              disabled={!content.trim() && !tasksText && !gaveEnergy.trim() && !lettingGo.trim()}
             >
               Reflect on today
             </button>

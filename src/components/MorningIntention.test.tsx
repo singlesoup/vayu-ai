@@ -7,12 +7,6 @@ import { parseIntention } from "../lib/intention";
 
 const date = "2026-10-21";
 
-const QUESTIONS = [
-  "How's your energy today?",
-  "What's the one thing that matters today?",
-  "Anything blocking you?",
-];
-
 function streamIntention(tauri: ReturnType<typeof mockInvoke>) {
   tauri.on("generate", (args) => {
     const ch = args.onEvent as { onmessage: ((e: unknown) => void) | null };
@@ -47,21 +41,17 @@ describe("MorningIntention (task 2.8/2.9)", () => {
     const onFinish = vi.fn();
     render(<MorningIntention date={date} onFinish={onFinish} />);
 
-    expect(screen.getByText(QUESTIONS[0])).toBeInTheDocument();
+    expect(screen.getByText("How is your energy showing up today?")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Skip today" })).toBeInTheDocument();
 
-    const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
-    fireEvent.input(textarea, { target: { value: "tired" } });
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByText(QUESTIONS[1])).toBeInTheDocument();
-
-    fireEvent.input(screen.getByRole("textbox") as HTMLTextAreaElement, { target: { value: "the mock" } });
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByText(QUESTIONS[2])).toBeInTheDocument();
-
-    fireEvent.input(screen.getByRole("textbox") as HTMLTextAreaElement, { target: { value: "nothing" } });
+    fireEvent.input(screen.getByPlaceholderText("Give your day a clear center..."), {
+      target: { value: "the mock" },
+    });
+    fireEvent.input(screen.getByPlaceholderText("Name it so it feels lighter..."), {
+      target: { value: "nothing" },
+    });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Plan my day" }));
+      fireEvent.click(screen.getByRole("button", { name: "Hold this intention" }));
     });
     expect(tauri.ran("generate")).toBe(true);
     // drive the channel's done event manually
@@ -81,7 +71,7 @@ describe("MorningIntention (task 2.8/2.9)", () => {
     });
     expect(tauri.args("mark_intention")).toEqual({ date, status: "done" });
     expect(onFinish).toHaveBeenCalledWith("done");
-    expect(screen.queryByText("Morning Intention")).not.toBeInTheDocument();
+    expect(screen.queryByText("Arrive before you begin.")).not.toBeInTheDocument();
   });
 
   it("Skip today marks the date skipped and hides the card (no re-nag)", async () => {
@@ -93,7 +83,7 @@ describe("MorningIntention (task 2.8/2.9)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Skip today" }));
     expect(tauri.args("mark_intention")).toEqual({ date, status: "skipped" });
     expect(onFinish).toHaveBeenCalledWith("skipped");
-    expect(screen.queryByText("Morning Intention")).not.toBeInTheDocument();
+    expect(screen.queryByText("Arrive before you begin.")).not.toBeInTheDocument();
     expect(tauri.ran("generate")).toBe(false);
   });
 });

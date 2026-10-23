@@ -23,21 +23,23 @@ describe("src/styles/tokens.css (task 1.3.1 — design tokens)", () => {
   const tokens = tokenMap();
 
   it("defines the 8 core colour tokens with the PRD §8 values", () => {
-    expectToken(tokens, "--color-ink", "#0E1116");
-    expectToken(tokens, "--color-surface", "#171B22");
-    expectToken(tokens, "--color-text", "#EDEFF3");
-    expectToken(tokens, "--color-muted", "#9BA3AF");
-    expectToken(tokens, "--color-breeze", "#5EEAD4");
-    expectToken(tokens, "--color-deep-teal", "#14B8A6");
+    expectToken(tokens, "--color-ink", "#0b0d10");
+    expectToken(tokens, "--color-surface", "#111419");
+    expectToken(tokens, "--color-text", "#eef1f4");
+    expectToken(tokens, "--color-muted", "#8b949f");
+    expectToken(tokens, "--color-breeze", "#a9d9bc");
+    expectToken(tokens, "--color-deep-teal", "#78be99");
     expectToken(tokens, "--color-paper", "#FAF9F6");
     expectToken(tokens, "--color-warm", "#F5C97A");
   });
 
   it("defines the supporting shades from the design board as named tokens", () => {
-    expectToken(tokens, "--color-border", "#262C36");
-    expectToken(tokens, "--color-border-card", "#2B323E");
+    expectToken(tokens, "--color-border", "#252b34");
+    expectToken(tokens, "--color-border-card", "#2a333b");
     expectToken(tokens, "--color-checkbox-border", "#4A5261");
     expectToken(tokens, "--color-on-accent", "#06231F");
+    expectToken(tokens, "--color-elevated", "#171b21");
+    expectToken(tokens, "--color-soft", "#bac3cd");
   });
 
   it("defines the three font stacks", () => {

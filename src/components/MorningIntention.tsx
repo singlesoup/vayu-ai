@@ -8,11 +8,7 @@ import { parseIntention } from "../lib/intention";
 import { formatNoteHeader } from "../lib/dateFormat";
 import { type NoteDate } from "../lib/noteFile";
 
-const QUESTIONS = [
-  "How's your energy today?",
-  "What's the one thing that matters today?",
-  "Anything blocking you?",
-];
+const ENERGY = ["Quiet", "Low", "Steady", "Bright", "Full"];
 
 type Step = "questions" | "generating" | "preview" | "done" | "error";
 
@@ -24,22 +20,19 @@ type Props = {
 
 export function MorningIntention({ date, onFinish }: Props) {
   const [step, setStep] = useState<Step>("questions");
-  const [qIndex, setQIndex] = useState(0);
-  const [answers, setAnswers] = useState(["", "", ""]);
+  const [energy, setEnergy] = useState(3);
+  const [focus, setFocus] = useState("");
+  const [blocker, setBlocker] = useState("");
   const [streamed, setStreamed] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const next = () => {
-    if (qIndex < QUESTIONS.length - 1) {
-      setQIndex(qIndex + 1);
-      return;
-    }
-    if (!answers.every((a) => a.trim() !== "")) return;
+    if (!focus.trim()) return;
     const prompt =
       "The user answered three questions:\n" +
-      `Energy: ${answers[0]}\n` +
-      `One thing that matters: ${answers[1]}\n` +
-      `Anything blocking: ${answers[2]}\n\n` +
+      `Energy: ${ENERGY[energy - 1]} (${energy}/5)\n` +
+      `One thing that matters: ${focus}\n` +
+      `Anything blocking: ${blocker || "(none)"}\n\n` +
       "Write ONE short daily intention line, then pick the Top 3 tasks from the answers.\n" +
       "Output exactly:\n" +
       "Intention: <one line>\n" +
@@ -89,8 +82,9 @@ export function MorningIntention({ date, onFinish }: Props) {
   if (step === "done") return null;
 
   return (
-    <section className="morning-intention" aria-label="Morning Intention">
-      <h2>Morning Intention</h2>
+    <section className="morning-intention flow-card" aria-label="Morning Intention">
+      <p className="flow-kicker">Morning intention</p>
+      <h2>Arrive before you begin.</h2>
       {step === "error" && (
         <p className="form-error" role="status">
           {error}
@@ -104,26 +98,50 @@ export function MorningIntention({ date, onFinish }: Props) {
       )}
       {step === "questions" && (
         <>
-          <p>{QUESTIONS[qIndex]}</p>
-          <textarea
-            value={answers[qIndex]}
-            onChange={(e) => {
-              const next = [...answers];
-              next[qIndex] = e.currentTarget.value;
-              setAnswers(next);
-            }}
+          <p className="flow-question">How is your energy showing up today?</p>
+          <div className="energy-readout">
+            <strong>{ENERGY[energy - 1]}</strong>
+            <span>{energy}/5</span>
+          </div>
+          <input
+            className="energy-slider"
+            type="range"
+            min={1}
+            max={5}
+            value={energy}
+            aria-label="Energy level"
+            onChange={(e) => setEnergy(Number(e.currentTarget.value))}
           />
-          <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
+          <p className="energy-ends"><span>Quiet</span><span>Full</span></p>
+          <label className="flow-question">
+            What is the one thing that matters today?
+            <input
+              className="flow-input"
+              value={focus}
+              placeholder="Give your day a clear center..."
+              onChange={(e) => setFocus(e.currentTarget.value)}
+            />
+          </label>
+          <label className="flow-question">
+            Anything blocking you?
+            <input
+              className="flow-input"
+              value={blocker}
+              placeholder="Name it so it feels lighter..."
+              onChange={(e) => setBlocker(e.currentTarget.value)}
+            />
+          </label>
+          <div className="panel-actions">
             <button type="button" className="btn-ghost" onClick={skip}>
               Skip today
             </button>
             <button
               type="button"
               className="btn-primary"
-              disabled={!answers[qIndex].trim()}
+              disabled={!focus.trim()}
               onClick={next}
             >
-              {qIndex === QUESTIONS.length - 1 ? "Plan my day" : "Next"}
+              Hold this intention
             </button>
           </div>
         </>

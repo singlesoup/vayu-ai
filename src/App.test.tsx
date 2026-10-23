@@ -39,7 +39,7 @@ describe("First-run flow (task 1.4.4)", () => {
     tauri.given("read_all_notes", []);
     render(<App />);
     // workspace appears (the note date header), folder screen absent
-    await screen.findByRole("heading", { name: "Wed, October 21st, 2026" });
+    await screen.findByRole("heading", { name: "Wednesday, October 21" });
     expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     resetNowProvider();

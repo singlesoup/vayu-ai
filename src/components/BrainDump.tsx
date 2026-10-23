@@ -102,7 +102,7 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "error") {
     return (
-      <section className="brain-dump" aria-label="Brain Dump">
+      <section className="brain-dump flow-card" aria-label="Brain Dump">
         <h2>Brain Dump → Tasks</h2>
         <p className="form-error" role="status">{error}</p>
         <button type="button" onClick={() => { setStep("idle"); setError(null); }}>
@@ -114,7 +114,7 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "idle") {
     return (
-      <section className="brain-dump" aria-label="Brain Dump">
+      <section className="brain-dump flow-card" aria-label="Brain Dump">
         <h2>Brain Dump → Tasks</h2>
         <p>Type everything on your mind — no structure needed.</p>
         <textarea
@@ -131,7 +131,7 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "extracting") {
     return (
-      <section className="brain-dump" aria-label="Brain Dump">
+      <section className="brain-dump flow-card" aria-label="Brain Dump">
         <h2>Brain Dump → Tasks</h2>
         <p>Extracting tasks…</p>
       </section>
@@ -140,7 +140,7 @@ export function BrainDump({ date, onFinish }: Props) {
 
   if (step === "empty") {
     return (
-      <section className="brain-dump" aria-label="Brain Dump">
+      <section className="brain-dump flow-card" aria-label="Brain Dump">
         <h2>Brain Dump → Tasks</h2>
         <p>No tasks found — nothing actionable in that dump. Nothing was written.</p>
       </section>
@@ -149,7 +149,7 @@ export function BrainDump({ date, onFinish }: Props) {
 
   // step === "preview"
   return (
-    <section className="brain-dump" aria-label="Brain Dump">
+    <section className="brain-dump flow-card" aria-label="Brain Dump">
       <h2>Brain Dump → Tasks</h2>
       <p>Review the extracted tasks before they are added to today's note.</p>
       <ul>
