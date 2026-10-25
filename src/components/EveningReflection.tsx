@@ -21,9 +21,11 @@ function nextDay(date: NoteDate): NoteDate {
 type Props = {
   date: NoteDate;
   onSaved?: () => void;
+  /** Leaves the dialog without writing. Same outlined control as morning Skip. */
+  onDismiss?: () => void;
 };
 
-export function EveningReflection({ date, onSaved }: Props) {
+export function EveningReflection({ date, onSaved, onDismiss }: Props) {
   const [step, setStep] = useState<"idle" | "reflecting" | "done" | "error">("idle");
   const [content, setContent] = useState("");
   const [summary, setSummary] = useState("");
@@ -88,10 +90,19 @@ export function EveningReflection({ date, onSaved }: Props) {
         <span className="flow-number">03</span>
       </div>
       {step === "error" && (
-        <p className="form-error" role="status">
-          {error}
-          <button type="button" onClick={() => setError(null)}>Dismiss</button>
-        </p>
+        <>
+          <p className="form-error" role="status">
+            {error}
+            <button type="button" onClick={() => setError(null)}>Dismiss</button>
+          </p>
+          {onDismiss && (
+            <div className="panel-actions">
+              <button type="button" className="flow-save-button flow-skip-button" onClick={onDismiss}>
+                Not tonight
+              </button>
+            </div>
+          )}
+        </>
       )}
       {step === "idle" && (
         <>
@@ -115,6 +126,11 @@ export function EveningReflection({ date, onSaved }: Props) {
             />
           </label>
           <div className="panel-actions">
+            {onDismiss && (
+              <button type="button" className="flow-save-button flow-skip-button" onClick={onDismiss}>
+                Not tonight
+              </button>
+            )}
             <button
               type="button"
               className="flow-save-button reflection-save"
@@ -126,7 +142,18 @@ export function EveningReflection({ date, onSaved }: Props) {
           </div>
         </>
       )}
-      {step === "reflecting" && <p>Reflecting on your day…</p>}
+      {step === "reflecting" && (
+        <>
+          <p>Reflecting on your day…</p>
+          {onDismiss && (
+            <div className="panel-actions">
+              <button type="button" className="flow-save-button flow-skip-button" onClick={onDismiss}>
+                Not tonight
+              </button>
+            </div>
+          )}
+        </>
+      )}
       {step === "done" && (
         <>
           <p className="flow-question">Summary</p>
@@ -141,6 +168,11 @@ export function EveningReflection({ date, onSaved }: Props) {
             />
           </label>
           <div className="panel-actions">
+            {onDismiss && (
+              <button type="button" className="flow-save-button flow-skip-button" onClick={onDismiss}>
+                Not tonight
+              </button>
+            )}
             <button type="button" className="flow-save-button reflection-save" disabled={!seed.trim()} onClick={saveSeed}>
               Save seed to tomorrow
             </button>

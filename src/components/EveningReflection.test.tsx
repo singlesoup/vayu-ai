@@ -1,6 +1,6 @@
 // Task 3.3: Evening Reflection tests.
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mockInvoke } from "../test/mocks";
 import { EveningReflection } from "./EveningReflection";
 
@@ -54,6 +54,19 @@ describe("EveningReflection (task 3.3)", () => {
       appendix: expect.stringContaining("Seed from " + today),
     });
     expect(tauri.args("append_note")!.appendix).toContain("A productive day");
+  });
+
+  it("Not tonight uses the outlined skip control and does not write", () => {
+    const tauri = mockInvoke();
+    mockReadNote(tauri, "Had a good day.");
+    const onDismiss = vi.fn();
+    render(<EveningReflection date={today} onDismiss={onDismiss} />);
+    const skip = screen.getByRole("button", { name: "Not tonight" });
+    expect(skip.className).toContain("flow-skip-button");
+    fireEvent.click(skip);
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(tauri.ran("append_note")).toBe(false);
+    expect(tauri.ran("generate")).toBe(false);
   });
 
   it("works on any day, not just today", async () => {

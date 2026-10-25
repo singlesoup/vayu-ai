@@ -2,14 +2,14 @@
 // Skip, no re-nag the same day. Output (1 intention line + Top 3 tasks) is
 // appended to today's note exactly once per day.
 import { useMemo, useState } from "react";
-import { Check, Coffee, Sun, Sunrise, Wind } from "lucide-react";
+import { Check, Coffee, Sun, Sunrise, Wind, Zap } from "lucide-react";
 import { appendNote, generate, markIntention } from "../lib/api";
 import { isApiErrorLike } from "../lib/apiErrors";
 import { parseIntention } from "../lib/intention";
 import { formatNoteHeader } from "../lib/dateFormat";
 import { type NoteDate } from "../lib/noteFile";
 
-const ENERGY = ["Quiet", "Low", "Steady", "Bright", "Full"];
+const ENERGY = ["Quiet", "Low", "Steady", "High", "Full"];
 
 type Step = "questions" | "generating" | "preview" | "done" | "error";
 
@@ -52,10 +52,12 @@ export function MorningIntention({ date, onFinish }: Props) {
   };
 
   const { intention, tasks } = parseIntention(streamed);
-  const moodIcon = useMemo(
-    () => (energy < 3 ? <Coffee size={18} /> : energy > 3 ? <Sun size={18} /> : <Wind size={18} />),
-    [energy],
-  );
+  const moodIcon = useMemo(() => {
+    if (energy <= 2) return <Coffee size={18} />;
+    if (energy === 3) return <Wind size={18} />;
+    if (energy === 4) return <Zap size={18} />;
+    return <Sun size={18} />;
+  }, [energy]);
 
   function dateLabel(d: NoteDate): string {
     return formatNoteHeader(

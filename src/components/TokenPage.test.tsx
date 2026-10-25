@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TokenPage } from "./TokenPage";
 import { tokenSwatches } from "./tokenData";
@@ -6,12 +6,16 @@ import { tokenSwatches } from "./tokenData";
 describe("TokenPage (task 1.3.4 — dev-only token test page)", () => {
   it("shows one swatch per colour token with name and value", () => {
     render(<TokenPage />);
-    const swatches = screen.getAllByTestId("token-swatch");
-    expect(swatches.length).toBe(tokenSwatches.length);
-    for (const { name, value } of tokenSwatches) {
-      expect(screen.getByText(name)).toBeInTheDocument();
-      expect(screen.getByText(value)).toBeInTheDocument();
-    }
+    const rows = screen.getAllByTestId("token-swatch").map((el) => el.closest("li"));
+    expect(rows.length).toBe(tokenSwatches.length);
+    // Swatch rows render in token order; each row carries its own name/value
+    // pair. Scoping per row because alias tokens legitimately share values.
+    tokenSwatches.forEach(({ name, value }, i) => {
+      const row = rows[i];
+      expect(row).not.toBeNull();
+      expect(within(row as HTMLElement).getByText(name)).toBeInTheDocument();
+      expect(within(row as HTMLElement).getByText(value)).toBeInTheDocument();
+    });
   });
 
   it("shows one sample per font token", () => {

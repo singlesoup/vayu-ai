@@ -34,6 +34,10 @@ type Props = {
   /** Journal redesign: breadcrumb editor instead of the hero date. */
   chrome?: "classic" | "journal";
   onToggleCompanion?: () => void;
+  /** Incoming links already known from the notes on screen. Omit when unknown. */
+  backlinkCount?: number;
+  /** Wiki [[ autocomplete] targets computed from all notes on screen. */
+  wikiTargets?: string[];
 };
 
 export function DailyNote({
@@ -43,6 +47,8 @@ export function DailyNote({
   afterTitle,
   chrome = "classic",
   onToggleCompanion,
+  backlinkCount,
+  wikiTargets = [],
 }: Props) {
   const [note, setNote] = useState<NoteState | null>(null);
   // "error" shows the calm retrying note; back to null when a save succeeds.
@@ -156,7 +162,13 @@ export function DailyNote({
       )}
       <header className={journal ? "entry-meta" : undefined}>
         <h1 className="note-title">{journal ? written : title}</h1>
-        {journal && <span className="edited-label">Last edited just now</span>}
+        {journal && (
+          <span className="edited-label">
+            {typeof backlinkCount === "number"
+              ? `${backlinkCount} ${backlinkCount === 1 ? "backlink" : "backlinks"}`
+              : "Last edited just now"}
+          </span>
+        )}
       </header>
       {afterTitle}
       {saveState === "error" && (
@@ -176,6 +188,7 @@ export function DailyNote({
               value={journal ? note.content : proseOf(note.content)}
               onChange={journal ? onNoteChange : onProseChange}
               formatBar={journal}
+              wikiTargets={wikiTargets}
             />
           </div>
           {!journal && (
