@@ -1,20 +1,19 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
-  Command,
   FileText,
   Hash,
+  Moon,
   PanelLeft,
   PanelRight,
   Plus,
   Search,
   Settings as SettingsIcon,
-  Sparkles,
-  Sunrise,
+  Sun,
 } from "lucide-react";
-import { getConfig, listNotes, readAllNotes, type ConfigResult, type Tier } from "./lib/api";
+import { getConfig, listNotes, readAllNotes, writeNote, type ConfigResult, type Tier } from "./lib/api";
 import { shouldShowTokenPage } from "./tokenPageGate";
 import { TokenPage } from "./components/TokenPage";
 import { FirstRunScreen } from "./components/FirstRunScreen";
@@ -28,9 +27,14 @@ import { RedModeBar } from "./components/RedModeBar";
 import { DailyNote } from "./components/DailyNote";
 import { Settings } from "./components/Settings";
 import { now } from "./lib/appClock";
-import { titleForDate } from "./lib/dateFormat";
+import { formatTaskDate, titleForDate } from "./lib/dateFormat";
+import { isBrowserPreview } from "./dev/browserPreview";
 import { localDateKey, isNoteDate, type NoteDate } from "./lib/noteFile";
-import { parseTasks } from "./lib/tasks";
+import { backlinksForNote } from "./lib/backlinks";
+import { collectWikiTargets } from "./lib/wikiAutocomplete";
+import { parseTasks, toggleTask } from "./lib/tasks";
+import { closeEvening, eveningClosed, ritualFor } from "./lib/ritual";
+import { applyTheme, getThemeChoice, resolvedTheme, subscribeTheme } from "./lib/theme";
 
 type ConfigState =
   | { state: "loading" }
@@ -59,7 +63,8 @@ type DayState = {
   current: NoteDate;
 };
 
-type CentreView = "journal" | "reset" | "tasks" | "tags";
+type CentreView = "journal" | "tasks" | "tags";
+type TaskFilter = "open" | "all" | "done";
 
 function App() {
   if (
@@ -81,6 +86,8 @@ function AppBody() {
   const [days, setDays] = useState<DayState | null>(initialDays);
   const [noteDates, setNoteDates] = useState<NoteDate[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [eveningDismissedOn, setEveningDismissedOn] = useState<string | null>(null);
+  const [hidePreviewRitual, setHidePreviewRitual] = useState(false);
   const [noteRevision, setNoteRevision] = useState(0);
   const [noteBodies, setNoteBodies] = useState<{ date: string; content: string }[]>([]);
   const [centreView, setCentreView] = useState<CentreView>("journal");
@@ -88,6 +95,9 @@ function AppBody() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [keywordHits, setKeywordHits] = useState<{ date: string; content: string }[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchCursor, setSearchCursor] = useState(0);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("open");
   const [weekOffset, setWeekOffset] = useState(0);
 
   function loadConfig() {
@@ -140,10 +150,10 @@ function AppBody() {
   useEffect(() => {
     if (days === null) return;
     document.title =
-      days.current === days.today ? "Vayu â€” Today" : `Vayu â€” ${titleForDay(days.current)}`;
+      days.current === days.today ? "Vayu — Today" : `Vayu — ${titleForDay(days.current)}`;
   }, [days]);
 
-  // Keyword search across notes (every tier â€” no AI).
+  // Keyword search across notes (every tier — no AI).
   useEffect(() => {
     const q = keyword.trim().toLowerCase();
     if (!q) return;
@@ -163,7 +173,7 @@ function AppBody() {
   }, [keyword, noteRevision]);
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+    function onKey(e: globalThis.KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         document.getElementById("nav-search-input")?.focus();
@@ -176,7 +186,7 @@ function AppBody() {
   if (config.state === "loading" || days === null) {
     return (
       <main className="app">
-        <p>Loadingâ€¦</p>
+        <p>Loading…</p>
       </main>
     );
   }
@@ -189,7 +199,8 @@ function AppBody() {
     return <SetupFlow notesDir={config.notesDir} onComplete={() => loadConfig()} />;
   }
 
-  const isToday = days.current === days.today;
+  const today = days.today;
+  const isToday = days.current === today;
   const aiOn = config.aiEnabled !== false && config.tier !== "Red";
 
   function openDay(date: string) {
@@ -202,10 +213,88 @@ function AppBody() {
   const tasks = noteBodies.flatMap((note) =>
     parseTasks(note.content).map((task) => ({ date: note.date, text: task.text, done: task.done, line: task.line })),
   );
+  const taskGroups = groupedTasks(tasks, taskFilter);
+  const openBacklinks = backlinksForNote(noteBodies, days.current);
+  const wikiTargets = collectWikiTargets(noteBodies);
+  const searchRows = keyword.trim()
+    ? keywordHits.map((hit) => ({ date: hit.date, title: entryLabel(hit.date, noteBodies) }))
+    : searchOpen
+      ? noteDates
+          .slice()
+          .reverse()
+          .slice(0, 8)
+          .map((date) => ({ date, title: entryLabel(date, noteBodies) }))
+      : [];
+  const searchActive = searchRows.length === 0 ? 0 : Math.min(searchCursor, searchRows.length - 1);
+
+  function closeSearch(blur: boolean) {
+    setKeyword("");
+    setKeywordHits([]);
+    setSearchCursor(0);
+    setSearchOpen(false);
+    if (blur) document.getElementById("nav-search-input")?.blur();
+  }
+
+  function onSearchKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeSearch(true);
+      return;
+    }
+    if (searchRows.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSearchCursor((index) => Math.min(index + 1, searchRows.length - 1));
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSearchCursor((index) => Math.max(index - 1, 0));
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const row = searchRows[searchActive];
+      if (!row) return;
+      openDay(row.date);
+      closeSearch(true);
+    }
+  }
 
   function bumpNote() {
     setNoteRevision((n) => n + 1);
   }
+
+  function rememberIntention(status: "done" | "skipped") {
+    setConfig((prev) => {
+      if (prev.state !== "ready") return prev;
+      return {
+        ...prev,
+        intention: [
+          ...prev.intention.filter((item) => item.date !== today),
+          { date: today, status },
+        ],
+      };
+    });
+  }
+
+  function dismissEvening() {
+    closeEvening(today);
+    setEveningDismissedOn(today);
+    setHidePreviewRitual(true);
+  }
+
+  const ritual = ritualFor(now());
+  const previewRitual = hidePreviewRitual ? null : previewRitualParam();
+  const morningOpen =
+    aiOn &&
+    (previewRitual === "morning" ||
+      (ritual === "morning" && !config.intention.some((item) => item.date === today)));
+  const eveningOpen =
+    aiOn &&
+    !morningOpen &&
+    (previewRitual === "evening" ||
+      (ritual === "evening" && eveningDismissedOn !== today && !eveningClosed(today)));
 
   return (
     <main
@@ -221,6 +310,7 @@ function AppBody() {
           All notes are local
         </p>
         <div className="topbar-actions">
+          <ThemeToggle />
           <button
             type="button"
             className="icon-button"
@@ -254,7 +344,7 @@ function AppBody() {
           {sidebarOpen && (
           <>
           <button type="button" className="new-entry" data-testid="new-note-button" onClick={() => openDay(days.today)}>
-            <Plus size={16} /> New entry <kbd><Command size={11} strokeWidth={2} /> N</kbd>
+            <Plus size={16} /> New entry <kbd>Win+N</kbd>
           </button>
           <label className="nav-search">
             <span className="visually-hidden">Search notes</span>
@@ -265,22 +355,46 @@ function AppBody() {
               type="search"
               placeholder="Search entries"
               value={keyword}
+              role="combobox"
+              aria-expanded={searchRows.length > 0}
+              aria-controls="nav-search-list"
+              aria-activedescendant={searchRows.length > 0 ? `nav-search-opt-${searchActive}` : undefined}
+              onFocus={() => {
+                setSearchOpen(true);
+                setSearchCursor(0);
+              }}
+              onBlur={() => setSearchOpen(false)}
+              onKeyDown={onSearchKey}
               onChange={(e) => {
                 const next = e.currentTarget.value;
                 setKeyword(next);
+                setSearchCursor(0);
                 if (!next.trim()) setKeywordHits([]);
               }}
             />
             {!keyword && (
-              <kbd className="nav-search-key"><Command size={11} strokeWidth={2} /> K</kbd>
+              <kbd className="nav-search-key">Win+K</kbd>
             )}
           </label>
-          {keywordHits.length > 0 && (
-            <ul className="nav-search-hits">
-              {keywordHits.map((hit) => (
-                <li key={hit.date}>
-                  <button type="button" className="nav-link" onClick={() => openDay(hit.date)}>
-                    {shortDay(hit.date)}
+          {searchRows.length > 0 && (
+            <ul className="nav-search-hits" id="nav-search-list" role="listbox">
+              {searchRows.map((row, index) => (
+                <li key={row.date}>
+                  <button
+                    type="button"
+                    id={`nav-search-opt-${index}`}
+                    role="option"
+                    aria-selected={index === searchActive}
+                    className={`nav-search-hit${index === searchActive ? " is-active" : ""}`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onMouseEnter={() => setSearchCursor(index)}
+                    onClick={() => {
+                      openDay(row.date);
+                      closeSearch(true);
+                    }}
+                  >
+                    <strong>{row.title}</strong>
+                    <span>{shortDay(row.date)}</span>
                   </button>
                 </li>
               ))}
@@ -289,11 +403,8 @@ function AppBody() {
           <button type="button" className={`nav-link${centreView === "journal" ? " nav-link-active" : ""}`} onClick={() => setCentreView("journal")}>
             <FileText size={16} /> All entries <b>{noteDates.length}</b>
           </button>
-          <button type="button" className={`nav-link${centreView === "reset" ? " nav-link-active" : ""}`} onClick={() => setCentreView("reset")}>
-            <Sparkles size={16} /> Daily reset
-          </button>
           <button type="button" className={`nav-link${centreView === "tasks" ? " nav-link-active" : ""}`} onClick={() => setCentreView("tasks")}>
-            <ClipboardCheck size={16} /> Tasks
+            <ClipboardCheck size={16} /> Tasks {tasks.filter((task) => !task.done).length > 0 && <b>{tasks.filter((task) => !task.done).length}</b>}
           </button>
           <button type="button" className={`nav-link${centreView === "tags" ? " nav-link-active" : ""}`} onClick={() => setCentreView("tags")}>
             <Hash size={16} /> Tags
@@ -345,36 +456,63 @@ function AppBody() {
         </nav>
 
         <section className="note-column" aria-label="Note">
-          {centreView === "reset" && aiOn && (
-            <div className="daily-flows">
-              <header className="daily-hero">
-                <p className="eyebrow"><Sunrise size={13} /> Your daily reset</p>
-                <h1>Make room for today.</h1>
-                <p>A little structure for the thoughts that are asking for your attention.</p>
-              </header>
-              <div className="flow-grid">
-                <MorningIntention date={days.today} onFinish={bumpNote} />
-                <BrainDump date={days.today} onFinish={bumpNote} />
-                <EveningReflection date={days.today} onSaved={bumpNote} />
-              </div>
-            </div>
-          )}
           {centreView === "tasks" && (
             <div className="daily-flows">
-              <header className="daily-hero">
-                <h1>Tasks</h1>
-              </header>
-              <ul className="task-board">
-                {tasks.map((task) => (
-                  <li key={task.date + String(task.line)}>
-                    <button type="button" className={task.done ? "is-done" : ""} onClick={() => openDay(task.date)}>
-                      <span className="task-box" aria-hidden="true">{task.done ? "✓" : ""}</span>
-                      <span>{task.text}</span>
-                    </button>
-                  </li>
+              <div className="task-column">
+                <header className="daily-hero">
+                  <h1>Tasks</h1>
+                </header>
+                {aiOn && <BrainDump date={days.today} onFinish={bumpNote} />}
+                <div className="task-filters" role="group" aria-label="Filter tasks">
+                {(["open", "all", "done"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    aria-pressed={taskFilter === filter}
+                    onClick={() => setTaskFilter(filter)}
+                  >
+                    {filter === "open" ? "Open" : filter === "all" ? "All" : "Done"}
+                  </button>
                 ))}
-                {tasks.length === 0 && <li className="empty-tasks">No open tasks in your notes yet.</li>}
-              </ul>
+              </div>
+              {taskGroups.length === 0 && (
+                <p className="empty-tasks">
+                  {taskFilter === "done"
+                    ? "No finished tasks."
+                    : taskFilter === "open"
+                      ? "No open tasks."
+                      : "No tasks in your notes yet."}
+                </p>
+              )}
+              {taskGroups.map((group) => (
+                <section key={group.date} className="task-group" data-testid="task-group">
+                  <h2>{taskGroupHeading(group.date, noteBodies)}</h2>
+                  <ul className="task-board">
+                    {group.tasks.map((task) => (
+                      <li key={task.date + String(task.line)}>
+                        <button
+                          type="button"
+                          className={task.done ? "is-done" : ""}
+                          onClick={() => {
+                            const note = noteBodies.find((item) => item.date === task.date);
+                            if (!note || !isNoteDate(task.date)) return;
+                            void writeNote(task.date, toggleTask(note.content, task.line)).then(bumpNote);
+                          }}
+                          aria-pressed={task.done}
+                        >
+                          <span className="task-box" aria-hidden="true">{task.done ? "✓" : ""}</span>
+                          <span>{task.text}</span>
+                        </button>
+                        <button type="button" className="task-open" onClick={() => openDay(task.date)}>
+                          {formatTaskDate(noteDateFromKey(task.date))}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+
+              </div>
             </div>
           )}
           {centreView === "tags" && (
@@ -392,20 +530,107 @@ function AppBody() {
                 isToday={isToday}
                 create={isToday}
                 chrome="journal"
+                backlinkCount={openBacklinks.length}
+                wikiTargets={wikiTargets}
                 onToggleCompanion={() => setCompanionOpen((v) => !v)}
               />
             </>
           )}
         </section>
 
-        {aiOn && (
-          <CompanionPanel date={days.current} open={companionOpen} refreshKey={noteRevision} />
+        {aiOn ? (
+          <CompanionPanel date={days.current} open={companionOpen} refreshKey={noteRevision} onOpenDay={openDay} />
+        ) : (
+          <aside className={`note-backlinks-rail${companionOpen ? "" : " companion-closed"}`}>
+            <BacklinksPanel noteDate={days.current} onOpenDay={openDay} refreshKey={noteRevision} />
+          </aside>
         )}
       </div>
-      <footer className="statusbar"><span><Command size={12} /> K to search</span><span className="sync-pip"><i />Synced just now</span></footer>
+      <footer className="statusbar"><span>Win+K to search</span><span className="sync-pip"><i />Synced just now</span></footer>
+      {morningOpen && (
+        <div className="ritual-backdrop">
+          <div className="ritual-dialog" role="dialog" aria-label="Morning intention">
+            <MorningIntention
+              date={today}
+              onFinish={(status) => {
+                rememberIntention(status);
+                bumpNote();
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {eveningOpen && (
+        <div className="ritual-backdrop">
+          <div className="ritual-dialog" role="dialog" aria-label="Evening reflection">
+            <EveningReflection
+              date={today}
+              onDismiss={dismissEvening}
+              onSaved={() => {
+                dismissEvening();
+                bumpNote();
+              }}
+            />
+          </div>
+        </div>
+      )}
       <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
   );
+}
+
+function groupedTasks<T extends { date: string; done: boolean }>(tasks: T[], filter: TaskFilter): { date: string; tasks: T[] }[] {
+  const visible = tasks.filter((task) =>
+    filter === "all" ? true : filter === "done" ? task.done : !task.done,
+  );
+  const order: string[] = [];
+  const byDate = new Map<string, T[]>();
+  for (const task of visible) {
+    const list = byDate.get(task.date);
+    if (list) list.push(task);
+    else {
+      byDate.set(task.date, [task]);
+      order.push(task.date);
+    }
+  }
+  order.sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  return order.map((date) => ({ date, tasks: byDate.get(date) ?? [] }));
+}
+
+function taskGroupHeading(date: string, notes: { date: string; content: string }[]): string {
+  const label = entryLabel(date, notes).replace(/[#*_`]/g, "").trim();
+  const day = shortDay(date);
+  return label === "Untitled entry" ? day : `${day} · ${label}`;
+}
+
+function ThemeToggle() {
+  useSyncExternalStore(subscribeTheme, getThemeChoice, getThemeChoice);
+  const prefersDark =
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const mode = resolvedTheme(prefersDark);
+  const next = mode === "dark" ? "light" : "dark";
+  return (
+    <button
+      type="button"
+      className="icon-button"
+      aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      data-testid="theme-toggle-button"
+      onClick={() => applyTheme(next)}
+    >
+      {mode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+    </button>
+  );
+}
+
+function previewRitualParam(): "morning" | "evening" | null {
+  if (!isBrowserPreview() || typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get("ritual");
+  return value === "morning" || value === "evening" ? value : null;
+}
+
+function noteDateFromKey(date: string): Date {
+  const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+  return new Date(y, m - 1, d, 12);
 }
 
 function weekDays(today: NoteDate, offsetWeeks = 0): NoteDate[] {

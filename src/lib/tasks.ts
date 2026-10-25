@@ -11,7 +11,7 @@ export type ParsedTask = {
 };
 
 /** Matches a task line: optional indent, `-` or `*`, space, `[ ]`/`[x]`/`[X]`. */
-const TASK_LINE = /^(\s*)([-*])\s+\[( |x|X)\]\s+(.*)$/;
+export const TASK_LINE = /^(\s*)([-*])\s+\[( |x|X)\]\s+(.*)$/;
 
 function splitLines(md: string): string[] {
   return md.split(/\r?\n/);

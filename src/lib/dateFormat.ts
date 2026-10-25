@@ -77,6 +77,14 @@ function dayOrdinal(n: number): string {
  * Reflect-style hero date for the note H1, e.g. "Thu, October 22nd, 2026".
  * Keeps Vayu tokens (colour applied in CSS); this is the string only.
  */
+/** Task row date, e.g. "24th Oct, 2026". */
+export function formatTaskDate(date: Date): string {
+  const day = date.getDate();
+  const mon = MONTHS[date.getMonth()];
+  const shortMon = mon.charAt(0) + mon.slice(1).toLowerCase();
+  return `${day}${dayOrdinal(day)} ${shortMon}, ${date.getFullYear()}`;
+}
+
 export function formatReflectTitle(date: Date): string {
   const wd = WEEKDAYS_SHORT[date.getDay()];
   const mon = MONTHS_FULL[date.getMonth()];

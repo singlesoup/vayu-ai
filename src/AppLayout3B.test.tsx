@@ -41,16 +41,14 @@ describe("Phase 3B Reflect-style shell", () => {
     expect(screen.getByText("All notes are local")).toBeInTheDocument();
   });
 
-  it("opens Daily reset with morning, brain dump, and evening together", async () => {
+  it("puts brain dump on Tasks and keeps a skipped morning closed", async () => {
     const user = userEvent.setup();
     armYellowAi();
     render(<App />);
     await screen.findByRole("heading", { name: "Wednesday, October 21, 2026" });
-    await user.click(screen.getByRole("button", { name: "Daily reset" }));
-    expect(screen.getByRole("heading", { name: "Make room for today." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Arrive before you begin." })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Arrive before you begin." })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tasks" }));
     expect(screen.getByRole("heading", { name: "Get it out of your head." })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Let the day settle." })).toBeInTheDocument();
   });
 
   it("does not list Ask your notes in the sidebar", async () => {

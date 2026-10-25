@@ -487,12 +487,12 @@
   position: relative;
   margin-top: var(--space-2);
   min-height: 12rem;
+  overflow: auto;
 }
 
 .note-editor-backdrop {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
   pointer-events: none;
   margin: 0;
   padding: 0;
@@ -501,21 +501,128 @@
   font-size: var(--text-note);
   line-height: 1.5;
   letter-spacing: normal;
-  white-space: pre-wrap;
+  white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
   box-sizing: border-box;
   width: 100%;
+  min-height: 12rem;
   color: var(--color-text);
   background: transparent;
 }
 
-.note-editor-backdrop .wiki-topic {
-  color: var(--color-breeze);
+.note-editor-backdrop .md-line {
+  min-height: 1.5em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.note-caret {
+  position: absolute;
+  width: 1.5px;
+  margin-left: -1px;
+  background: var(--color-breeze);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.wiki-topic {
+  display: inline-block;
+  box-sizing: border-box;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: 20px;
+  letter-spacing: normal;
+  vertical-align: middle;
+  white-space: nowrap;
+  color: var(--color-context-tag);
+  background: var(--color-context-tag-bg);
 }
 
 .note-editor-backdrop .wiki-brackets {
   color: var(--color-primary-400);
+}
+
+.note-editor-backdrop .md-bold,
+.note-editor-backdrop strong {
+  font-weight: var(--font-weight-bold);
+}
+
+.note-editor-backdrop .md-em,
+.note-editor-backdrop em {
+  font-style: italic;
+}
+
+.note-editor-backdrop .md-selected {
+  background: color-mix(in srgb, var(--color-breeze) 35%, transparent);
+}
+
+.note-editor-backdrop .md-code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--color-muted);
+}
+
+.note-editor-backdrop .md-link-label {
+  color: var(--color-breeze);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.note-editor-backdrop .md-link-url,
+.note-editor-backdrop .md-link-paren {
+  color: var(--color-muted);
+  font-size: 0.9em;
+}
+
+.note-editor-backdrop .md-quote {
+  box-shadow: inset 2px 0 0 var(--color-border);
+  padding-left: 0.65em;
+  color: var(--color-muted);
+}
+
+.note-editor-backdrop .md-bullet {
+  color: var(--color-muted);
+  margin-right: 0.35em;
+}
+
+.note-editor-backdrop .md-task-box {
+  display: inline-block;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  margin: 0 8px 0 0;
+  vertical-align: -2px;
+  border: 1.5px solid var(--color-checkbox-border);
+  border-radius: 5px;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.note-editor-backdrop .md-task-box.is-checked {
+  border-color: var(--color-deep-teal);
+  background: var(--color-deep-teal);
+}
+
+.note-editor-backdrop .md-task-box.is-checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--color-ink);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.note-editor-backdrop .md-task-text.is-done {
+  color: var(--color-muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-muted) 55%, transparent);
 }
 
 .note-editor {
@@ -543,13 +650,19 @@
 }
 
 .note-editor-overlay {
-  /* Paint glyphs via the backdrop; keep caret + selection on the textarea. */
+  /* Glyphs live on the backdrop. This layer only receives typing. */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   color: transparent;
+  caret-color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
 .note-editor-overlay::selection {
-  background: color-mix(in srgb, var(--color-breeze) 35%, transparent);
+  background: transparent;
   color: transparent;
 }
 
@@ -620,9 +733,10 @@
   padding: 0;
 }
 
-/* Done: struck through at ~55% opacity. */
+/* Done: struck through in muted colour. */
 .task-list li.task-done input[type="text"] {
   text-decoration: line-through;
+  color: var(--color-muted);
   opacity: 0.55;
 }
 
@@ -668,6 +782,36 @@
 }
 
 /* ---------- settings (1B.3): a calm Surface card ---------- */
+
+.theme-switch {
+  display: flex;
+  gap: 8px;
+}
+
+.settings .theme-switch button {
+  margin-top: 0;
+}
+
+.theme-switch button[aria-pressed="true"] {
+  background: var(--color-nav-item-bg);
+  border-color: var(--color-breeze);
+}
+
+.ritual-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--color-ink) 72%, transparent);
+}
+
+.ritual-dialog {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+}
 
 .settings-backdrop {
   position: fixed;
@@ -1465,6 +1609,57 @@
   cursor: pointer;
 }
 
+.journal-shell .nav-search-hits {
+  list-style: none;
+  margin: 0 1px 8px;
+  padding: 4px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--color-search-border);
+  border-radius: 6px;
+  background: var(--color-search-bg);
+}
+
+.journal-shell .nav-search-hit {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journal-shell .nav-search-hit strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-medium);
+}
+
+.journal-shell .nav-search-hit span {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+}
+
+.journal-shell .nav-search-hit.is-active,
+.journal-shell .nav-search-hit:hover {
+  background: var(--color-nav-item-bg);
+}
+
 .journal-shell .nav-search-key {
   display: inline-flex;
   align-items: center;
@@ -1829,8 +2024,10 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   height: 100%;
   flex: 1;
+  overflow: hidden;
   background-color: var(--color-journal-surface);
 }
 
@@ -1902,11 +2099,13 @@
 }
 
 .journal-editor .entry-meta {
+  box-sizing: border-box;
   display: flex;
   gap: 12px;
   align-items: baseline;
   max-width: 690px;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
   padding: 36px 25px 0;
 }
@@ -1927,40 +2126,57 @@
 }
 
 .writing-zone {
+  box-sizing: border-box;
   max-width: 690px;
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
-  padding: 30px 25px 0;
+  padding: 30px 25px 8px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-.journal-editor .note-body { max-width: none; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.journal-editor .note-editor-stack { flex: 1; min-height: 280px; margin-top: 0; }
+.journal-editor .note-body { max-width: none; flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.journal-editor .note-editor-stack { flex: 1 1 auto; min-height: 0; margin-top: 0; overflow: auto; }
 .app .journal-editor .note-editor,
 .app .journal-editor .note-editor-backdrop {
   display: block;
   width: 100%;
-  min-height: 450px;
   font-family: var(--font-ui), sans-serif;
   font-size: 16px;
   font-weight: var(--font-weight-medium);
   line-height: 30.4px;
   color: var(--color-note-body);
+  min-height: 0;
+}
+
+.app .journal-editor .note-editor-backdrop {
+  position: relative;
+  min-height: 100%;
+  overflow: visible;
+  white-space: normal;
+}
+
+.app .journal-editor .note-editor-backdrop .md-line {
+  min-height: 30.4px;
+}
+
+.journal-editor .note-editor-stack {
   overflow: auto;
-  white-space: pre-wrap;
 }
 
 /* Caret lives on the overlay; visible glyphs stay on the backdrop. */
 .app .journal-editor .note-editor-overlay {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  overflow: hidden;
   color: transparent;
+  caret-color: transparent;
   -webkit-text-fill-color: transparent;
-}
-
-.app .journal-editor .note-editor-backdrop .wiki-topic {
-  color: var(--color-accent-300);
 }
 
 /* Open format row: only a top hairline — no card/container */
@@ -1968,9 +2184,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  width: 100%;
+  box-sizing: border-box;
   margin-top: auto;
-  padding: 14px 0 18px;
+  padding: 12px 0 8px;
   border: 0;
   border-top: 1px solid var(--color-border);
   border-radius: 0;
@@ -1980,6 +2200,7 @@
 .format-tools {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 4px;
 }
 
@@ -2010,6 +2231,8 @@
 
 .format-bar > span {
   margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--color-neutral-600);
   font-family: var(--font-mono), monospace;
   font-size: var(--font-size-sm);
@@ -2019,6 +2242,15 @@
 
 .chat-composer { margin-top: auto; }
 .chat-composer input { flex: 1; }
+
+.task-column {
+  max-width: var(--width-note-column);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
 
 .daily-flows {
   overflow: auto;
@@ -2323,6 +2555,16 @@
   transform: translateY(-1px);
 }
 
+.reflection-card .flow-skip-button {
+  background: transparent;
+  border-color: var(--color-reflection-save-border);
+  color: var(--color-reflection-save);
+}
+
+.reflection-card .flow-skip-button:hover {
+  background: var(--color-reflection-save-hover);
+}
+
 .intention-card .panel-actions,
 .reflection-card .panel-actions {
   justify-content: flex-start;
@@ -2350,8 +2592,8 @@
 
 .task-list {
   border-top: 1px solid var(--color-task-divider);
-  margin-top: 16px;
-  padding-top: 10px;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
 }
 
 .empty-tasks {
@@ -2585,6 +2827,31 @@
   color: var(--color-breeze);
 }
 
+.companion .ask-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0 24px;
+}
+
+.companion .ask-source-chip {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  line-height: 14px;
+  color: var(--color-breeze);
+  background: transparent;
+  border: 1px solid var(--color-suggestion-border);
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+
+.companion .ask-source-chip:hover,
+.companion .ask-source-chip:focus-visible {
+  color: var(--color-text);
+  border-color: var(--color-breeze);
+  outline: none;
+}
+
 .companion .chat-composer {
   display: flex;
   align-items: center;
@@ -2669,7 +2936,107 @@
   color: var(--color-privacy-note);
 }
 
-.app .companion-foot i {
+.app .note-backlinks-rail {
+  min-height: 0;
+  overflow: auto;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-companion);
+  padding: 18px 16px 14px;
+}
+
+.backlinks-rail {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.app .companion .backlinks-rail h2,
+.backlinks-rail h2 {
+  display: block;
+  margin: 0 0 12px;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.12em;
+  line-height: 14px;
+  text-transform: none;
+  color: var(--color-muted);
+}
+
+.backlinks-rail h2 span {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-eyebrow);
+}
+
+.backlink-hits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.companion .backlink-hits {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.backlink-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.backlink-hit:hover .backlink-hit-title,
+.backlink-hit:focus-visible .backlink-hit-title {
+  color: var(--color-text);
+}
+
+.backlink-hit:focus-visible {
+  outline: 1px solid var(--color-border);
+  outline-offset: 2px;
+}
+
+.backlink-hit-title {
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-muted);
+}
+
+.backlink-excerpt {
+  font-family: var(--font-ui), sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-context-body);
+}
+
+.backlink-empty {
+  margin: 0;
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-muted);
+}
+
+.companion-foot i {
   width: 5px;
   height: 5px;
   border-radius: 50%;
@@ -2678,13 +3045,113 @@
   flex-shrink: 0;
 }
 
+.task-filters {
+  display: flex;
+  gap: 6px;
+}
+
+.task-filters button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--color-flow-card-flat-border);
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.task-filters button[aria-pressed="true"] {
+  background: var(--color-context-tag-bg);
+  color: var(--color-context-tag);
+  border-color: var(--color-context-tag-bg);
+}
+
+.task-group {
+  /* width inherited from .task-column; no own max-width/margin */
+
+.task-group h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  line-height: 16px;
+  color: var(--color-muted);
+}
+
+.task-group .task-board {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.task-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-composer input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  background: var(--color-flow-input-bg);
+  color: var(--color-flow-input);
+  border: 1px solid var(--color-flow-input-border);
+  border-radius: 6px;
+  padding: 0 12px;
+  font-family: var(--font-ui), sans-serif;
+  font-size: 13px;
+}
+
+.task-composer button {
+  flex-shrink: 0;
+  height: 36px;
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--color-flow-save-border);
+  background: var(--color-flow-save-rest);
+  color: var(--color-flow-save);
+  font-family: var(--font-ui), sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-composer button:hover:not(:disabled) {
+  background: var(--color-flow-save-bg);
+}
+
+.task-composer button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.task-open {
+  margin-left: 8px;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+}
+
 .task-board {
   list-style: none;
-  padding: 0;
-  max-width: 900px;
+  padding: 0 0 24px;
+  max-width: 640px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.task-board li {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -2705,8 +3172,28 @@
   cursor: pointer;
 }
 
+.task-board li > button:not(.task-open) {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-board .task-open {
+  flex: none;
+  width: auto;
+  margin: 0;
+  padding: 8px 2px 8px 12px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  white-space: nowrap;
+  color: var(--color-muted);
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+}
+
 .task-board button.is-done {
   color: var(--color-muted);
+  text-decoration: line-through;
 }
 
 .task-box {
@@ -2796,4 +3283,116 @@
   .flow-grid { grid-template-columns: 1fr; }
   .intention-card { grid-row: auto; }
   .topbar-center { display: none; }
+}
+
+/* ---------- motion: panel entrance + utility keyframes (item 2, 25 Oct) ----------
+   200ms fade only per design spec. No colour values — colour guard safe.
+   Wrapped in prefers-reduced-motion so motion-sensitive users get none. */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .animate-fade-in  { animation: fadeIn  var(--motion-fade) ease-out both; }
+  .animate-rise-in  { animation: riseIn  var(--motion-fade) ease-out both; }
+  .animate-blink    { animation: blink   1s ease-in-out infinite; }
+
+  /* Panel entrance: morning/evening ritual panels rise in */
+  .ritual-panel,
+  .companion-panel {
+    animation: riseIn var(--motion-fade) ease-out both;
+  }
+}
+
+/* ---------- item 6: mobile layout fix at 760px (and 1050px polish) ----------
+   CSS-only, no JS changes. Sidebar collapse uses existing .sidebar-collapsed
+   classes driven by App.tsx toggle. */
+
+@media (max-width: 1050px) {
+  .journal-workspace {
+    grid-template-columns: 210px minmax(360px, 1fr) 280px;
+  }
+  .sidebar-collapsed .journal-workspace {
+    grid-template-columns: 54px minmax(360px, 1fr) 280px;
+  }
+  .app-nav {
+    overflow: hidden;
+  }
+  .app-nav .nav-link,
+  .app-nav .nav-section-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 760px) {
+  .journal-workspace,
+  .sidebar-collapsed .journal-workspace,
+  .companion-collapsed .journal-workspace,
+  .sidebar-collapsed.companion-collapsed .journal-workspace {
+    grid-template-columns: 0px minmax(0, 1fr);
+  }
+
+  /* Sidebar becomes a fixed drawer when open (existing .sidebar-collapsed
+     toggle drives open/closed; default collapsed = hidden). */
+  .app-nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 10;
+    background: var(--color-surface);
+    transform: translateX(-100%);
+    transition: transform var(--motion-fade) ease-out;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .app-nav.sidebar-open,
+  .app:not(.sidebar-collapsed) .app-nav {
+    transform: translateX(0);
+  }
+
+  /* Calendar: compact 7-col grid, no overlap */
+  .calendar-grid {
+    grid-template-columns: repeat(7, minmax(32px, 1fr));
+  }
+  .calendar-cell {
+    font-size: 10px;
+    min-width: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Companion drawer (already exists, keep) */
+  .companion {
+    position: fixed;
+    right: 0;
+    top: 58px;
+    bottom: 27px;
+    width: 315px;
+    z-index: 4;
+  }
+
+  .flow-grid { grid-template-columns: 1fr; }
+  .intention-card { grid-row: auto; }
+  .topbar-center { display: none; }
+
+  /* Prevent horizontal scroll on the shell only */
+  .workspace {
+    overflow-x: hidden;
+  }
 }
