@@ -1427,3 +1427,10 @@ Dev app relaunched in background for checks (tauri dev, CARGO_TARGET_DIR per hou
 - Owner instruction: after the composer test is flipped to assert-absence (correct per the removal), commit and push ALL current changes.
 - Flow: hermes fixes AppPhase2 test -> green check -> FREEZE both agents -> grouped commits (tasks-view fix slice; editor slice if check-clean; docs/eval-kit slice) -> push -> UNFREEZE.
 - kilo warned to reach a coherent test state; docs (reflect-mockup-research.md, testing runbooks, golden/, scripts/, board files) batched as a docs commit.
+
+### Commit-all round executed (owner order, 25 Oct evening)
+
+- npm run check independently re-run at freeze: 287 FE / 73 Rust green (1 lint warning).
+- 5 commits pushed (d844b8e..a1e3138): 26e3938 tasks-view (hermes A1 v3 full set), 37b2ed7 editor in-progress + known-issue note (kilo caret/wiki autocomplete), 3f910e1 rail groundwork pre-verify, 7ebc811 + 5b36112 design/token polish, a1e3138 docs/eval-privacy kit.
+- Agents UNFROZEN with resume orders: hermes -> A1 v3 verdict then item 1; kilo -> arrows (evidence msg).
+- Open gates: A1 v3 re-measure; arrows live test; item-1 verification; 3.9/3.10 live runs still blocked on Ollama.
