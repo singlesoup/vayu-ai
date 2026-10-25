@@ -3,10 +3,14 @@ import react from "@vitejs/plugin-react";
 // @ts-expect-error type error without @types/node package
 import process from "node:process";
 const host = process.env.TAURI_DEV_HOST;
+/** GitHub Pages project site: https://<user>.github.io/vayu-ai/ */
+const pagesBase = process.env.VITE_PAGES_BASE;
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
   plugins: [react()],
+  // Default `/` for Tauri; `/vayu-ai/` when building the static design preview.
+  base: pagesBase || "/",
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

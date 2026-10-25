@@ -55,3 +55,39 @@ export function titleForDate(date: Date): string {
   const mon = MONTHS_FULL[date.getMonth()];
   return `${wd}, ${date.getDate()} ${mon} ${date.getFullYear()}`;
 }
+
+const WEEKDAYS_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function dayOrdinal(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (n % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+/**
+ * Reflect-style hero date for the note H1, e.g. "Thu, October 22nd, 2026".
+ * Keeps Vayu tokens (colour applied in CSS); this is the string only.
+ */
+/** Task row date, e.g. "24th Oct, 2026". */
+export function formatTaskDate(date: Date): string {
+  const day = date.getDate();
+  const mon = MONTHS[date.getMonth()];
+  const shortMon = mon.charAt(0) + mon.slice(1).toLowerCase();
+  return `${day}${dayOrdinal(day)} ${shortMon}, ${date.getFullYear()}`;
+}
+
+export function formatReflectTitle(date: Date): string {
+  const wd = WEEKDAYS_SHORT[date.getDay()];
+  const mon = MONTHS_FULL[date.getMonth()];
+  const day = date.getDate();
+  return `${wd}, ${mon} ${day}${dayOrdinal(day)}, ${date.getFullYear()}`;
+}

@@ -11,6 +11,7 @@ export const AI_OFF_LINE =
 
 type Props = {
   onOpenDay: (date: string) => void;
+  refreshKey?: number;
 };
 
 function short(date: string): string {
@@ -21,7 +22,7 @@ function short(date: string): string {
   });
 }
 
-export function RedModeBar({ onOpenDay }: Props) {
+export function RedModeBar({ onOpenDay, refreshKey = 0 }: Props) {
   const [notes, setNotes] = useState<{ date: string; content: string }[] | null>(null);
   const [query, setQuery] = useState("");
   const [failed, setFailed] = useState(false);
@@ -30,7 +31,7 @@ export function RedModeBar({ onOpenDay }: Props) {
     void readAllNotes()
       .then(setNotes)
       .catch(() => setFailed(true));
-  }, []);
+  }, [refreshKey]);
 
   const q = query.trim().toLowerCase();
   const matches = (notes ?? []).filter((n) => q && n.content.toLowerCase().includes(q));

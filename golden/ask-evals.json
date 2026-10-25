@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Vayu 3.9 golden-set: Ask Your Notes. Install golden/journal/*.md into the configured notes dir first (see golden/README.md). Run these IN-APP (the gate covers retrieval + answering + source chips). Pass = answer cites the expected day (or a chip on it) AND lands in the keyword sets. Threshold: >=9/10 citing real days.",
+  "questions": [
+    {
+      "id": "aq-01",
+      "question": "How fast did I run my 5K?",
+      "expectDay": "2026-10-19",
+      "keywordSets": [["27:12", "27 minutes"]]
+    },
+    {
+      "id": "aq-02",
+      "question": "What did Marta and I discuss?",
+      "expectDay": "2026-10-20",
+      "keywordSets": [["q3", "numbers"]]
+    },
+    {
+      "id": "aq-03",
+      "question": "Have I booked the dentist yet?",
+      "expectDay": "2026-10-21",
+      "keywordSets": [["nov", "booked", "confirmed"]]
+    },
+    {
+      "id": "aq-04",
+      "question": "What did I get for Nia's birthday?",
+      "expectDay": "2026-10-22",
+      "keywordSets": [["mug"]]
+    },
+    {
+      "id": "aq-05",
+      "question": "Did I ever fix the garage door sensor?",
+      "expectDay": "2026-10-20",
+      "keywordSets": [["garage", "sensor"]],
+      "note": "honest status: it is still open as of 10-23; answer must not claim it is fixed"
+    },
+    {
+      "id": "aq-06",
+      "question": "What book did I start reading on the tram?",
+      "expectDay": "2026-10-19",
+      "keywordSets": [["project hail mary", "hail mary"]]
+    },
+    {
+      "id": "aq-07",
+      "question": "Who volunteered to own the demo build?",
+      "expectDay": "2026-10-22",
+      "keywordSets": [["lisa"]]
+    },
+    {
+      "id": "aq-08",
+      "question": "When was pizza night?",
+      "expectDay": "2026-10-23",
+      "keywordSets": [["pizza"]]
+    },
+    {
+      "id": "aq-09",
+      "question": "How many weeks are left before my marathon training block starts?",
+      "expectDay": "2026-10-21",
+      "keywordSets": [["6", "six"]]
+    },
+    {
+      "id": "aq-10",
+      "question": "What do I still need to draft for Amir?",
+      "expectDay": "2026-10-22",
+      "keywordSets": [["performance review"]],
+      "note": "raised 10-22, completed 10-23; either day with the review mention passes — expectDay is the minimum"
+    }
+  ]
+}

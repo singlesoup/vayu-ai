@@ -41,25 +41,25 @@ describe("DailyNote (task 1.5.4 — open to today)", () => {
     expect(tauri.ran("read_note")).toBe(true);
   });
 
-  it("header shows the mono date and 'Today' on today's note", async () => {
+  it("header shows the Reflect-style date as the H1 on today's note", async () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: false, content: "" });
     render(<DailyNote date="2026-10-21" isToday create />);
-    expect(await screen.findByText("WED 21 OCT 2026")).toBeInTheDocument();
-    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Wed, October 21st, 2026" }),
+    ).toBeInTheDocument();
   });
 
-  it("other days get their weekday/date as the title", async () => {
+  it("other days get the Reflect-style date as the title", async () => {
     const tauri = mockInvoke();
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "hi" });
     render(<DailyNote date="2026-10-20" isToday={false} create={false} />);
     expect(((await screen.findByLabelText("Note")) as HTMLTextAreaElement).value).toBe("hi");
-    // header keeps the mono uppercase date; the title is the weekday + date
-    expect(screen.getByText("TUE 20 OCT 2026")).toBeInTheDocument();
-    expect(screen.getByText("Tuesday, 20 October 2026")).toBeInTheDocument();
-    expect(screen.queryByText("Today")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Tue, October 20th, 2026" }),
+    ).toBeInTheDocument();
   });
 
   it("without create, an empty day shows the empty state and writes nothing", async () => {

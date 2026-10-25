@@ -31,6 +31,8 @@ describe("Workspace launch (task 1.5.4)", () => {
     });
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "started at 9" });
+    tauri.given("list_notes", []);
+    tauri.given("read_all_notes", []);
     tauri.on("ollama_status", () => new Promise<never>(() => undefined)); // never resolves
     return tauri;
   }
@@ -42,7 +44,7 @@ describe("Workspace launch (task 1.5.4)", () => {
     const iEnsure = callIndex("ensure_note");
     const iRead = callIndex("read_note");
     expect(iEnsure).toBeGreaterThan(-1);
-    expect(iRead).toBe(iEnsure + 1);
+    expect(iRead).toBeGreaterThan(iEnsure);
   });
 
   it("the window title is 'Vayu — Today' on today's note", async () => {
@@ -65,7 +67,9 @@ describe("Workspace launch (task 1.5.4)", () => {
     nowRef.value = new Date(2026, 9, 22, 0, 5, 0); // past midnight
     window.dispatchEvent(new Event("focus"));
 
-    expect(await screen.findByText("THU 22 OCT 2026")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Thursday, October 22, 2026" }),
+    ).toBeInTheDocument();
     expect(document.title).toBe("Vayu — Today");
     // the last ensure/read pair targets the new day
     const calls = getInvokeMock().mock.calls;
@@ -88,16 +92,16 @@ describe("Workspace launch (task 1.5.4)", () => {
   it("clicking a calendar day opens that day's note (task 1.7.2)", async () => {
     const { fireEvent } = await import("@testing-library/react");
     const tauri = armConfig();
-    tauri.on("list_notes", () => ["2026-10-05"]);
+    tauri.on("list_notes", () => ["2026-10-19"]);
     tauri.on("read_note", (args) =>
-      args["date"] === "2026-10-05"
+      args["date"] === "2026-10-19"
         ? { exists: true, content: "pruned the apple tree" }
         : { exists: true, content: "started at 9" },
     );
     render(<App />);
     await screen.findByDisplayValue("started at 9");
 
-    fireEvent.click(await screen.findByRole("button", { name: "5" }));
+    fireEvent.click(await screen.findByRole("button", { name: /mo\s*19/i }));
     expect(await screen.findByDisplayValue("pruned the apple tree")).toBeInTheDocument();
   });
 

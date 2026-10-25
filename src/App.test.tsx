@@ -35,10 +35,13 @@ describe("First-run flow (task 1.4.4)", () => {
     });
     tauri.given("ensure_note", null);
     tauri.given("read_note", { exists: true, content: "" });
+    tauri.given("list_notes", []);
+    tauri.given("read_all_notes", []);
     render(<App />);
     // workspace appears (the note date header), folder screen absent
-    await screen.findByText("WED 21 OCT 2026");
+    await screen.findByRole("heading", { name: "Wednesday, October 21, 2026" });
     expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     resetNowProvider();
   });
 });

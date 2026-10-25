@@ -1,6 +1,6 @@
 // Task 3.3: Evening Reflection tests.
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { mockInvoke } from "../test/mocks";
 import { EveningReflection } from "./EveningReflection";
 
@@ -28,7 +28,7 @@ describe("EveningReflection (task 3.3)", () => {
     const tauri = mockInvoke();
     mockReadNote(tauri, "");
     render(<EveningReflection date={today} />);
-    expect(screen.getByRole("button", { name: "Reflect on today" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close the day gently" })).toBeDisabled();
     expect(tauri.ran("generate")).toBe(false);
   });
 
@@ -39,7 +39,7 @@ describe("EveningReflection (task 3.3)", () => {
     render(<EveningReflection date={today} />);
     await act(async () => {}); // flush the async read_note
 
-    fireEvent.click(screen.getByRole("button", { name: "Reflect on today" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close the day gently" }));
     // generate runs synchronously within the click, so the summary is ready
     expect(
       screen.getByText(/A productive day/, { selector: "p" }),
@@ -56,6 +56,19 @@ describe("EveningReflection (task 3.3)", () => {
     expect(tauri.args("append_note")!.appendix).toContain("A productive day");
   });
 
+  it("Not tonight uses the outlined skip control and does not write", () => {
+    const tauri = mockInvoke();
+    mockReadNote(tauri, "Had a good day.");
+    const onDismiss = vi.fn();
+    render(<EveningReflection date={today} onDismiss={onDismiss} />);
+    const skip = screen.getByRole("button", { name: "Not tonight" });
+    expect(skip.className).toContain("flow-skip-button");
+    fireEvent.click(skip);
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(tauri.ran("append_note")).toBe(false);
+    expect(tauri.ran("generate")).toBe(false);
+  });
+
   it("works on any day, not just today", async () => {
     const tauri = mockInvoke();
     mockReadNote(tauri, "A past day note.");
@@ -63,7 +76,7 @@ describe("EveningReflection (task 3.3)", () => {
     render(<EveningReflection date="2026-10-15" />);
     await act(async () => {}); // flush the async read_note
 
-    fireEvent.click(screen.getByRole("button", { name: "Reflect on today" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close the day gently" }));
     await act(async () => {});
     expect(
       screen.getByText("Past day summary.", { selector: "p" }),

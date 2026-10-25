@@ -26,6 +26,17 @@ pnpm-debug.log*
 Thumbs.db
 desktop.ini
 
+# Temporary design-agent skills (not part of the product build).
+# Installed for the design_upgrades branch; delete after merge if unused.
+.agents/
+.cursor/skills/
+.cursor/agents/
+.cursor/hooks/
+.cursor/hooks.json
+.impeccable/
+PRODUCT.md
+skills-lock.json
+
 # Local notes / vector index used during dev
 notes/
 *.index

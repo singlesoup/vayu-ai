@@ -17,15 +17,26 @@ export function parseTokens(css: string): Token[] {
   return tokens;
 }
 
-const parsed = parseTokens(tokensCss);
+// CSS resolves duplicate custom properties with last-wins (theme blocks
+// legitimately redefine tokens). Keep the effective definition so the page
+// shows one swatch per token name.
+function lastWins(tokens: Token[]): Token[] {
+  const byName = new Map<string, Token>();
+  for (const t of tokens) byName.set(t.name, t);
+  return [...byName.values()];
+}
+
+const parsed = lastWins(parseTokens(tokensCss));
 
 export const allTokens: Token[] = parsed;
 
 export const tokenSwatches: Token[] = parsed.filter((t) => t.name.startsWith("--color-"));
 export const fontTokens: Token[] = parsed.filter(
-  (t) => t.name.startsWith("--font-") && t.value !== "",
+  (t) => t.name === "--font-ui" || t.name === "--font-body" || t.name === "--font-mono",
 );
-export const sizeTokens: Token[] = parsed.filter((t) => t.name.startsWith("--text-"));
+export const sizeTokens: Token[] = parsed.filter(
+  (t) => t.name.startsWith("--text-") || t.name.startsWith("--font-size-"),
+);
 
 export const FONT_PROPERTY_BY_NAME: Record<string, string> = {
   "--font-ui": "var(--font-ui)",

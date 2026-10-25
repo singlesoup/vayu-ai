@@ -6,8 +6,9 @@
 // unmounts on close — so polling simply stops. No download buttons: installing
 // models is Phase 2. All outcomes are calm — Ollama being down is a normal
 // state, not a crash.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { deleteModel, listModels, ollamaStatus } from "../lib/api";
+import { applyTheme, getThemeChoice, subscribeTheme, type ThemeChoice } from "../lib/theme";
 import type { DetectedModels, OllamaStatus } from "../lib/api";
 import { TestAi } from "./TestAi";
 import { ModelCard } from "./ModelCard";
@@ -33,6 +34,10 @@ export function Settings({ open, onClose }: Props) {
         </header>
 
         <div className="settings-section">
+          <h3>Appearance</h3>
+          <Appearance />
+        </div>
+        <div className="settings-section">
           <h3>Model</h3>
           <ModelStatus />
         </div>
@@ -42,6 +47,25 @@ export function Settings({ open, onClose }: Props) {
           <TestAi />
         </div>
       </section>
+    </div>
+  );
+}
+
+function Appearance() {
+  const choice = useSyncExternalStore(subscribeTheme, getThemeChoice, getThemeChoice);
+  const options: ThemeChoice[] = ["dark", "light", "system"];
+  return (
+    <div className="theme-switch" role="group" aria-label="Appearance">
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          aria-pressed={choice === option}
+          onClick={() => applyTheme(option)}
+        >
+          {option === "dark" ? "Dark" : option === "light" ? "Light" : "System"}
+        </button>
+      ))}
     </div>
   );
 }

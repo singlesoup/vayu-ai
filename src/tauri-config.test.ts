@@ -10,10 +10,10 @@ function readTauriConf() {
 }
 
 describe("tauri.conf.json (task 1.2.3 — Ink window background)", () => {
-  it("the main window has the Ink background colour #0E1116", () => {
+  it("the main window has the Ink background colour #0b0d10", () => {
     const conf = readTauriConf();
     const main = conf.app.windows.find((w) => w.title === "Vayu");
     expect(main).toBeDefined();
-    expect(main?.backgroundColor).toBe("#0E1116");
+    expect(main?.backgroundColor).toBe("#0b0d10");
   });
 });

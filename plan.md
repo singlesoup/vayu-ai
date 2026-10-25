@@ -215,7 +215,37 @@ Details: [`now.md`](now.md) Phase 1C.
 
 ## Parked (P2 — after 24 Oct only)
 
-Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · Voice dictation · Manual model switching polish · Full light-mode component pass.
+Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · Voice dictation · Manual model switching polish · Full light-mode component pass · **Journal format keyboard shortcuts** (e.g. Ctrl/Cmd+B, I, K) — format bar only for now · **Note map** (a graph of `[[links]]`, from the Reflect mock).
+
+### Later — from the Reflect mock (24 Oct)
+
+Seen on the mock: All notes, the daily note, Tasks, Search, the Map, Product Ideas, and the Reflect-vs-Vayu table.
+
+Take later, not in the current four-feature pass:
+
+- Search can open as a centered list, including when the field is empty: note title, short date, one highlighted row, Enter opens it, Esc closes it. Keep commands out of that list. Vayu's sidebar field can stay for typing; the palette is the later upgrade.
+- Tasks list grouped by the note they came from, with Open / All / Done. Checking a box updates the `- [ ]` line in that note. Vayu's Tasks screen already checks, adds, and opens the day; grouping and the Done filter are the gap.
+- Backlinks for the **open note** beside the writing column, titled for that note: source title, excerpt, and a link pill. A quiet line under the note title can show last edited and the backlink count. Tags can stay as the full index.
+- Wiki links in the editor hide `[[ ]]` and show a ~20px chip (6–8px radius, ~8px padding), same chip inside backlink excerpts. Backlink rows are a date title, then a dim excerpt, not a card. Colours stay Vayu sage tokens, not Reflect indigo.
+
+Leave out: Map for now, Publish, calendar meetings, an AI button in the note header, voice transcription, and bring-your-own-key prompts.
+
+The mock's Reflect-vs-Vayu table was checked against an older preview. It still said Tasks opened nothing and rituals lived on Daily Reset. This branch already has Tasks (check, add, open the day, brain dump) and morning/evening dialogs. Still open from that table: `[[` autocomplete, backlinks beside the open note, task grouping with Open/All/Done, and a search palette that lists notes.
+
+### Later — shared UI (after the design pass and the rebase)
+
+**Do not start this during the current visual pass.**
+
+**Scope: the whole app** — shell (topbar, sidebar, status bar), journal column, companion, daily reset, settings, first-run/setup, and any future surfaces. Not sidebar-only.
+
+Screens are already components (`Editor`, `CompanionPanel`, `DailyNote`, daily-reset panels). The pieces that look the same are not: buttons, text fields, kickers, chips, pills, cards, and status dots are often separate markup plus separate rules in `App.css` (sidebar search vs companion composer, format bar vs nav icons, and so on). Font families go through `tokens.css`. Sizes are raw pixels on each rule, and many similar grays each have their own token. A change to one control does not show up on the others.
+
+**When:** after both of these are true.
+
+1. The Emergent design changes on this branch are finished.
+2. This branch is rebased onto `main` without dropping the design work or the work through Phase 3.
+
+**Then:** decide how shared controls and a shorter token/type list should work, because the app will keep growing and copying each widget will get expensive. Until that decision, keep painting with tokens and reuse an existing class when two controls are the same thing. Do not rebuild the shell into a component library mid-pass.
 
 ---
 
@@ -234,6 +264,10 @@ Laya Red-tier decisions · Cloud BYOK · Landing-page compatibility checker · V
 | 2026-10-21 | Phase 1B visual pass added before Check-in 1. Home screens must match the design board; a screenshot comparison is the gate. File-content tests are not enough | The running app shipped unstyled because `App.css` was never imported |
 | 2026-10-21 | Editor = plain controlled `<textarea>` (not CodeMirror/TipTap) | Smallest path that keeps disk bytes = typed Markdown |
 | 2026-10-21 | `get_config` returns `{ notesDir, version, defaultNotesDir }` in one call | First-run screen can pre-fill without a second command |
+| 2026-10-23 | Journal redesign palette in `tokens.css`: Ink `#0b0d10`, Surface `#111419`, Text `#eef1f4`, Muted `#8b949f`, Breeze `#a9d9bc`, Deep Teal `#78be99`, plus Elevated `#171b21` and Soft `#bac3cd`. Inter / Newsreader stay (offline). Layout follows `vayu-frontend-source` (sidebar, daily reset, companion) without its axios backend or font CDN | Owner asked to match the live journal UI; PRD §8 stays revisable through tokens only |
+| 2026-10-23 | Adopt Emergent `Design-vayu_em.md` ramps in `tokens.css` (primary/secondary/accent/neutral 50–950, DM Sans / Fraunces / DM Mono, rem type scale). App aliases (`--color-breeze` → accent-300, `--color-deep-teal` → accent-400, etc.) so existing CSS picks up the system | Owner asked to apply Emergent colours and fonts throughout |
+| 2026-10-23 | Shared controls and a shorter token/type list wait until the design pass is done and this branch is rebased onto `main` with the design work and Phase 3 still intact. Scope is the **entire app** (shell, journal, companion, flows, settings), not sidebar-only. Until then, reuse an existing class when two controls are the same thing; do not extract a component library mid-pass | Screens are components; repeated chrome is copied CSS across the app. That gets expensive as the product grows |
+| 2026-10-24 | Journal editor formatting uses the format bar (click) only; keyboard shortcuts for bold/italic/quote/list/link are **deferred** (see Parked) | Live preview + toolbar accepted for now; shortcuts are a follow-up, not blocking |
 
 ---
 
@@ -257,6 +291,21 @@ Newest first. One line per meaningful change or verification result.
 
 | Date | Phase/ID | Change | By |
 |---|---|---|---|
+| 2026-10-24 | mock / reflect | Wiki chips hide `[[ ]]` until the caret is on the link. Open-note backlinks sit in the companion rail. Tasks group by day with Open/All/Done. Empty search lists recent notes. Journal format shortcuts are Ctrl+B/I (Ctrl+K stays search). Format bar stays inside the note column. No commit | agent |
+| 2026-10-24 | mock / compare | Reflect vs Vayu table: keep journal, rituals, energy slider, markdown toolbar, and the local companion. Later: `[[` autocomplete, backlinks beside the note, task filters, search palette. Leave publish, calendar sync, voice, and API-key AI | agent |
+| 2026-10-24 | 3B / rituals | Morning and evening are dialogs (05:00–12:00 and 17:00–midnight). Brain dump is on Tasks. Settings has Dark / Light / System. Light remaps the shell tokens | agent |
+| 2026-10-24 | mock / note | Reflect Product Ideas: title line with last edited and backlink count; right rail Backlinks · that note with excerpt and pill. Leave AI buttons, Publish, and the meeting calendar | agent |
+| 2026-10-24 | mock / search | Reflect search is a centered palette: empty query lists notes (title, date), Enter opens, Esc closes. Copy the rows later. Leave commands and “5 days from now” out | agent |
+| 2026-10-24 | mock / tasks | Reflect Tasks: group by source note and add Open / All / Done. Leave Publish and the meeting calendar | agent |
+| 2026-10-24 | mock / later | Reflect mock Map + backlinks: park the note graph. Later, show the open note's backlinks beside the journal and consider wiki pills. Not part of morning/evening/tasks/theme | agent |
+| 2026-10-24 | 3.6 / companion | Companion panel is Ask your notes: `search_index`, excerpts-only answer, abstain, source-day chips that open that day. Suggestion chips use the same path. Old `AskNotes` screen stays unmounted | agent |
+| 2026-10-24 | 1.6.1 / journal | Journal `Editor` live preview (tasks, bold, italic, wiki links, quote, bullets, links) + format toolbar clicks. **No keyboard shortcuts for formatting yet** — owner OK to ship bar-only; add shortcuts later (Parked + Decisions log) | agent |
+| 2026-10-24 | design UI | Renamed `docs/design/emergent-ui-todo.md` to `docs/design/design-ui-todo.md` and rewrote it from the preview pass (Daily Reset, Tasks, Tags, Settings, shell). The 23 Oct audit in the old file was stale | agent |
+| 2026-10-23 | later / shared UI | Recorded: revisit shared components and a shorter font/colour token list only after the design pass is finished and the branch is rebased onto `main` without losing the design work or Phase 3. See Decisions log and Parked | agent |
+| 2026-10-23 | design tokens | Applied Emergent `Design-vayu_em.md` colour ramps + rem type scale in `tokens.css`; semantic aliases (`breeze`→accent-300, `deep-teal`→accent-400) and App.css headings/weights/sizes switched onto those tokens | agent |
+| 2026-10-22 | design Pages | `design_upgrades` push + GitHub Actions Pages deploy of static UI preview (`VITE_UI_PREVIEW`, dummy notes). Not merged to main. URL: https://singlesoup.github.io/vayu-ai/ | agent |
+| 2026-10-22 | 3B polish | Reflect polish on `design_upgrades`: hero date H1, quieter nav + gear, wiki highlight, circular tasks, compact calendar, Reflection primary right-aligned. Browser-verified 1280/960; `npm run check` green | agent |
+| 2026-10-22 | 3B.4/6/7/8 | `design_upgrades`: Reflect three-zone shell (nav \| note \| calendar), keyword search every tier, one AI surface under the title, Ask in centre. Browser-verified vs Reflect reference + SG-3 shots in `docs/design/`. `npm run check` green. Bugs 3B.1–3B.3 still on `main`. Tree dirty, no commit | agent |
 | 2026-10-21 | Phase 3 | P0 build done: 3.1–3.8 review-ready, tree left dirty (no commit, per default). `npm run check` green: **205 FE + 73 Rust**, lint + tsc clean, no Rust warnings. New Rust: `index.rs` (chunking, cosine, index file `.vayu_index.json`), `embeddings`/`delete_model`/`reindex`/`search_index`/`read_all_notes` commands. New UI mounted in `App.tsx`: JournalChat, EveningReflection, RedModeBar, BacklinksPanel, AskNotes, ModelCard in Settings. Rust tests 62 → 73; FE 175 → 205 | agent |
 | 2026-10-21 | 2.5 fix | `cancel_pull` now really cancels: `pull_model` spawns the pull as a task and registers its abort handle (`register_pull` was dead code before, so Cancel only hid the UI while the download kept running). An aborted pull settles as `Err("Download cancelled.")`. Rust is warning-free again | agent |
 | 2026-10-21 | 3.8 | Settings → Model: `ModelCard` (tier in plain words Full/Lite/No-AI, recommended model + one-time size, Re-run check, Re-index, BYOK "coming soon" label only) + Delete model with a confirm step (Ollama `POST /api/delete`). New `src/lib/tiers.ts` (react-refresh rule: no non-component exports from a component file) | agent |
@@ -322,3 +371,7 @@ Newest first. One line per meaningful change or verification result.
 | 2026-10-22 | feat(2.3) | Tier result screen: plain words per tier (Green E4B / Yellow E2B / Red no-chat), PRD first-run copy, one primary action, specs under Details; 5 tests | agent |
 | 2026-10-22 | feat(2.8/2.9) | Morning Intention: 3 questions + one-tap Skip, streams intention line + Top 3 tasks, saved once per day via append_note/mark_intention, no re-nag same day; `parseIntention` in src/lib/intention.ts; 4 tests | agent |
 | 2026-10-22 | feat(2.10/2.11) | Brain Dump → Tasks: streamed extraction → editable preview → insert only after confirm; extractor guardrails (no invented tasks, NO_TASKS empty state); 4 tests | agent |
+| 2026-10-25 | Token reconciliation | Emergent 50-950 scale is canonical; PRD §8 semantic aliases (--color-ink, --color-breeze, etc.) are supplementary and point at the scale. Fonts: DM Sans/Fraunces/DM Mono (Emergent). Spacing: 8pt grid px (PRD §8). Documented in docs/design/new-design-system.md. No code changes to tokens.css. | hermes |
+| 2026-10-25 | Wiki `[[` autocomplete (item 1) | `src/lib/wikiAutocomplete.ts` (NEW): collectWikiTargets, wikiTriggerAt, insertWikiLink — pure, deterministic, case-insensitive dedupe + sorted output. `src/lib/wikiAutocomplete.test.ts` (NEW): 11 unit tests. `src/components/Editor.tsx`: wiki dropdown (role=listbox/option) at caret position, Enter inserts, Escape closes, ArrowUp/Down cycle; colour-guard safe (var(--color-*) inline styles, no App.css touch). `src/components/DailyNote.tsx` + `src/App.tsx`: wikiTargets prop wired from collectWikiTargets(noteBodies). Editor tests added. npm run lint: 0 new errors; typecheck: 0 new errors; vitest: 22/22 pass (my tests) | kilo |
+| 2026-10-25 | Check-gate closure + coordinator repairs (owner asleep, GO delegated) | All agent items verified (kilo item-1: 22/22 independent run, wiring end-to-end, colour-guard; hermes items 2/4/6 accepted earlier incl. live orca-browser drawer proof). `npm run check` GREEN end-to-end (lint / typecheck / vitest 268/268 / cargo). Coordinator repairs, all in service of the repo's own check gate: CompanionPanel.tsx lint fix (date-change suggestion reset moved into the readNote promise - identical behaviour); App.tsx encoding repair (3 em-dashes + 1 ellipsis corrupted pre-today; title literal now matches the 1.5.4 spec "Vayu � Today"); 2 React-vs-native event typings (App.tsx onKey, Editor.tsx drag-select). Test?delivered-design alignment, semantics preserved: launch test asserts ordering (ensure before read) not adjacency (delivered app adds a tasks fetch between - the Tasks-nav badge work); midnight heading expectation = delivered long format ("Thursday, October 22, 2026"); calendar-day click = delivered week-strip label (regex /mo\s*19/i; behaviour live-verified in the orca browser: clicking MO 19 opens Oct 19); TokenPage test scopes name/value assertions per swatch row (alias tokens legitimately share values); tokens.css light block --color-flow-save-rest #dceee3 ? var(--color-accent-400) (last "dark leftovers" alias); tokenData.ts last-wins dedupe so the dev token page shows one swatch per token name (CSS cascade semantics). NOTE: owner commit 4aec4d6 itself failed 4 of these tests + carried the TokenPage dupes - recorded as pre-existing baseline. No commits made; tree left dirty; owner's staged files untouched (42 dirty entries). | opencode |
+| 2026-10-25 | assignment | Work re-frozen after owner go: kilo editor pack reordered (arrows first, owner blocked), hermes A1 fix round then Reflect Section 6 items 1-5; deep mockup behaviour research doc + eval/privacy gate kits in place (static 3.10 clean). | agent |

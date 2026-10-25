@@ -11,7 +11,7 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ] as const;
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
 
 type Props = {
   /** Today's date, used for highlight and the initial month view. */
