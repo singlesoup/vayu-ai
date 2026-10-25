@@ -20,8 +20,12 @@ function todayKey(): NoteDate {
 }
 
 function yesterdayKey(): NoteDate {
+  return daysAgo(1);
+}
+
+function daysAgo(n: number): NoteDate {
   const d = new Date();
-  d.setDate(d.getDate() - 1);
+  d.setDate(d.getDate() - n);
   const key = localDateKey(d);
   return isNoteDate(key) ? key : "2026-10-21";
 }
@@ -45,10 +49,13 @@ function bootStore(): Store {
         : "Yellow";
   const today = todayKey();
   const yesterday = yesterdayKey();
+  const older = daysAgo(2);
   const notes = new Map<string, string>();
   notes.set(
     today,
     [
+      "# Morning pages",
+      "",
       "Morning focus on [[Vayu]] design and a calm [[reading]] list.",
       "",
       "- [ ] Ship the Reflect-style layout",
@@ -59,8 +66,17 @@ function bootStore(): Store {
   );
   notes.set(
     yesterday,
-    "Wrote about [[Berlin Marathon]] training and the [[Atlas redesign]] kickoff.\n\n- [ ] Book flights\n",
+    [
+      "Wrote about [[Berlin Marathon]] training and the [[Atlas redesign]] kickoff.",
+      "",
+      "Left the next step in [[Morning pages]].",
+      "",
+      "- [ ] Book flights",
+    ].join("\n"),
   );
+  if (older !== yesterday && older !== today) {
+    notes.set(older, "A short note that points at [[Morning pages]] after the walk.\n");
+  }
   store = {
     notes,
     tier,
@@ -157,7 +173,9 @@ export async function previewInvoke(
       };
     case "generate": {
       const prompt = String(args?.prompt ?? "");
-      const reply = prompt.toLowerCase().includes("summarize")
+      const reply = prompt.includes("exactly two short questions")
+        ? "What made this feel costly?\nWho did you want to tell about it?"
+        : prompt.toLowerCase().includes("summarize")
         ? "You focused on Vayu's layout and kept a short reading list. Tomorrow: finish the Reflect-style shell."
         : prompt.toLowerCase().includes("extract")
           ? "- [ ] Ship the Reflect-style layout\n- [ ] Verify Ask in the browser"

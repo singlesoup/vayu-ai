@@ -86,4 +86,13 @@ describe("renderNoteBackdrop", () => {
     expect(html).not.toContain("md-task-box");
     expect(html).toContain("- [ ] not a task");
   });
+
+  it("renders a checked task with the is-done strike class on its text", () => {
+    const md = "- [x] Finished Task\n";
+    const html = renderNoteBackdrop(md, 0);
+    expect(html).toContain("md-task-box is-checked");
+    expect(html).toContain("md-task-text is-done");
+    expect(html).toContain(">Finished Task<");
+    expect(html).not.toMatch(/- \[x\] Finished Task/);
+  });
 });
