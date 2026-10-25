@@ -39,6 +39,24 @@ describe("BacklinksPanel (task 3.5)", () => {
     expect(screen.queryByRole("button", { name: /, / })).not.toBeInTheDocument();
   });
 
+  it("lists notes that link to the open note, with a chip and no card", async () => {
+    const tauri = mockInvoke();
+    tauri.on("read_all_notes", () => [
+      { date: "2026-10-24", content: "# Morning pages\n\nHello" },
+      { date: "2026-10-23", content: "See [[Morning pages]] tomorrow." },
+    ]);
+    const onOpenDay = vi.fn();
+    const { container } = render(<BacklinksPanel noteDate="2026-10-24" onOpenDay={onOpenDay} />);
+    await act(async () => {});
+    expect(screen.getByRole("heading", { name: /Backlinks/ })).toHaveTextContent("Morning pages");
+    expect(screen.getByText("Oct 23 · Daily note")).toBeInTheDocument();
+    const chip = container.querySelector(".wiki-topic");
+    expect(chip?.textContent).toBe("Morning pages");
+    expect(container.textContent).not.toContain("[[");
+    fireEvent.click(screen.getByRole("button", { name: /Oct 23/ }));
+    expect(onOpenDay).toHaveBeenCalledWith("2026-10-23");
+  });
+
   it("shows a calm error when reads fail, not a crash", async () => {
     const tauri = mockInvoke();
     tauri.on("read_all_notes", () => {
