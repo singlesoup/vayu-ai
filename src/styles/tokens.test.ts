@@ -4,12 +4,27 @@ import { describe, expect, it } from "vitest";
 
 const TOKENS_PATH = resolve(__dirname, "tokens.css");
 
-function tokenMap(): Map<string, string> {
-  const css = readFileSync(TOKENS_PATH, "utf8");
+function cssBlock(css: string, header: string): string {
+  const start = css.indexOf(header);
+  if (start < 0) throw new Error(`missing ${header}`);
+  const open = css.indexOf("{", start);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}") {
+      depth--;
+      if (depth === 0) return css.slice(open + 1, i);
+    }
+  }
+  throw new Error(`unclosed ${header}`);
+}
+
+/** Dark defaults live in `:root`. Light overrides are a later block. */
+function tokenMap(block = cssBlock(readFileSync(TOKENS_PATH, "utf8"), ":root")): Map<string, string> {
   const map = new Map<string, string>();
   const pattern = /(--[a-z0-9-]+)\s*:\s*([^;]+);/gi;
   let m: RegExpExecArray | null;
-  while ((m = pattern.exec(css)) !== null) {
+  while ((m = pattern.exec(block)) !== null) {
     map.set(m[1].toLowerCase().trim(), m[2].trim());
   }
   return map;
@@ -143,5 +158,31 @@ describe("src/styles/tokens.css (task 1.3.1 — design tokens)", () => {
     expectToken(tokens, "--space-4", "32px");
     expectToken(tokens, "--space-6", "48px");
     expectToken(tokens, "--motion-fade", "200ms");
+  });
+});
+
+describe("[data-theme=light] journal surfaces", () => {
+  const light = tokenMap(cssBlock(readFileSync(TOKENS_PATH, "utf8"), '[data-theme="light"]'));
+
+  it("paints the shell, note, companion, and settings card in paper tones", () => {
+    expectToken(light, "--color-ink", "#f4f6f4");
+    expectToken(light, "--color-companion", "#eef3ef");
+    expectToken(light, "--color-journal-surface", "#f7faf7");
+    expectToken(light, "--color-flow-card-flat", "#ffffff");
+    expectToken(light, "--color-flow-input-bg", "#ffffff");
+    expectToken(light, "--color-note-body", "#243028");
+  });
+
+  it("aliases the dark leftovers onto the existing ramps", () => {
+    expectToken(light, "--color-entry-selected-bg", "var(--color-accent-100)");
+    expectToken(light, "--color-entry-count-bg", "var(--color-primary-100)");
+    expectToken(light, "--color-context-tag-bg", "var(--color-accent-100)");
+    expectToken(light, "--color-send-idle", "var(--color-primary-100)");
+    expectToken(light, "--color-flow-action-bg", "var(--color-primary-50)");
+    expectToken(light, "--color-flow-save-rest", "var(--color-accent-400)");
+    expectToken(light, "--color-task-divider", "var(--color-border)");
+    expectToken(light, "--color-primary-950", "var(--color-primary-100)");
+    expectToken(light, "--color-accent-300", "var(--color-accent-700)");
+    expect(light.get("--color-entry-selected-bg")).not.toMatch(/#[0-9a-f]{3,8}/i);
   });
 });

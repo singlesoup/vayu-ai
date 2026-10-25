@@ -357,6 +357,104 @@
   --text-note: var(--font-size-2xl);
 }
 
+/* Light appearance. Same token names, paper canvas. Dark stays the default. */
+[data-theme="light"] {
+  --color-ink: #f4f6f4;
+  --color-surface: #ffffff;
+  --color-text: #1c2822;
+  --color-muted: #5c6b62;
+  --color-breeze: #2f7a52;
+  --color-deep-teal: #246846;
+  --color-border: #d5ddd6;
+  --color-border-card: #c5d0c8;
+  --color-checkbox-border: #7d8c82;
+  --color-on-accent: #f4faf6;
+  --color-elevated: #ffffff;
+  --color-companion: #eef3ef;
+  --color-context-card: #ffffff;
+  --color-context-card-border: #d3e0d6;
+  --color-journal-surface: #f7faf7;
+  --color-note-body: #243028;
+  --color-heading: #1c2822;
+  --color-topbar-bg: #f4f6f4;
+  --color-topbar-border: #d5ddd6;
+  --color-topbar-label: #3d4c43;
+  --color-statusbar-bg: #eef3ef;
+  --color-statusbar-border: #d5ddd6;
+  --color-statusbar-text: #5c6b62;
+  --color-search-bg: #ffffff;
+  --color-search-border: #d5ddd6;
+  --color-search-text: #5c6b62;
+  --color-nav-item-text: #243028;
+  --color-nav-item-bg: #e4eee6;
+  --color-suggestion-bg: #ffffff;
+  --color-suggestion-border-idle: #d3e0d6;
+  --color-composer-bg: #ffffff;
+  --color-composer-border: #d3e0d6;
+  --color-flow-card-flat: #ffffff;
+  --color-flow-card-flat-border: #d5ddd6;
+  --color-flow-input: #1c2822;
+  --color-flow-input-bg: #ffffff;
+  --color-flow-input-border: #c5d0c8;
+  --color-flow-question: #3d4c43;
+  --color-flow-copy: #5c6b62;
+  --color-chat-muted: #3d4c43;
+  --color-format-icon: #243028;
+  --color-entry-snippet: #5c6b62;
+  --color-new-entry-bg: #ffffff;
+  --color-new-entry-border: #c5d0c8;
+
+  /* Same names as dark. Light only points them at the existing ramps. */
+  --color-entry-selected-bg: var(--color-accent-100);
+  --color-entry-selected-border: var(--color-accent-200);
+  --color-entry-count-bg: var(--color-primary-100);
+  --color-section-kicker: var(--color-muted);
+  --color-settings-link: var(--color-muted);
+  --color-context-tag: var(--color-deep-teal);
+  --color-context-tag-bg: var(--color-accent-100);
+  --color-context-label: var(--color-accent-800);
+  --color-context-body: var(--color-muted);
+  --color-eyebrow: var(--color-accent-800);
+  --color-message-icon: var(--color-breeze);
+  --color-privacy-note: var(--color-muted);
+  --color-send-idle: var(--color-primary-100);
+  --color-send-idle-icon: var(--color-muted);
+  --color-suggestion-border: var(--color-accent-200);
+  --color-flow-action-bg: var(--color-primary-50);
+  --color-flow-action-border: #e2d3a4;
+  --color-flow-action: #6e5618;
+  --color-flow-action-hover: #f3e6c4;
+  --color-flow-save: #143224;
+  --color-flow-save-rest: var(--color-accent-400);
+  --color-flow-save-bg: #cfe4d6;
+  --color-flow-save-border: #8fbfa2;
+  --color-flow-card-shadow: color-mix(in srgb, var(--color-neutral-900) 12%, transparent);
+  --color-flow-kicker: #2f7a52;
+  --color-flow-kicker-gold: #8a6a1e;
+  --color-flow-kicker-lavender: #6b5a8a;
+  --color-flow-number: var(--color-muted);
+  --color-flow-placeholder: var(--color-muted);
+  --color-flow-highlight-bg: var(--color-accent-100);
+  --color-flow-highlight-border: var(--color-accent-200);
+  --color-task-divider: var(--color-border);
+  --color-empty-tasks: var(--color-muted);
+  --color-daily-lede: var(--color-muted);
+  --color-energy-icon-bg: var(--color-accent-100);
+  --color-energy-icon: var(--color-breeze);
+  --color-energy-score: var(--color-muted);
+  --color-slider-label: var(--color-muted);
+  --color-slider-accent: var(--color-breeze);
+  --color-reflection-border: #d4cbe3;
+  --color-reflection-save-bg: #f3eef8;
+  --color-reflection-save-border: #c4b7d6;
+  --color-reflection-save: #5c4d78;
+  --color-reflection-save-hover: #e7dff2;
+  --color-soft: var(--color-neutral-700);
+  --color-neutral-300: var(--color-neutral-700);
+  --color-accent-300: var(--color-accent-700);
+  --color-primary-950: var(--color-primary-100);
+}
+
 /* Global surface: the app window must never flash white (task 1.2.3). */
 body {
   margin: 0;
