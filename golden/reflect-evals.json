@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Vayu 3.9 golden-set: Evening Reflection 'invents nothing'. Prompt must stay byte-identical to src/components/EveningReflection.tsx reflect(). 'must' tokens must appear in the summary (normalised); 'invent' tokens must NOT appear anywhere in note/content/wind-downs, so their presence in the summary = hallucination. Threshold: >=9/10 clean.",
+  "evals": [
+    {
+      "id": "re-01",
+      "date": "2026-10-19",
+      "gaveEnergy": "the riverside run",
+      "lettingGo": "the tight calf worry",
+      "must": [["run"]],
+      "invent": ["marta", "dentist", "pizza"]
+    },
+    {
+      "id": "re-02",
+      "date": "2026-10-20",
+      "gaveEnergy": "wrapping up the Q3 call",
+      "lettingGo": "the unread email pile",
+      "must": [["marta", "q3"]],
+      "invent": ["marathon", "pizza", "bakery"]
+    },
+    {
+      "id": "re-03",
+      "date": "2026-10-21",
+      "gaveEnergy": "finally getting the dentist booked",
+      "lettingGo": "laundry guilt",
+      "must": [["dentist"]],
+      "invent": ["pizza", "amir", "beach trip"]
+    },
+    {
+      "id": "re-04",
+      "date": "2026-10-22",
+      "gaveEnergy": "the honest retro",
+      "lettingGo": "leaving exactly on time",
+      "must": [["retro"]],
+      "invent": ["dentist", "screenwash", "karaoke night"]
+    },
+    {
+      "id": "re-05",
+      "date": "2026-10-23",
+      "gaveEnergy": "the quiet pizza evening",
+      "lettingGo": "the stubborn sensor",
+      "must": [["pizza", "garage"]],
+      "invent": ["marta", "cycling", "yacht trip"]
+    },
+    {
+      "id": "re-06",
+      "date": "2026-10-19",
+      "gaveEnergy": "",
+      "lettingGo": "",
+      "must": [["run", "hail mary"]],
+      "invent": ["dentist", "marta"]
+    },
+    {
+      "id": "re-07",
+      "date": "2026-10-22",
+      "gaveEnergy": "finding the mug at the bakery corner",
+      "lettingGo": "the long meeting",
+      "must": [["mug"], ["bakery"]],
+      "invent": ["dentist", "screenwash"]
+    },
+    {
+      "id": "re-08",
+      "date": "2026-10-21",
+      "gaveEnergy": "",
+      "lettingGo": "the road plan noise",
+      "must": [["dentist"], ["marathon"]],
+      "invent": ["pizza", "amir"]
+    },
+    {
+      "id": "re-09",
+      "date": "2026-10-24",
+      "gaveEnergy": "",
+      "lettingGo": "",
+      "must": [],
+      "invent": ["marta", "pizza", "dentist", "amir", "lisa", "rover"],
+      "note": "day does not exist -> summary must not borrow facts from other days"
+    },
+    {
+      "id": "re-10",
+      "date": "2026-10-20",
+      "gaveEnergy": "fixing nothing but feeling useful anyway",
+      "lettingGo": "the flaky sensor",
+      "must": [["sensor"]],
+      "invent": ["amir", "bakery", "nov 3 appointment happening today"]
+    }
+  ]
+}

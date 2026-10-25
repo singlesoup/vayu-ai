@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Vayu 3.9 golden-set: Extractor brain dumps. Each check references tokens that must appear verbatim (normalised: lowercase, punctuation/whitespace-insensitive) in the extractor's task lines. expectNoTasks=true dumps must produce NO_TASKS or zero tasks. Threshold: >=18/20 wording preserved. Prompts must stay byte-identical to src/components/BrainDump.tsx extract().",
+  "note": "18 actionable + 2 nothing-actionable → both buckets scored.",
+  "dumps": [
+    {
+      "id": "bd-01",
+      "dump": "Closet is a disaster. Bag up the winter clothes for donation, and get the dry cleaning to Kwik Clean before Friday.",
+      "expectNoTasks": false,
+      "tokens": ["winter clothes", "donation", "dry cleaning", "Kwik Clean"]
+    },
+    {
+      "id": "bd-02",
+      "dump": "Beatriz asked about the design file ages ago, I keep forgetting. Send the design file to Beatriz. Also the parking permit renewal is due next week — sort that out.",
+      "expectNoTasks": false,
+      "tokens": ["design file", "beatriz", "parking permit"]
+    },
+    {
+      "id": "bd-03",
+      "dump": "Nothing to do on this rambly one: the rain on the window today reminded me of that holiday in Porto two years ago, the little bakery by the stepped street, how the tiles looked after the showers. Just makings of a memory.",
+      "expectNoTasks": true,
+      "tokens": []
+    },
+    {
+      "id": "bd-04",
+      "dump": "Bicycle chain is grinding. Clean the bike chain this weekend. Might need the new degreaser from the shop on Miller Street.",
+      "expectNoTasks": false,
+      "tokens": ["bike chain", "degreaser"]
+    },
+    {
+      "id": "bd-05",
+      "dump": "Call the pharmacy about the repeat prescription before they close at five. And don't forget Daylight saving — clock change, no action I think?",
+      "expectNoTasks": false,
+      "tokens": ["pharmacy", "prescription"],
+      "optionalGroups": [["clock change"]]
+    },
+    {
+      "id": "bd-06",
+      "dump": "Ran out of dog food again. Buy dog food for Rover — the salmon kind. Also book the vet for his checkup some evening next week.",
+      "expectNoTasks": false,
+      "tokens": ["dog food", "rover"],
+      "optionalGroups": [["vet", "checkup"]]
+    },
+    {
+      "id": "bd-07",
+      "dump": "Sometimes I wonder why I keep this notebook at all, whether anyone would ever read it, whether it matters that the ink is blue and the coffee stains brown. A rumination, not a job list.",
+      "expectNoTasks": true,
+      "tokens": []
+    },
+    {
+      "id": "bd-08",
+      "dump": "Draft the birthday invite for Dad's 70th. Ask Priya whether the community hall is free on the 12th. Order the cake from the bakery on Orchard Lane — the one he likes with the orange zest.",
+      "expectNoTasks": false,
+      "tokens": ["birthday invite", "priya", "cake"]
+    },
+    {
+      "id": "bd-09",
+      "dump": "The leak under the sink is back. Put the drip bucket under it tonight, and call the plumber on Tuesday if it keeps going.",
+      "expectNoTasks": false,
+      "tokens": ["sink", "plumber"]
+    },
+    {
+      "id": "bd-10",
+      "dump": "Sitting here watching the kettle steam. Thinking about the sea in winter, grey and flat, the ferry lights across the bay like someone blinking slowly. No jobs in this one, just weather.",
+      "expectNoTasks": true,
+      "tokens": []
+    },
+    {
+      "id": "bd-11",
+      "dump": "Return the library books — three of them, due Saturday. Reserve the new Dana Glebowski novel while I'm at it.",
+      "expectNoTasks": false,
+      "tokens": ["library books", "dana glebowski"]
+    },
+    {
+      "id": "bd-12",
+      "dump": "Taxes: gather the receipts folder from the filing cabinet and give the accountant the whole box by the 31st.",
+      "expectNoTasks": false,
+      "tokens": ["receipts", "accountant"]
+    },
+    {
+      "id": "bd-13",
+      "dump": "Album finally arrived — the vinyl of In Rough Weather. Sit and listen to it properly tonight. File the spare sleeves anyway.",
+      "expectNoTasks": false,
+      "tokens": ["vinyl", "file the spare sleeves"],
+      "optionalGroups": [["listen"]]
+    },
+    {
+      "id": "bd-14",
+      "dump": "Car is due its MOT at the end of the month. Ring the garage on Ash Road and get it booked. Also top up the screenwash, it was low this morning.",
+      "expectNoTasks": false,
+      "tokens": ["mot", "garage", "screenwash"]
+    },
+    {
+      "id": "bd-15",
+      "dump": "Agata is visiting on the 9th. Tidy the guest room and put fresh sheets on the bed. Maybe fix the squeaky wardrobe door while I'm at it.",
+      "expectNoTasks": false,
+      "tokens": ["guest room", "agata"],
+      "optionalGroups": [["wardrobe door"]]
+    },
+    {
+      "id": "bd-16",
+      "dump": "The fog over the rooftops this morning was sodium-lamp orange for a second before the sun found it. I stood on the balcony with cold hands and forgot what I was stressed about. Nothing here to fold into a list.",
+      "expectNoTasks": true,
+      "tokens": []
+    },
+    {
+      "id": "bd-17",
+      "dump": "Renew the home insurance — they said to do it before the 1st. Compare one other quote at least so the renewal isn't a blind yes.",
+      "expectNoTasks": false,
+      "tokens": ["insurance", "quote"]
+    },
+    {
+      "id": "bd-18",
+      "dump": "Start the tomato seeds on the windowsill this weekend. Label them, Brazil Giant on the left tray, Sweet Aperitif on the right.",
+      "expectNoTasks": false,
+      "tokens": ["tomato seeds", "windowsill"]
+    },
+    {
+      "id": "bd-19",
+      "dump": "Printer is flashing some error code, orange lights. Reinstall the printer driver when I have ten minutes. Shake the toner maybe.",
+      "expectNoTasks": false,
+      "tokens": ["printer"],
+      "optionalGroups": [["driver", "toner"]]
+    },
+    {
+      "id": "bd-20",
+      "dump": "Just a thought for the record: the parakeets were loud all afternoon, green sparks in the plane tree, and I caught myself smiling at nothing in particular. A day doesn't need a checklist.",
+      "expectNoTasks": true,
+      "tokens": []
+    }
+  ]
+}

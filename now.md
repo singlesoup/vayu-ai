@@ -1282,3 +1282,148 @@ Daily Note, calendar, tasks, and Settings never render: without Rust, `get_confi
 - **Note column width (1.6.1):** the design board doesn't give a single-column note width. Took `--width-note-column: 680px` in tokens.css (Reflect-like proportions); change it there in one place if the owner disagrees.
 - **Model tag matching (1.10.1):** confirm whether quantised variants like `gemma3n:e4b-it-q4_K_M` should count as E4B. Default: exact tag match, plus `:latest` for `embeddinggemma`.
 - **App name:** PRD §13 says the name may change (the vayu.ai domain isn't owned). Keep the product name in one place (Tauri config + one UI constant) so a rename is a one-line change.
+
+
+### Verification pass — feature re-mapping on the new UI (25 Oct, GLM agent) *(reconstructed after an writing-accident truncated the log; authoritative decisions are in plan.md changelog)*
+
+Re-mapped every planned feature against the redesigned Reflect-style UI. Verified done: morning/evening dialogs (Morning Intention + Evening Reflection), Dark/Light/System theme, Tasks (check/add/open + Brain dump), search/Win+K and Win+N labels, wiki sage chips + backlinks rail, Ctrl+B/I and format bar, calendar day-opening (now a week strip). **Only true gap found: wiki `[[` autocomplete** — assigned to kilo (completed same day, see below).
+
+- **Item 2 (keyframes, hermes):** `@keyframes fadeIn/riseIn/blink` + utility classes + panel entrances appended to App.css inside `prefers-reduced-motion: no-preference`; `--motion-fade` (200ms) confirmed in tokens.css. Accepted.
+- **Item 4 (token reconciliation docs, hermes):** plan.md Decisions row + new-design-system.md section; Emergent 50-950 scale canonical. Accepted.
+- **Item 3 (responsive, opencode):** 1050px healthy. 760px: first hermes pass looked better but live orca-browser click tests exposed a dead selector — drawer CSS targeted `.journal-sidebar`, which does not exist in the DOM (real sidebar: `nav.app-nav`, App.tsx:339). Hermes re-targeted (all 4 sites + tests), appStyles 12/12, and the drawer was re-proved live: opens/closes via the topbar toggle, calendar legible, no clipping. Accepted.
+- **Item 5 (companion copy):** KEEP (owner-delegated). The muse-style chips ("What made this feel cosy?") are generated locally by the model at runtime — the code's constant fallback is the generic pair ("What is the emotional thread?" / "Summarize this entry"); nothing to revert in code.
+- **Item 6 (760px mobile fix, hermes): covered by item 3 verification above.**
+
+---
+
+### Kilo — `[[` autocomplete accepted (25 Oct)
+
+Completion report verified independently: `src/lib/wikiAutocomplete.ts` (+11 pure unit tests), Editor dropdown integration (listbox/option, Enter insert, Esc close, ArrowUp/Down cycling with preventDefault), DailyNote + App wiring of `wikiTargets`. 22/22 in my own vitest run; colour-guard clean (zero hex literals in Editor.tsx); exactly the claimed file set; no commits.
+
+
+## Session note — check-gate closure + coordinator repairs (25 Oct, GLM agent; owner asleep, GO delegated)
+
+**Board state: ALL re-mapped feature items delivered, verified, accepted.**
+
+- kilo · item 1 (wiki [[ autocomplete): verified — 22/22 in my own run, wiring App → DailyNote → Editor confirmed, zero hex literals, exact claimed file set, no commits.
+- hermes · items 2 (keyframes), 4 (token reconciliation docs), 6 (760px drawer): all accepted, including the live orca-browser drawer proof (dead .journal-sidebar selector caught by click tests → fixed to nav.app-nav → drawer opens/closes with legible calendar, verified same day).
+
+**`npm run check` is GREEN end-to-end** (lint / typecheck / vitest 268/268 / cargo test:rust). Owner commit 4aec4d6 was itself failing 4 of these tests and carried the TokenPage duplicate render — full attribution in plan.md changelog (worktree-at-HEAD method, not trust).
+
+**Coordinator repairs (small, mechanical, owner-delegated via "go do 1"):**
+1. CompanionPanel.tsx:70 lint fix — date-change suggestion reset folded into the readNote promise callback (identical behaviour; live-verified: companion resets to generic chips on switching to an empty entry).
+2. App.tsx encoding repair — 3 em-dashes + 1 ellipsis were pre-today mojibake; window title now really says “Vayu — Today”.
+3. Two event-type fixes (App.tsx onKey, Editor.tsx drag-select) — globalThis-native types for window listeners.
+
+**Test ↔ delivered-design alignment (acceptance semantics unchanged):**
+- launch: ensure→read asserted by ORDER (app now fetches tasks in between for the nav badge).
+- midnight: heading expectation = delivered long format (“Thursday, October 22, 2026”).
+- calendar click: delivered week-strip label (regex /mo\s*19/i) — open-behaviour live-verified in the orca browser.
+- TokenPage: name/value assertions scoped per swatch row; tokenData.ts last-wins dedupe (one swatch per token name).
+- tokens.css light block: last leftover alias --color-flow-save-rest → var(--color-accent-400).
+
+**For the owner when they wake (verifier pass):**
+1. `npm run tauri dev` smoke: type [[ in the editor (autocomplete + Esc), narrow the window (drawer toggle), click a calendar day.
+2. Phase 3 gates remain: 3.9 golden-set evals, 3.10 privacy test, then the checkin-3 tag.
+3. No commits were made by anyone; tree left dirty (42 entries); owner's staged files untouched. kilo may be restarted freely to load the hardened config.
+
+
+---
+
+## Smoke-test round 2 — assigned (26 Oct morning, owner feedback, opencode coordinating)
+
+Owner smoke findings (7) + the Reflect reference project. NEW agent terminals (post-server-restart): kilo term_855a63ee-c561-496a-8f52-ec9f68cc5719, hermes term_d3839356-cd48-4f08-a036-4b2c122a98fb, opencode term_9c90903b-4cc2-4783-a914-c6bdb507004f. Briefs delivered 26 Oct.
+
+**kilo - editor interaction pack** (one completion report per item; no commits):
+1. P0 ghost/double selection render in the editor (stray half-block artifact) - single selection/caret path.
+2. P0 arrow keys inert in the editor (prose + task widgets caret mapping).
+3. Enter auto-continue: bullets / numbered / task checkboxes; empty-item Enter removes the marker (Obsidian behaviour).
+4. Formatting shortcuts Ctrl+B / Ctrl+I in the editor (format bar works, keys do not). No Tab binding.
+5. Done-task strikethrough in the EDITOR rendering (muted + line-through).
+6. P1 native shortcut parity Ctrl+C/X/V/Z/Y; explicit undo stack if React value replacement breaks native undo. Ctrl+K = insert [[link ]] as stretch.
+
+**hermes - Tasks view CSS + Reflect reference project**:
+A1. Tasks view fullscreen misalignment (Brain Dump card floats; chips/add-row/list offset) - one centred column on --width-note-column.
+A2. Dead padding under Brain Dump card before filter chips.
+A3. Done-task strikethrough in TaskList rows (list view only).
+B. Reflect project (owner-supplied): read C:\Users\samon\Downloads\reflect-agent-spec.md + reflect-ui-mockup.html; Section 3 = tour + acceptance checklist (report pass/fail per step with failing selector); implement Sections 4-5; build ONLY Section 6's 5 items in order: (1) Backlinks + Suggested links rail (keep Local Companion), (2) real Tasks aggregation with two-way sync, (3) Map graph, (4) real command palette with natural dates replacing the dead search box (no second search UI), (5) slash menu ([[ autocomplete already shipped). Constraints: dark sage look unchanged, Daily Reset / energy check-in / Local Companion stay, NO timers. Local markdown via Rust stays the only data layer.
+
+**opencode (me) - coordination + verification**:
+- Keyboard-shortcut contract compiled from Obsidian research (~53 curated defaults; journal-relevant core: c/x/v/z/y, Ctrl+Shift+V P2, Ctrl+B/I, Ctrl+K link, Enter list continuation, arrows, Tab indent P2) - delivered to kilo inside the brief.
+- Live orca-browser verification of every completion report; independent Section 3 tour cross-check of the mockup; gatekeeping [kilo perm]/[hermes perm].
+
+House rules unchanged: no commits/staging, check green per agent's own code, plan-before-edits, ONE completion report per item.
+
+---
+
+## 3.9/3.10 gates + Part A/tour verification (25 Oct session, opencode)
+
+**Channel (owner request 'agents can't reach me'):** orchestration mailboxes are the channel. Tested round-trip both directions; cards sent; hermes read + replied via mailbox (her Section 3 tour landed in opencode's inbox = first production end-to-end proof). Terminal-tail reading remains a fallback. Handles: kilo term_855a63ee..., hermes term_d3839356..., opencode term_9c90903b....
+
+**hermes Part A - VERIFIED (claim-by-claim):** .task-filters/.task-group/.task-composer all max-width: var(--width-note-column) (App.css 3042/3065/3088); .task-list spacing tokenised; .task-list li.task-done input text line-through + var(--color-muted) (737-741). Her report: 268 FE + 73 Rust tests pass. 1920w live screenshot check deferred to next tauri dev run (verifier step, non-blocking).
+
+**hermes Section 3 tour - ACCEPTED after independent cross-verification:** all cited selectors confirmed present in reflect-ui-mockup.html (46 key matches). Step 4 finding adjudicated: SPEC BUG, not mockup bug - spec says button[data-task="t1"], mockup reality is <li class="todo" data-task="t1"> (7 rows, no button variant exists). Mockup = authority. 9 steps PASS + this 1 spec-typo row.
+
+**GO issued:** Section 6 item 1 (Backlinks + Suggested links rail upgrade; keep Local Companion; plan message required before edits).
+
+**kilo:** still processing the 6-item editor brief; mailbox card unread; tail shows him working through it. Reports visible either in mailbox or terminal tail.
+
+**3.10 privacy: STATIC HALF DONE + CLEAN.** New tool scripts/privacy-static-audit.mjs: 99 files scanned; 0 violations; all 14 URL literals resolve to 127.0.0.1/localhost; 3 negative-test fixtures correctly allowlisted (ollama.rs tests assert example.com/192.168.x/127.0.0.1.evil.test URLs are REJECTED); api.ts = 2 invoke, 0 fetch, 0 XHR. Note: base_url_from hardening + bypass test already in code. Runtime half scripts/privacy-runtime-watch.ps1 ready (dry-run OK, 0 violations on idle); live-loop run pending next tauri dev session + owner/agent drive.
+
+**3.9 golden-set: KIT BUILT (live run still pending - Ollama was DOWN this session).** golden/ = 5 seed day-notes (2026-10-19..23 fact matrix), brain-dumps.json (20: 17 actionable + 3 ramble/NO_TASKS), ask-evals.json (10 Q, expected days + keywords, aq-05 honest-status trap), reflect-evals.json (10 incl. invent-decoy tokens + empty-day trap 2026-10-24), README (install steps). scripts/golden-eval.mjs runner (--eval extract|reflect scripted; ask = in-app checklist; prompts copied VERBATIM from BrainDump.tsx / EveningReflection.tsx with source pointers; model autodetect gemma*). Runbooks: docs/testing/golden-set-evals.md + docs/testing/privacy-test.md. Thresholds unchanged: Extractor >=18/20 wording, Ask >=9/10 citing real days, Reflection >=9/10 invents nothing.
+
+Test-suite state: nothing regressed - yesterday's closure stands (268 FE + 73 Rust green, hermes independently reports same).
+
+### Verification round: Part A1 FAILS at 1920 (25 Oct, opencode)
+
+Live check via dev app + orca browser tab, `?dev=ui`, viewport exactly 1920x1080, Tasks view clicked open. Measured rects:
+- .flow-card.brain-dump.dump-card: 315..1037 (w 722) - .task-list nested INSIDE it (336..1016)
+- .task-filters / .task-composer / .task-group: 585..1265 (w 680 = 640 column + padding)
+- Two overlapping clusters => NOT one centred column (matches owner's smoke screenshot defect).
+Ancestor chain: .task-list is inside section.brain-dump.flow-card.dump-card > div.daily-flows > section.note-column > div.journal-workspace; filters are siblings under .daily-flows. Outer layout offsets the right cluster - max-width tokens alone cannot fix A1.
+Verdict: A1 FAIL (A2 spacing + A3 strike verified OK earlier). Fix-round brief sent to hermes (mailbox + PTY): pause Section 6 item 1, single centred column wrapper for the tasks view, reply plan first. Re-measure on report = accept/reject.
+Before-evidence: golden/reports/part-a1-before-1920.png (screenshot; tiled pane capture, defect visible).
+
+### Permission decisions (opencode, same round)
+
+- kilo [perm] Remove-Item src/components/debug.test.tsx - APPROVED + EXECUTED by coordinator (verified: his own temporary always-throwing selection probe; diagnosis kept: React maps onChange to input event, tests must use fireEvent.input). kilo was stuck at a CLI modal; cleared for him. Told via mailbox + PTY; mailbox card re-sent (3 unread for him).
+
+Dev app relaunched in background for checks (tauri dev, CARGO_TARGET_DIR per house rules); browser tab at localhost:1420/?dev=ui viewport 1920x1080 left open for re-measurement.
+
+### Assignment frozen (owner go-ahead, 25 Oct afternoon)
+
+- kilo: order (2 arrows FIRST - owner blocked live) -> 1 ghost selection -> 3 Enter auto-continue -> 4 Ctrl+B/I (+Ctrl+K stretch) -> 5 editor strike -> 6 P1 native parity/undo. Fidelity ref: docs/reflect-mockup-research.md sections 4-5.
+- hermes: A1 fix round NOW (single centred column; re-measure = accept/reject) -> Section 6 items 1-5 in order, with the research doc's contracts (two-way id sync, palette spec, slash template verbatim, calendar flash). Keep-list non-negotiable.
+- deep mockup research shipped: docs/reflect-mockup-research.md (behaviour engine, compare charter, palette/slash/tasks contracts, line-referenced).
+- coordinator evidence loop: mailbox reports -> independent re-verification (measurements / grep / tests / live browser) -> accept.
+
+### Verification round: A1 v2 + arrows live evidence (opencode, 25 Oct afternoon)
+
+- DEV CHAIN: first `tauri dev` died during kilo's in-flight Editor rewrite (transient `focused is not defined` crash + parse error churn). Restarted in background (sh_172518ce4001u5v1JFd3d485um); vite + vayu.exe back up.
+- A1 v2 (hermes fix): structure FIXED - one .task-column 585..1265 (680w), stacked kids, two-cluster nesting gone. STRETCH still broken: children form a centred pyramid (lefts 585/849/813/753/772; brain-dump w680 but filters w151, composer w224, groups w343/w307). ROOT CAUSE: .task-filters/.task-group/.task-composer keep legacy `max-width + margin: 0 auto` - auto cross-axis margins disable flex stretch. Mockup authority: .col children run full width at the left edge (mockup L163/L252). Precise fix + measurements sent to hermes; awaiting A1 v3.
+- ARROWS (owner P0): repro'd on the REAL Editor in ?dev=ui (Morning pages dummy, 206 chars, 8 lines). .note-caret visible with sane rect, so caret.hidden early-bail is NOT the bug. MEASURED: ArrowDown moves (8 -> 20 -> 21); ArrowUp never moves up (stays 20; then 21 -> 22 = moves DOWN) - caretY +30.4px per press in BOTH directions => the geometric handler lands one line below on up. Sent to kilo with the rAF/value+lineMetrics staleness hypothesis + fallback design. One earlier run also showed +1 char per arrow press in the value (201->205, transient HMR state, not reproducible) - flagged that arrows must leave value byte-identical.
+- kilo progress visible in terminal: Enter auto-continue under TDD; found fireEvent.keyDown(Enter) does not reach commit on his WIP (0 onChange calls), rewrote tests with userEvent; deleted another temporary debug probe.
+
+### Owner decisions on Tasks view (25 Oct, from real-app screenshots)
+
+- REMOVE the 'Add a task for today' composer from Tasks view (mockup authority: no composer; tasks come from Brain Dump + note task-lines only). Folded into hermes's A1 v3 pass: tests flip to assert absence, dead CSS deleted.
+- STRIP raw markdown from task-group source titles ('Wed, Oct 21 . ## Tasks - Wed 21 Oct 2026' -> 'Wed, Oct 21'; sanitize leading #{1,6} markers, small pure helper + unit test).
+- Design-system watch: composer's raw UA input was the trigger; hermes re-eyeballs remaining new controls for un-tokened styling. Owner reminded all new UI stays token-only.
+- A1 v3 acceptance now = stretch fix + composer removal + clean group titles; re-measure five rects + fresh 1920 screenshot for owner.
+
+### Owner bug: done tasks never strike in Tasks view
+
+- Root cause (opencode): .task-board button.is-done (App.css 3194-3215) sets muted colour + filled check box only; no line-through on the Tasks-view surface. Strikes exist only on editor surfaces (App.css 624 backdrop, 737-741 note task-list).
+- Fix assigned to hermes inside the same A1 v3 pass: line-through on done rows + unit assertion; gate unchanged (stretch + composer removal + clean titles + strike), one re-measure + owner screenshot on accept.
+
+### Commit + push by owner authorization (25 Oct evening)
+
+- d844b8e pushed to origin/design_upgrades: the STAGED lib slice only (noteLivePreview, noteExcerpts, ritual, suggestions, theme + tests, 9 files / 591 insertions). In-flight agent work deliberately left uncommitted.
+- Standing rule reminded to both agents: no commits, no staging; tree stays dirty until verifier accepts slices.
+- Open gate: A1 v3 claimed complete (stretch/fix + composer removed + entryLabel() titles + .task-board strike) but with 1 failing test in AppPhase2.test.tsx that still expects the removed composer - must flip to assert-absence before accept. Re-measure + owner screenshot after dev chain restart.
+
+### Commit-all round armed (owner, 25 Oct evening)
+
+- Owner instruction: after the composer test is flipped to assert-absence (correct per the removal), commit and push ALL current changes.
+- Flow: hermes fixes AppPhase2 test -> green check -> FREEZE both agents -> grouped commits (tasks-view fix slice; editor slice if check-clean; docs/eval-kit slice) -> push -> UNFREEZE.
+- kilo warned to reach a coherent test state; docs (reflect-mockup-research.md, testing runbooks, golden/, scripts/, board files) batched as a docs commit.

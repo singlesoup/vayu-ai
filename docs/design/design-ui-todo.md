@@ -23,8 +23,8 @@ This file replaces `docs/design/emergent-ui-todo.md`. The 23 Oct audit in that f
 - [x] Journal grid, 250ms column collapse, mini sidebar (`+` only).
 - [x] Topbar 58px, blur, “All notes are local”, concentric status pip.
 - [x] Avatar “JD”. Code download button removed.
-- [x] Footer: “⌘ K to search” and “Synced just now” with one top border.
-- [x] Sidebar `#0E1216`. Search field with a clear icon and ⌘K hint.
+- [x] Footer: “Win+K to search” and “Synced just now” with one top border.
+- [x] Sidebar `#0E1216`. Search field with a clear icon and Win+K hint.
 - [x] New entry matches the context-card fill.
 - [x] Nav: only the selected row is filled (`#1a2026`). Other rows are transparent with grey icon and text.
 - [x] All entries count and Recent entries count are 18×18 circles.

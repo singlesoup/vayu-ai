@@ -1,4 +1,4 @@
-# 🎨 Vayu | Local AI Journal App
+# Vayu | Local AI Journal App
 
 > A product of soupapps
 
@@ -141,3 +141,28 @@ The color system is defined by scales from 50 (lightest) to 950 (darkest), along
 | md | `rgb(67, 114, 85) 0px 0px 0px 1px inset` | `--shadow-md` |
 | lg | `0 10px 15px -3px rgb(0 0 0 / 0.1)` | `--shadow-lg` |
 | xl | `0 20px 25px -5px rgb(0 0 0 / 0.1)` | `--shadow-xl` |
+
+---
+
+## Relationship to PRD §8 and tokens.css (reconciliation, 25 Oct)
+
+The two colour systems that coexist in this repo are reconciled as follows:
+
+- **Canonical system: Emergent 50–950 scale.** `src/styles/tokens.css` defines
+  `--color-primary-*`, `--color-secondary-*`, `--color-accent-*`, `--color-neutral-*`
+  (50 … 950) plus semantic intents (`--color-success`, `--color-warning`,
+  `--color-error`). These are the source of truth for the palette.
+- **Supplementary system: PRD §8 semantic aliases.** `--color-ink`, `--color-surface`,
+  `--color-text`, `--color-muted`, `--color-breeze`, `--color-deep-teal`,
+  `--color-paper`, `--color-warm`, etc. are semantic aliases that **point at** the
+  Emergent scale (e.g. `--color-surface: var(--color-secondary-950)`). Components
+  use these aliases; they do not redefine colours. Removing them would break every
+  component, so they remain.
+- **Fonts:** DM Sans / Fraunces / DM Mono (Emergent). The PRD §8 Inter/Newsreader/
+  JetBrains Mono fonts are no longer used.
+- **Spacing:** 8pt grid in px (`--space-1: 8px` … `--space-6: 48px`), from PRD §8.
+- **Colour guard:** `src/styles/colours.test.ts` still enforces that `tokens.css`
+  is the only colour source. No new token files were added.
+
+Decision recorded in `plan.md` Decisions log, 25 Oct.
+EOF
